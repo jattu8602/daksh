@@ -24,16 +24,22 @@ export default function SchoolsPage() {
 
   // Fetch schools on component mount
   useEffect(() => {
-    // This would be replaced with an actual API call in production
-    // Mock data for now
-    const mockSchools = [
-      { id: 1, name: "Springfield High School", code: "SPR001", email: "springfield@example.com", phone: "123-456-7890" },
-      { id: 2, name: "Riverside Academy", code: "RVA002", email: "riverside@example.com", phone: "234-567-8901" },
-      { id: 3, name: "Oakwood Elementary", code: "OAK003", email: "oakwood@example.com", phone: "345-678-9012" },
-      { id: 4, name: "Valley Middle School", code: "VAL004", email: "valley@example.com", phone: "456-789-0123" },
-      { id: 5, name: "Hillside Preparatory", code: "HIL005", email: "hillside@example.com", phone: "567-890-1234" },
-    ];
-    setSchools(mockSchools);
+    const fetchSchools = async () => {
+      try {
+        const response = await fetch('/api/schools');
+        const data = await response.json();
+        
+        if (data.success) {
+          setSchools(data.schools);
+        } else {
+          setErrorMessage(data.error || "Failed to fetch schools");
+        }
+      } catch (error) {
+        setErrorMessage("Error fetching schools: " + error.message);
+      }
+    };
+
+    fetchSchools();
   }, []);
 
   const handleInputChange = (e) => {

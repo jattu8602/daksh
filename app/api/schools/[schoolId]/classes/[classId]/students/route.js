@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
+import QRCode from 'qrcode';
 
 export async function GET(request, { params }) {
   try {
@@ -64,6 +65,121 @@ export async function GET(request, { params }) {
     console.error("Error fetching students:", error);
     return NextResponse.json(
       { error: "Something went wrong", message: error.message },
+      { status: 500 }
+    );
+  }
+}
+
+export async function POST(request) {
+  try {
+    const { students, classId } = await request.json();
+
+    // Validate required fields
+    if (!students || !Array.isArray(students) || !classId) {
+      return NextResponse.json(
+        { error: "Invalid request data" },
+        { status: 400 }
+      );
+    }
+
+    // Get the class information
+    const classData = await prisma.class.findUnique({
+      where: { id: classId },
+      include: {
+        school: true,
+        students: true
+      }
+    });
+
+    if (!classData) {
+      return NextResponse.json(
+        { error: "Class not found" },
+        { status: 404 }
+      );
+    }
+
+    // Generate usernames and passwords for all students
+    const newStudents = students.map((student, index) => {
+      const currentRollNo = classData.students.length + index + 1;
+      const username = `${student.name.toLowerCase().replace(/\s+/g, '')}${currentRollNo}`;
+      const password = Math.random().toString(36).substring(2, 15);
+      
+      // Generate QR code data
+      const qrData = {
+        username,
+        password,
+        class: classData.name,
+        school: classData.school.name,
+        rollNo: currentRollNo
+      };
+
+      return {
+        ...student,
+        rollNo: currentRollNo,
+        username,
+        password,
+        qrCode: JSON.stringify(qrData)
+      };
+    });
+
+    // Create students in bulk
+    const createdStudents = await prisma.$transaction(
+      newStudents.map(student =>
+        prisma.student.create({
+          data: {
+            rollNo: student.rollNo,
+            name: student.name,
+            gender: student.gender,
+            username: student.username,
+            password: student.password,
+            qrCode: student.qrCode,
+            user: {
+              create: {
+                name: student.name,
+                username: student.username,
+                password: student.password,
+                role: "STUDENT"
+              }
+            },
+            class: {
+              connect: { id: classId }
+            }
+          },
+          include: {
+            user: true
+          }
+        })
+      )
+    );
+
+    // Generate QR codes for all students
+    await Promise.all(
+      createdStudents.map(async (student) => {
+        const qrData = JSON.parse(student.qrCode);
+        const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
+        
+        await prisma.student.update({
+          where: { id: student.id },
+          data: { qrCode }
+        });
+      })
+    );
+
+    return NextResponse.json({
+      success: true,
+      students: createdStudents.map(student => ({
+        ...student,
+        user: {
+          ...student.user,
+          password: student.qrCode ? JSON.parse(student.qrCode).password : null
+        }
+      }))
+    });
+
+  } catch (error) {
+    console.error("Error in bulk student import:", error);
+    return NextResponse.json(
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }

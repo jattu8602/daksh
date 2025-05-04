@@ -30,24 +30,34 @@ export default function SchoolDetailPage() {
 
   // Fetch school and its classes on component mount
   useEffect(() => {
-    // This would be replaced with actual API calls in production
-    // Mock data for now
-    const mockSchool = {
-      id: schoolId,
-      name: "Springfield High School",
-      code: "SPR001",
-      email: "springfield@example.com",
-      phone: "123-456-7890",
+    const fetchSchoolAndClasses = async () => {
+      try {
+        // Fetch school details
+        const schoolResponse = await fetch(`/api/schools/${schoolId}`);
+        const schoolData = await schoolResponse.json();
+        
+        if (schoolData.success) {
+          setSchool(schoolData.school);
+        } else {
+          setErrorMessage(schoolData.error || "Failed to fetch school details");
+          return;
+        }
+
+        // Fetch classes for this school
+        const classesResponse = await fetch(`/api/schools/${schoolId}/classes`);
+        const classesData = await classesResponse.json();
+        
+        if (classesData.success) {
+          setClasses(classesData.classes);
+        } else {
+          setErrorMessage(classesData.error || "Failed to fetch classes");
+        }
+      } catch (error) {
+        setErrorMessage("Error fetching data: " + error.message);
+      }
     };
 
-    const mockClasses = [
-      { id: 1, name: "10th Grade - A", totalStudents: 32, boys: 18, girls: 14, startRollNumber: 101 },
-      { id: 2, name: "10th Grade - B", totalStudents: 35, boys: 20, girls: 15, startRollNumber: 201 },
-      { id: 3, name: "9th Grade - A", totalStudents: 30, boys: 16, girls: 14, startRollNumber: 301 },
-    ];
-
-    setSchool(mockSchool);
-    setClasses(mockClasses);
+    fetchSchoolAndClasses();
   }, [schoolId]);
 
   const handleInputChange = (e) => {

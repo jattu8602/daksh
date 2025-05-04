@@ -11,6 +11,7 @@ export default function ClassDetailPage() {
 
   const [isAddStudentModalOpen, setIsAddStudentModalOpen] = useState(false);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [isBulkImportModalOpen, setIsBulkImportModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [school, setSchool] = useState(null);
@@ -25,52 +26,74 @@ export default function ClassDetailPage() {
     rollNo: "",
   });
 
+  // Bulk import state
+  const [bulkImportData, setBulkImportData] = useState({
+    students: Array(10).fill({
+      name: "",
+      rollNo: "",
+      gender: ""
+    }),
+    availableBoys: classData?.totalStudents || 0,
+    availableGirls: 0,
+    startRollNumber: classData?.startRollNumber || 1
+  });
+
   // New student created info
   const [newStudent, setNewStudent] = useState(null);
 
-  // Fetch school, class and students on component mount
+  // Fetch school, class and students on component mount with caching
   useEffect(() => {
-    // This would be replaced with actual API calls in production
-    // Mock data for now
-    const mockSchool = {
-      id: schoolId,
-      name: "Springfield High School",
-      code: "SPR001",
+    const fetchClassDetails = async () => {
+      try {
+        // Use cache-first strategy
+        const cacheKey = `class:${schoolId}:${classId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+        
+        if (cachedData) {
+          const data = JSON.parse(cachedData);
+          setClassData(data.class);
+          setSchool(data.class.school);
+          setStudents(data.class.students);
+          return;
+        }
+
+        setIsLoading(true);
+        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
+        const data = await response.json();
+
+        if (data.success) {
+          // Cache the data for 5 minutes
+          localStorage.setItem(cacheKey, JSON.stringify(data));
+          localStorage.setItem(`${cacheKey}:timestamp`, Date.now().toString());
+
+          setClassData(data.class);
+          setSchool(data.class.school);
+          setStudents(data.class.students);
+
+          // Pre-fill the roll number with the next available one
+          if (data.class.students.length > 0) {
+            const maxRollNo = Math.max(...data.class.students.map(s => s.rollNo));
+            setStudentFormData(prev => ({
+              ...prev,
+              rollNo: (maxRollNo + 1).toString(),
+            }));
+          } else {
+            setStudentFormData(prev => ({
+              ...prev,
+              rollNo: data.class.startRollNumber.toString(),
+            }));
+          }
+        } else {
+          setErrorMessage(data.error || "Failed to fetch class details");
+        }
+      } catch (error) {
+        setErrorMessage("Error fetching data: " + error.message);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    const mockClass = {
-      id: classId,
-      name: "10th Grade - A",
-      totalStudents: 32,
-      boys: 18,
-      girls: 14,
-      startRollNumber: 101,
-      schoolId,
-    };
-
-    const mockStudents = [
-      { id: 1, name: "John Smith", rollNo: 101, username: "john_10a_spr001", qrCode: true },
-      { id: 2, name: "Sarah Johnson", rollNo: 102, username: "sarah_10a_spr001", qrCode: true },
-      { id: 3, name: "Michael Brown", rollNo: 103, username: "michael_10a_spr001", qrCode: true },
-    ];
-
-    setSchool(mockSchool);
-    setClassData(mockClass);
-    setStudents(mockStudents);
-
-    // Pre-fill the roll number with the next available one
-    if (mockClass && mockStudents.length > 0) {
-      const maxRollNo = Math.max(...mockStudents.map(s => s.rollNo));
-      setStudentFormData(prev => ({
-        ...prev,
-        rollNo: (maxRollNo + 1).toString(),
-      }));
-    } else if (mockClass) {
-      setStudentFormData(prev => ({
-        ...prev,
-        rollNo: mockClass.startRollNumber.toString(),
-      }));
-    }
+    fetchClassDetails();
   }, [schoolId, classId]);
 
   const handleInputChange = (e) => {
@@ -88,7 +111,7 @@ export default function ClassDetailPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch("/api/students/create", {
+      const response = await fetch(`/api/schools/${schoolId}/classes/${classId}/students`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -132,6 +155,82 @@ export default function ClassDetailPage() {
         name: "",
         rollNo: (parseInt(studentFormData.rollNo) + 1).toString(),
       });
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleBulkImport = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      // Validate input
+      const errors = [];
+      bulkImportData.students.forEach((student, index) => {
+        if (!student.name.trim()) {
+          errors.push(`Student at row ${index + 1} has no name`);
+        }
+        if (!student.gender) {
+          errors.push(`Student at row ${index + 1} has no gender`);
+        }
+        if (!student.rollNo) {
+          errors.push(`Student at row ${index + 1} has no roll number`);
+        }
+      });
+
+      if (errors.length > 0) {
+        throw new Error(errors.join("\n"));
+      }
+
+      // Calculate roll numbers if not provided
+      const studentsWithRolls = bulkImportData.students.map((student, index) => {
+        if (!student.rollNo) {
+          return {
+            ...student,
+            rollNo: bulkImportData.startRollNumber + index
+          };
+        }
+        return student;
+      });
+
+      const response = await fetch(`/api/schools/${schoolId}/classes/${classId}/students/bulk`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          students: studentsWithRolls,
+          classId,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to import students");
+      }
+
+      // Update the students list
+      setStudents(data.students);
+      setSuccessMessage("Students imported successfully");
+
+      // Reset the bulk import form
+      setBulkImportData({
+        students: Array(10).fill({
+          name: "",
+          rollNo: "",
+          gender: ""
+        }),
+        availableBoys: classData?.totalStudents || 0,
+        availableGirls: 0,
+        startRollNumber: classData?.startRollNumber || 1
+      });
+
+      setIsBulkImportModalOpen(false);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
     } finally {
@@ -212,12 +311,12 @@ export default function ClassDetailPage() {
           >
             Export Data
           </button>
-          <button
-            onClick={() => setIsAddStudentModalOpen(true)}
+          <Link
+            href={`/admin/schools/${schoolId}/classes/${classId}/bulk`}
             className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
           >
-            <span className="mr-2">+</span> Add Student
-          </button>
+            <span className="mr-2">+</span> Bulk Import Students
+          </Link>
         </div>
       </div>
 
@@ -336,6 +435,10 @@ export default function ClassDetailPage() {
                   <button
                     onClick={() => {
                       setNewStudent(null);
+                      setStudentFormData({
+                        name: "",
+                        rollNo: (parseInt(studentFormData.rollNo) + 1).toString(),
+                      });
                     }}
                     className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
                   >
@@ -395,69 +498,170 @@ export default function ClassDetailPage() {
         </div>
       )}
 
-      {/* Export Modal */}
-      {isExportModalOpen && (
+      {/* Bulk Import Modal */}
+      {isBulkImportModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+          <div className="w-full max-w-4xl rounded-lg bg-white p-6 shadow">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Export Student Data</h2>
+              <h2 className="text-xl font-bold">Bulk Import Students</h2>
               <button
-                onClick={() => setIsExportModalOpen(false)}
+                onClick={() => {
+                  setIsBulkImportModalOpen(false);
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                }}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
               </button>
             </div>
-            <form>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Export Type</label>
-                <select className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500">
-                  <option value="excel">Excel (.xlsx)</option>
-                  <option value="csv">CSV (.csv)</option>
-                  <option value="pdf">PDF (.pdf)</option>
-                </select>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
               </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Data to Export</label>
-                <div className="mt-2 space-y-2">
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span className="text-sm">Student Names</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span className="text-sm">Roll Numbers</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span className="text-sm">Usernames</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span className="text-sm">Passwords</span>
-                  </label>
-                  <label className="flex items-center">
-                    <input type="checkbox" className="mr-2" defaultChecked />
-                    <span className="text-sm">QR Codes</span>
-                  </label>
+            )}
+
+            {successMessage && (
+              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
+                {successMessage}
+              </div>
+            )}
+
+            <div className="space-y-6">
+              {/* Class Structure */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h3 className="text-lg font-semibold mb-4">Class Structure</h3>
+                <div className="flex flex-wrap gap-4">
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Total Students:</span>
+                      <span className="font-medium text-gray-900">{bulkImportData.availableBoys + bulkImportData.availableGirls}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Boys:</span>
+                      <span className="font-medium text-blue-600">{bulkImportData.availableBoys}</span>
+                    </div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Girls:</span>
+                      <span className="font-medium text-pink-600">{bulkImportData.availableGirls}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-600">Start Roll No:</span>
+                      <span className="font-medium text-gray-900">{bulkImportData.startRollNumber}</span>
+                    </div>
+                  </div>
+                  <div className="flex-1">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm text-gray-600">Available Tags:</span>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setBulkImportData(prev => ({
+                            ...prev,
+                            availableBoys: Math.max(0, prev.availableBoys - 1)
+                          }))}
+                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
+                          disabled={bulkImportData.availableBoys <= 0}
+                        >
+                          Boy
+                        </button>
+                        <button
+                          onClick={() => setBulkImportData(prev => ({
+                            ...prev,
+                            availableGirls: Math.max(0, prev.availableGirls - 1)
+                          }))}
+                          className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm hover:bg-pink-200"
+                          disabled={bulkImportData.availableGirls <= 0}
+                        >
+                          Girl
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+
+              {/* Student List */}
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-2">Student Name</th>
+                      <th className="px-4 py-2">Gender</th>
+                      <th className="px-4 py-2">Roll Number</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {bulkImportData.students.map((student, index) => (
+                      <tr key={index} className="border-b">
+                        <td className="px-4 py-2">
+                          <input
+                            type="text"
+                            value={student.name}
+                            onChange={(e) => {
+                              const newStudents = [...bulkImportData.students];
+                              newStudents[index].name = e.target.value;
+                              setBulkImportData({ students: newStudents });
+                            }}
+                            className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Enter student name"
+                            required
+                          />
+                        </td>
+                        <td className="px-4 py-2">
+                          <select
+                            value={student.gender}
+                            onChange={(e) => {
+                              const newStudents = [...bulkImportData.students];
+                              newStudents[index].gender = e.target.value;
+                              setBulkImportData({ students: newStudents });
+                            }}
+                            className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                          >
+                            <option value="">Select Gender</option>
+                            <option value="M">Boy</option>
+                            <option value="F">Girl</option>
+                          </select>
+                        </td>
+                        <td className="px-4 py-2">
+                          <input
+                            type="number"
+                            value={student.rollNo}
+                            onChange={(e) => {
+                              const newStudents = [...bulkImportData.students];
+                              newStudents[index].rollNo = e.target.value;
+                              setBulkImportData({ students: newStudents });
+                            }}
+                            className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                            placeholder="Roll Number"
+                            required
+                          />
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Actions */}
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
-                  onClick={() => setIsExportModalOpen(false)}
+                  onClick={() => setIsBulkImportModalOpen(false)}
                   className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  disabled={isLoading}
                 >
                   Cancel
                 </button>
                 <button
-                  type="button"
+                  onClick={handleBulkImport}
                   className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  disabled={isLoading}
                 >
-                  Export
+                  {isLoading ? "Importing..." : "Import Students"}
                 </button>
               </div>
-            </form>
+            </div>
           </div>
         </div>
       )}

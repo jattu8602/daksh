@@ -5,9 +5,16 @@ export async function GET(request, { params }) {
   const { schoolId } = await params;
   try {
 
-    // Check if the school exists
+    // Get school details
     const school = await prisma.school.findUnique({
       where: { id: schoolId },
+      include: {
+        classes: {
+          orderBy: {
+            name: 'asc',
+          },
+        },
+      },
     });
 
     if (!school) {
@@ -17,23 +24,12 @@ export async function GET(request, { params }) {
       );
     }
 
-    // Get all classes for this school
-    const classes = await prisma.class.findMany({
-      where: {
-        schoolId: schoolId,
-      },
-      orderBy: {
-        name: 'asc',
-      },
-    });
-
     return NextResponse.json({
       school,
-      classes,
       success: true,
     });
   } catch (error) {
-    console.error("Error fetching classes:", error);
+    console.error("Error fetching school:", error);
     return NextResponse.json(
       { error: "Something went wrong", message: error.message },
       { status: 500 }

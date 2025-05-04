@@ -24,6 +24,20 @@ export async function POST(request) {
       );
     }
 
+    // Check if email already exists (if provided)
+    if (email) {
+      const existingEmail = await prisma.school.findUnique({
+        where: { email },
+      });
+
+      if (existingEmail) {
+        return NextResponse.json(
+          { message: "School with this email already exists" },
+          { status: 400 }
+        );
+      }
+    }
+
     // Create school
     const school = await prisma.school.create({
       data: {
