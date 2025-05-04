@@ -1,10 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
 import Link from "next/link";
 
-export default function StudentLogin() {
+export default function MentorLogin() {
   const [loginMethod, setLoginMethod] = useState("credentials");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -15,13 +14,13 @@ export default function StudentLogin() {
     setIsLoading(true);
 
     // This would be replaced with actual API call
-    console.log("Logging in with:", { username, password });
+    console.log("Mentor login with:", { username, password });
 
     // Simulate API call
     setTimeout(() => {
       setIsLoading(false);
       // Redirect would happen here after successful login
-      window.location.href = "/dashboard/home";
+      window.location.href = "/mentor/dashboard";
     }, 1500);
   };
 
@@ -36,10 +35,10 @@ export default function StudentLogin() {
         <div className="text-center">
           <h1 className="text-4xl font-bold tracking-tight text-gray-900">Daksh</h1>
           <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
-            Student Login
+            Mentor Login
           </h2>
           <p className="mt-2 text-sm text-gray-500">
-            Sign in to access your student dashboard
+            Sign in to access your mentor dashboard
           </p>
         </div>
 
@@ -136,18 +135,9 @@ export default function StudentLogin() {
         </div>
 
         <div className="mt-4 text-center text-sm">
-          <div className="text-gray-600">
-            Admin?{" "}
-            <Link href="/admin/login" className="font-medium text-black hover:text-gray-800">
-              Login here
-            </Link>
-          </div>
-          <div className="mt-2 text-gray-600">
-            Mentor?{" "}
-            <Link href="/mentor/login" className="font-medium text-black hover:text-gray-800">
-              Login here
-            </Link>
-          </div>
+          <Link href="/" className="font-medium text-black hover:text-gray-800">
+            Back to student login
+          </Link>
         </div>
       </div>
     </div>
