@@ -20,25 +20,51 @@ export default function BulkImportPage() {
     startRollNumber: 1
   });
 
-  // Fetch class details on mount
+  // Fetch class details on mount - optimized version
   useEffect(() => {
     const fetchClassDetails = async () => {
       try {
+        // Check for cached class data first
+        const cacheKey = `class:${schoolId}:${classId}`;
+        const cachedData = localStorage.getItem(cacheKey);
+        const cachedTimestamp = localStorage.getItem(`${cacheKey}:timestamp`);
+        const isCacheValid = cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < 60000);
+
+        if (isCacheValid && cachedData) {
+          const data = JSON.parse(cachedData);
+          const totalStudents = data.class.boys + data.class.girls;
+
+          setClassData(data.class);
+          setBulkImportData(prev => ({
+            ...prev,
+            students: Array(Math.min(20, totalStudents)).fill().map(() => ({
+              name: "",
+              rollNo: "",
+              gender: ""
+            })),
+            availableBoys: data.class.boys || 0,
+            availableGirls: data.class.girls || 0,
+            startRollNumber: data.class.startRollNumber || 1
+          }));
+          return;
+        }
+
+        setIsLoading(true);
         const response = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
         const data = await response.json();
 
         if (data.success) {
           const totalStudents = data.class.boys + data.class.girls;
-          const initialStudents = Array(totalStudents).fill({
-            name: "",
-            rollNo: "",
-            gender: ""
-          });
 
           setClassData(data.class);
           setBulkImportData(prev => ({
             ...prev,
-            students: initialStudents,
+            // Limit initial array size for better performance
+            students: Array(Math.min(20, totalStudents)).fill().map(() => ({
+              name: "",
+              rollNo: "",
+              gender: ""
+            })),
             availableBoys: data.class.boys || 0,
             availableGirls: data.class.girls || 0,
             startRollNumber: data.class.startRollNumber || 1
@@ -48,6 +74,8 @@ export default function BulkImportPage() {
         }
       } catch (error) {
         setErrorMessage("Error fetching class details: " + error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -113,7 +141,7 @@ export default function BulkImportPage() {
 
       // Redirect back to class page with a query parameter to force refresh
       setTimeout(() => {
-        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?fromBulkImport=true`;
+        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?refresh=true`;
       }, 1500);
 
       // Reset the bulk import form
@@ -130,6 +158,21 @@ export default function BulkImportPage() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // Dynamically add more rows as needed
+  const addMoreRows = () => {
+    setBulkImportData(prev => ({
+      ...prev,
+      students: [
+        ...prev.students,
+        ...Array(5).fill().map(() => ({
+          name: "",
+          rollNo: "",
+          gender: ""
+        }))
+      ]
+    }));
   };
 
   if (!classData) {
@@ -339,7 +382,13 @@ export default function BulkImportPage() {
               {bulkImportData.students.length < (bulkImportData.availableBoys + bulkImportData.availableGirls) && (
                 <tr className="border-b">
                   <td colSpan={4} className="px-4 py-2 text-center text-gray-500">
-                    {bulkImportData.availableBoys + bulkImportData.availableGirls - bulkImportData.students.length} slots remaining
+                    <button
+                      onClick={addMoreRows}
+                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
+                    >
+                      + Add 5 More Rows
+                    </button>
+                    <p className="mt-2">{bulkImportData.availableBoys + bulkImportData.availableGirls - bulkImportData.students.length} slots remaining</p>
                   </td>
                 </tr>
               )}

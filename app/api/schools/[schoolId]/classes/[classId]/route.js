@@ -2,26 +2,49 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
-  const { schoolId, classId } = await params;
+  const schoolId = params.schoolId;
+  const classId = params.classId;
+
+  // Use URL to check for any cache-control settings
+  const url = new URL(request.url);
+  const noCache = url.searchParams.get('no-cache') === 'true';
+
+  // Set cache control headers
+  const headers = new Headers();
+  if (!noCache) {
+    headers.append('Cache-Control', 'max-age=60, s-maxage=60, stale-while-revalidate=300');
+  } else {
+    headers.append('Cache-Control', 'no-cache, no-store, must-revalidate');
+  }
 
   try {
     // Get class details with school and students in a single query
+    // Use select instead of include where possible to reduce data transfer
     const classData = await prisma.class.findUnique({
       where: { id: classId },
       include: {
-        school: true,
+        school: {
+          select: {
+            id: true,
+            name: true,
+            code: true
+          }
+        },
         students: {
           orderBy: {
             rollNo: 'asc',
           },
-          include: {
+          select: {
+            id: true,
+            rollNo: true,
+            userId: true,
             user: {
               select: {
                 id: true,
                 name: true,
                 username: true,
-                qrCode: true,
                 password: true,
+                qrCode: true,
               }
             }
           }
@@ -53,7 +76,7 @@ export async function GET(request, { params }) {
       }
     };
 
-    return NextResponse.json(response);
+    return NextResponse.json(response, { headers });
   } catch (error) {
     console.error("Error fetching class details:", error);
     return NextResponse.json(

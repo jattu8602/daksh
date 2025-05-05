@@ -3,7 +3,8 @@ import prisma from "@/lib/prisma";
 import * as XLSX from 'xlsx';
 
 export async function GET(request, { params }) {
-  const { schoolId, classId } = params;
+  const schoolId = params.schoolId;
+  const classId = params.classId;
 
   try {
     // Get class details with school and students in a single query

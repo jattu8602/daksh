@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -46,24 +46,41 @@ export default function ClassDetailPage() {
   const [selectedQRCode, setSelectedQRCode] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
-  // Fetch school, class and students on component mount with caching
+  // Fetch school, class and students on component mount with improved caching
   useEffect(() => {
     const fetchClassDetails = async () => {
       try {
-        // Use cache-first strategy
+        console.log("Fetching class details for:", schoolId, classId);
+
+        // Use cache-first strategy with performance improvements
         const cacheKey = `class:${schoolId}:${classId}`;
         const cachedData = localStorage.getItem(cacheKey);
         const cachedTimestamp = localStorage.getItem(`${cacheKey}:timestamp`);
 
         // Check if cache is recent (less than 1 minute old) and not returning from bulk import
         const cacheAge = cachedTimestamp ? Date.now() - parseInt(cachedTimestamp) : Infinity;
-        const hasBulkImportQuery = typeof window !== 'undefined' && window.location.search.includes('fromBulkImport');
+        const hasBulkImportQuery = typeof window !== 'undefined' &&
+          (window.location.search.includes('fromBulkImport') ||
+           window.location.search.includes('refresh'));
+
+        // Set loading state only if we need to fetch
+        if (!(cachedData && cacheAge < 60000 && !hasBulkImportQuery)) {
+          setIsLoading(true);
+
+          // Clear any existing cached data if we're forcing a refresh
+          if (hasBulkImportQuery) {
+            localStorage.removeItem(cacheKey);
+            localStorage.removeItem(`${cacheKey}:timestamp`);
+            console.log("Clearing cache due to refresh parameter");
+          }
+        }
 
         if (cachedData && cacheAge < 60000 && !hasBulkImportQuery) {
           const data = JSON.parse(cachedData);
+          console.log("Using cached data:", data.class.name, "Students:", data.class.students?.length || 0);
           setClassData(data.class);
           setSchool(data.class.school);
-          setStudents(data.class.students);
+          setStudents(data.class.students || []);
 
           // Remove any query parameters to clean the URL
           if (hasBulkImportQuery && typeof window !== 'undefined') {
@@ -72,22 +89,30 @@ export default function ClassDetailPage() {
           return;
         }
 
-        setIsLoading(true);
-        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
+        console.log("Making API request for fresh data");
+        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}?no-cache=true`);
         const data = await response.json();
 
         if (data.success) {
-          // Cache the data for 5 minutes
+          console.log("API returned data successfully:",
+            "Class:", data.class.name,
+            "Students:", data.class.students?.length || 0);
+
+          // Cache the data for 1 minute
           localStorage.setItem(cacheKey, JSON.stringify(data));
           localStorage.setItem(`${cacheKey}:timestamp`, Date.now().toString());
 
           setClassData(data.class);
           setSchool(data.class.school);
-          setStudents(data.class.students);
+
+          // Make sure students is always an array
+          const studentArray = Array.isArray(data.class.students) ? data.class.students : [];
+          setStudents(studentArray);
+          console.log("Student data set:", studentArray.length, "students");
 
           // Pre-fill the roll number with the next available one
-          if (data.class.students.length > 0) {
-            const maxRollNo = Math.max(...data.class.students.map(s => s.rollNo));
+          if (studentArray.length > 0) {
+            const maxRollNo = Math.max(...studentArray.map(s => s.rollNo));
             setStudentFormData(prev => ({
               ...prev,
               rollNo: (maxRollNo + 1).toString(),
@@ -104,9 +129,11 @@ export default function ClassDetailPage() {
             window.history.replaceState({}, document.title, window.location.pathname);
           }
         } else {
+          console.error("Failed to fetch class details:", data.error);
           setErrorMessage(data.error || "Failed to fetch class details");
         }
       } catch (error) {
+        console.error("Error in fetchClassDetails:", error);
         setErrorMessage("Error fetching data: " + error.message);
       } finally {
         setIsLoading(false);
@@ -128,6 +155,11 @@ export default function ClassDetailPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, [schoolId, classId]);
+
+  // Add debugging for students state changes
+  useEffect(() => {
+    console.log("Students state updated:", students?.length || 0, "students");
+  }, [students]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -398,12 +430,27 @@ export default function ClassDetailPage() {
     }
   };
 
-  const filteredStudents = students.filter(
-    (student) =>
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.rollNo.toString().includes(searchTerm) ||
-      student.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoize filtered students to prevent unnecessary re-renders
+  const filteredStudents = useMemo(() => {
+    // Ensure students is an array before filtering
+    if (!Array.isArray(students)) {
+      console.warn("Students is not an array:", students);
+      return [];
+    }
+
+    return students.filter(
+      (student) =>
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.rollNo.toString().includes(searchTerm) ||
+        student.username.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  }, [students, searchTerm]);
+
+  // Add refresh function
+  const handleRefresh = () => {
+    // Add refresh parameter to force a reload
+    window.location.href = `${window.location.pathname}?refresh=true`;
+  };
 
   if (!school || !classData) {
     return <div className="p-6 text-center">Loading class information...</div>;
@@ -448,6 +495,12 @@ export default function ClassDetailPage() {
             </div>
           </div>
           <div className="mt-4 sm:mt-0">
+            <button
+              onClick={handleRefresh}
+              className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
+            >
+              Refresh Data
+            </button>
             <button className="rounded-md border px-4 py-2 text-sm font-medium mr-2">
               Edit Class
             </button>
@@ -460,6 +513,50 @@ export default function ClassDetailPage() {
           </div>
         </div>
       </div>
+
+      {/* Error Messages Section */}
+      {errorMessage && (
+        <div className="p-4 mb-4 border border-red-200 rounded-md bg-red-50">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-red-800">Error</h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p>{errorMessage}</p>
+                <button
+                  onClick={handleRefresh}
+                  className="mt-2 inline-flex items-center rounded-md bg-red-50 px-2 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-600/20"
+                >
+                  Refresh Data
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Success Messages Section */}
+      {successMessage && (
+        <div className="p-4 mb-4 border border-green-200 rounded-md bg-green-50">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.857-9.809a.75.75 0 00-1.214-.882l-3.483 4.79-1.88-1.88a.75.75 0 10-1.06 1.061l2.5 2.5a.75.75 0 001.137-.089l4-5.5z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3">
+              <h3 className="text-sm font-medium text-green-800">Success</h3>
+              <div className="mt-2 text-sm text-green-700">
+                <p>{successMessage}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Students Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

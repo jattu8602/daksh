@@ -4,7 +4,8 @@ import QRCode from 'qrcode';
 
 export async function GET(request, { params }) {
   try {
-    const { schoolId, classId } = params;
+    const schoolId = params.schoolId;
+    const classId = params.classId;
 
     // Check if the class exists and belongs to the specified school
     const classData = await prisma.class.findFirst({
@@ -103,7 +104,7 @@ export async function POST(request) {
       const currentRollNo = classData.students.length + index + 1;
       const username = `${student.name.toLowerCase().replace(/\s+/g, '')}${currentRollNo}`;
       const password = Math.random().toString(36).substring(2, 15);
-      
+
       // Generate QR code data
       const qrData = {
         username,
@@ -157,7 +158,7 @@ export async function POST(request) {
       createdStudents.map(async (student) => {
         const qrData = JSON.parse(student.qrCode);
         const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
-        
+
         await prisma.student.update({
           where: { id: student.id },
           data: { qrCode }

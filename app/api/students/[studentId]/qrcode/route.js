@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
-  const { studentId } = params;
+  const studentId = params.studentId;
 
   try {
     // Get student details

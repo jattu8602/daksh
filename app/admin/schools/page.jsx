@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 
 export default function SchoolsPage() {
@@ -26,16 +26,34 @@ export default function SchoolsPage() {
   useEffect(() => {
     const fetchSchools = async () => {
       try {
+        setIsLoading(true);
+
+        // Check for cached data
+        const cachedData = sessionStorage.getItem('allSchools');
+        const cachedTimestamp = sessionStorage.getItem('allSchools:timestamp');
+        const isCacheValid = cachedTimestamp && (Date.now() - parseInt(cachedTimestamp)) < 300000; // 5 min cache
+
+        if (cachedData && isCacheValid) {
+          setSchools(JSON.parse(cachedData));
+          setIsLoading(false);
+          return;
+        }
+
         const response = await fetch('/api/schools');
         const data = await response.json();
-        
+
         if (data.success) {
           setSchools(data.schools);
+          // Cache the data
+          sessionStorage.setItem('allSchools', JSON.stringify(data.schools));
+          sessionStorage.setItem('allSchools:timestamp', Date.now().toString());
         } else {
           setErrorMessage(data.error || "Failed to fetch schools");
         }
       } catch (error) {
         setErrorMessage("Error fetching schools: " + error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -99,13 +117,16 @@ export default function SchoolsPage() {
     }
   };
 
-  const filteredSchools = schools.filter(
-    (school) =>
-      school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      school.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (school.phone && school.phone.includes(searchTerm))
-  );
+  // Memoize the filtered schools to prevent unnecessary re-renders
+  const filteredSchools = useMemo(() => {
+    return schools.filter(
+      (school) =>
+        school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        school.code.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (school.email && school.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        (school.phone && school.phone.includes(searchTerm))
+    );
+  }, [schools, searchTerm]);
 
   return (
     <div className="space-y-6">

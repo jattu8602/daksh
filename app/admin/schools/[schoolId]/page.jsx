@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 
@@ -34,33 +34,84 @@ export default function SchoolDetailPage() {
   useEffect(() => {
     const fetchSchoolAndClasses = async () => {
       try {
-        // Fetch school details
-        const schoolResponse = await fetch(`/api/schools/${schoolId}`);
-        const schoolData = await schoolResponse.json();
+        setIsLoading(true);
 
-        if (schoolData.success) {
-          setSchool(schoolData.school);
+        // Check for cached data
+        const schoolCacheKey = `school:${schoolId}`;
+        const classesCacheKey = `school:${schoolId}:classes`;
+
+        const schoolCache = sessionStorage.getItem(schoolCacheKey);
+        const classesCache = sessionStorage.getItem(classesCacheKey);
+        const cacheTimestamp = sessionStorage.getItem(`${schoolCacheKey}:timestamp`);
+        const isCacheValid = cacheTimestamp && (Date.now() - parseInt(cacheTimestamp)) < 300000; // 5 min cache
+
+        let schoolData, classesData;
+
+        // Use cache if available and valid
+        if (schoolCache && classesCache && isCacheValid) {
+          schoolData = JSON.parse(schoolCache);
+          classesData = JSON.parse(classesCache);
+
+          setSchool(schoolData);
+          setClasses(classesData);
+          setIsLoading(false);
         } else {
-          setErrorMessage(schoolData.error || "Failed to fetch school details");
-          return;
-        }
+          // Clear any existing cache
+          sessionStorage.removeItem(schoolCacheKey);
+          sessionStorage.removeItem(classesCacheKey);
+          sessionStorage.removeItem(`${schoolCacheKey}:timestamp`);
 
-        // Fetch classes for this school
-        const classesResponse = await fetch(`/api/schools/${schoolId}/classes`);
-        const classesData = await classesResponse.json();
+          // Fetch both in parallel
+          const [schoolResponse, classesResponse] = await Promise.all([
+            fetch(`/api/schools/${schoolId}?no-cache=true`),
+            fetch(`/api/schools/${schoolId}/classes?no-cache=true`)
+          ]);
 
-        if (classesData.success) {
-          setClasses(classesData.classes);
-        } else {
-          setErrorMessage(classesData.error || "Failed to fetch classes");
+          // Parse both responses
+          const schoolJson = await schoolResponse.json();
+          const classesJson = await classesResponse.json();
+
+          if (schoolJson.success) {
+            setSchool(schoolJson.school);
+            sessionStorage.setItem(schoolCacheKey, JSON.stringify(schoolJson.school));
+          } else {
+            setErrorMessage(schoolJson.error || "Failed to fetch school details");
+          }
+
+          if (classesJson.success) {
+            // Handle the updated classes API response format
+            const classesArray = classesJson.classes || [];
+            setClasses(classesArray);
+            sessionStorage.setItem(classesCacheKey, JSON.stringify(classesArray));
+
+            console.log("Classes loaded:", classesArray.length);
+          } else {
+            setErrorMessage(classesJson.error || "Failed to fetch classes");
+          }
+
+          // Save timestamp for cache validation
+          sessionStorage.setItem(`${schoolCacheKey}:timestamp`, Date.now().toString());
         }
       } catch (error) {
+        console.error("Error fetching data:", error);
         setErrorMessage("Error fetching data: " + error.message);
+      } finally {
+        setIsLoading(false);
       }
     };
 
     fetchSchoolAndClasses();
+
+    // Clear session storage on unmount
+    return () => {
+      // We don't want to clear session storage entirely, as it may affect other pages
+    };
   }, [schoolId]);
+
+  // Add a debug render for classes
+  useEffect(() => {
+    console.log("Classes in state:", classes);
+  }, [classes]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -148,9 +199,11 @@ export default function SchoolDetailPage() {
     }
   };
 
-  const filteredClasses = classes.filter(
-    (cls) => cls.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoize filtered classes to prevent unnecessary re-renders
+  const filteredClasses = useMemo(() => {
+    return Array.isArray(classes) ?
+      classes.filter(cls => cls.name.toLowerCase().includes(searchTerm.toLowerCase())) : [];
+  }, [classes, searchTerm]);
 
   if (!school) {
     return <div className="p-6 text-center">Loading school information...</div>;
@@ -217,49 +270,55 @@ export default function SchoolDetailPage() {
         </div>
 
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-                <th className="px-4 py-3">Class Name</th>
-                <th className="px-4 py-3">Total Students</th>
-                <th className="px-4 py-3">Boys</th>
-                <th className="px-4 py-3">Girls</th>
-                <th className="px-4 py-3">Start Roll No.</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {filteredClasses.length > 0 ? (
-                filteredClasses.map((cls) => (
-                  <tr key={cls.id} className="border-b">
-                    <td className="px-4 py-3 font-medium">{cls.name}</td>
-                    <td className="px-4 py-3">{cls.totalStudents || 0}</td>
-                    <td className="px-4 py-3">{cls.boys || 0}</td>
-                    <td className="px-4 py-3">{cls.girls || 0}</td>
-                    <td className="px-4 py-3">{cls.startRollNumber}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          href={`/admin/schools/${schoolId}/classes/${cls.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          View Students
-                        </Link>
-                        <button className="text-blue-600 hover:underline">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
-                      </div>
+          {isLoading ? (
+            <div className="p-4 text-center">Loading classes...</div>
+          ) : (
+            <table className="w-full">
+              <thead>
+                <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+                  <th className="px-4 py-3">Class Name</th>
+                  <th className="px-4 py-3">Total Students</th>
+                  <th className="px-4 py-3">Boys</th>
+                  <th className="px-4 py-3">Girls</th>
+                  <th className="px-4 py-3">Start Roll No.</th>
+                  <th className="px-4 py-3">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="text-sm">
+                {filteredClasses && filteredClasses.length > 0 ? (
+                  filteredClasses.map((cls) => (
+                    <tr key={cls.id} className="border-b">
+                      <td className="px-4 py-3 font-medium">{cls.name}</td>
+                      <td className="px-4 py-3">{cls.totalStudents || 0}</td>
+                      <td className="px-4 py-3">{cls.boys || 0}</td>
+                      <td className="px-4 py-3">{cls.girls || 0}</td>
+                      <td className="px-4 py-3">{cls.startRollNumber || 1}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center space-x-2">
+                          <Link
+                            href={`/admin/schools/${schoolId}/classes/${cls.id}`}
+                            className="text-blue-600 hover:underline"
+                          >
+                            View Students
+                          </Link>
+                          <button className="text-blue-600 hover:underline">Edit</button>
+                          <button className="text-red-600 hover:underline">Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
+                      {classes && Array.isArray(classes) && classes.length === 0
+                        ? "No classes found for this school."
+                        : "Error loading classes. Please refresh the page."}
                     </td>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
-                    No classes found for this school.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
 
         <div className="flex items-center justify-between p-4">
