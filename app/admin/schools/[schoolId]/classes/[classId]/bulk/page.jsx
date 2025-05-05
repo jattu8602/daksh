@@ -110,7 +110,13 @@ export default function BulkImportPage() {
       }
 
       setSuccessMessage("Students imported successfully");
-      // Reset only the students array, keep other state intact
+
+      // Redirect back to class page with a query parameter to force refresh
+      setTimeout(() => {
+        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?fromBulkImport=true`;
+      }, 1500);
+
+      // Reset the bulk import form
       setBulkImportData(prev => ({
         ...prev,
         students: Array(10).fill({
@@ -328,7 +334,7 @@ export default function BulkImportPage() {
                   </td>
                 </tr>
               ))}
-              
+
               {/* Display remaining slots */}
               {bulkImportData.students.length < (bulkImportData.availableBoys + bulkImportData.availableGirls) && (
                 <tr className="border-b">

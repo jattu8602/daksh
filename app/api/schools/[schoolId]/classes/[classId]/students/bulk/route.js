@@ -36,7 +36,7 @@ export async function POST(request) {
     // Validate gender distribution
     const boysCount = students.filter(student => student.gender === "M").length;
     const girlsCount = students.filter(student => student.gender === "F").length;
-    
+
     if (boysCount + girlsCount !== students.length) {
       return NextResponse.json(
         { error: "All students must have a valid gender (M or F)" },
@@ -47,7 +47,7 @@ export async function POST(request) {
     // Check if we have enough available slots
     const currentBoys = classData.students.filter(s => s.gender === "M").length;
     const currentGirls = classData.students.filter(s => s.gender === "F").length;
-    
+
     if (currentBoys + boysCount > classData.boys || currentGirls + girlsCount > classData.girls) {
       return NextResponse.json(
         { error: "Not enough available slots for the specified gender distribution" },
@@ -58,9 +58,9 @@ export async function POST(request) {
     // Check if all roll numbers are unique within this class
     const existingRollNumbers = classData.students.map(s => s.rollNo);
     const newRollNumbers = students.map(student => student.rollNo);
-    
-    const duplicateRollNumbers = newRollNumbers.filter(rollNo => 
-      existingRollNumbers.includes(rollNo) || 
+
+    const duplicateRollNumbers = newRollNumbers.filter(rollNo =>
+      existingRollNumbers.includes(rollNo) ||
       newRollNumbers.filter(n => n === rollNo).length > 1
     );
 
@@ -76,7 +76,7 @@ export async function POST(request) {
       students.map((student, index) => {
         // Generate password
         const password = Math.random().toString(36).substring(2, 15);
-        
+
         // Generate QR code data
         const qrData = {
           username: student.username,
@@ -118,7 +118,7 @@ export async function POST(request) {
       createdStudents.map(async (student) => {
         const qrData = JSON.parse(student.qrCode);
         const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
-        
+
         await prisma.student.update({
           where: { id: student.id },
           data: { qrCode }
@@ -129,11 +129,12 @@ export async function POST(request) {
     return NextResponse.json({
       success: true,
       students: createdStudents.map(student => ({
-        ...student,
-        user: {
-          ...student.user,
-          password: student.qrCode ? JSON.parse(student.qrCode).password : null
-        }
+        id: student.id,
+        name: student.user.name,
+        rollNo: student.rollNo,
+        username: student.user.username,
+        qrCode: student.qrCode ? true : false,
+        userId: student.userId
       }))
     });
 

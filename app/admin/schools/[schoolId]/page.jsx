@@ -28,6 +28,8 @@ export default function SchoolDetailPage() {
   // New class created info
   const [newClass, setNewClass] = useState(null);
 
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
   // Fetch school and its classes on component mount
   useEffect(() => {
     const fetchSchoolAndClasses = async () => {
@@ -35,7 +37,7 @@ export default function SchoolDetailPage() {
         // Fetch school details
         const schoolResponse = await fetch(`/api/schools/${schoolId}`);
         const schoolData = await schoolResponse.json();
-        
+
         if (schoolData.success) {
           setSchool(schoolData.school);
         } else {
@@ -46,7 +48,7 @@ export default function SchoolDetailPage() {
         // Fetch classes for this school
         const classesResponse = await fetch(`/api/schools/${schoolId}/classes`);
         const classesData = await classesResponse.json();
-        
+
         if (classesData.success) {
           setClasses(classesData.classes);
         } else {
@@ -118,6 +120,34 @@ export default function SchoolDetailPage() {
     }
   };
 
+  const handleExport = async () => {
+    try {
+      setIsLoading(true);
+
+      // Directly trigger file download by creating a link to the export endpoint
+      const exportUrl = `/api/schools/${schoolId}/export`;
+
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = exportUrl;
+      link.setAttribute('download', `school_students_${schoolId}.xlsx`);
+      document.body.appendChild(link);
+
+      // Trigger the download
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+
+      setSuccessMessage("Export started successfully");
+    } catch (error) {
+      setErrorMessage("Error exporting data: " + error.message);
+    } finally {
+      setIsLoading(false);
+      setIsExportModalOpen(false);
+    }
+  };
+
   const filteredClasses = classes.filter(
     (cls) => cls.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -138,6 +168,12 @@ export default function SchoolDetailPage() {
             {school.phone && <div className="mt-1 text-sm text-gray-600">Phone: {school.phone}</div>}
           </div>
           <div className="mt-4 sm:mt-0">
+            <button
+              onClick={() => setIsExportModalOpen(true)}
+              className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
+            >
+              Export All Students
+            </button>
             <button className="rounded-md border px-4 py-2 text-sm font-medium mr-2">
               Edit School
             </button>
@@ -359,6 +395,67 @@ export default function SchoolDetailPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Export All Student Data</h2>
+              <button
+                onClick={() => {
+                  setIsExportModalOpen(false);
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
+                {successMessage}
+              </div>
+            )}
+
+            <div className="mb-6 text-sm text-gray-600">
+              <p>This will export data for all students in all classes, including:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Class-wise student lists</li>
+                <li>Combined list of all students</li>
+                <li>Usernames, passwords, and QR Code information</li>
+              </ul>
+              <p className="mt-2 text-red-500 font-medium">Note: This file will contain sensitive information for all students. Please ensure you're authorized to access this data.</p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExport}
+                className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                disabled={isLoading}
+              >
+                {isLoading ? "Exporting..." : "Export Excel"}
+              </button>
+            </div>
           </div>
         </div>
       )}

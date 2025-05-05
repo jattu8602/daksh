@@ -21,6 +21,7 @@ export async function GET(request, { params }) {
                 name: true,
                 username: true,
                 qrCode: true,
+                password: true,
               }
             }
           }
@@ -45,7 +46,8 @@ export async function GET(request, { params }) {
           name: student.user.name,
           rollNo: student.rollNo,
           username: student.user.username,
-          qrCode: student.user.qrCode,
+          password: student.user.password,
+          qrCode: student.user.qrCode ? true : false,
           userId: student.userId
         }))
       }

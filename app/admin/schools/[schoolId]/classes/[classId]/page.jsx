@@ -41,6 +41,11 @@ export default function ClassDetailPage() {
   // New student created info
   const [newStudent, setNewStudent] = useState(null);
 
+  // QR Code modal state
+  const [isQRModalOpen, setIsQRModalOpen] = useState(false);
+  const [selectedQRCode, setSelectedQRCode] = useState(null);
+  const [selectedStudent, setSelectedStudent] = useState(null);
+
   // Fetch school, class and students on component mount with caching
   useEffect(() => {
     const fetchClassDetails = async () => {
@@ -48,12 +53,22 @@ export default function ClassDetailPage() {
         // Use cache-first strategy
         const cacheKey = `class:${schoolId}:${classId}`;
         const cachedData = localStorage.getItem(cacheKey);
-        
-        if (cachedData) {
+        const cachedTimestamp = localStorage.getItem(`${cacheKey}:timestamp`);
+
+        // Check if cache is recent (less than 1 minute old) and not returning from bulk import
+        const cacheAge = cachedTimestamp ? Date.now() - parseInt(cachedTimestamp) : Infinity;
+        const hasBulkImportQuery = typeof window !== 'undefined' && window.location.search.includes('fromBulkImport');
+
+        if (cachedData && cacheAge < 60000 && !hasBulkImportQuery) {
           const data = JSON.parse(cachedData);
           setClassData(data.class);
           setSchool(data.class.school);
           setStudents(data.class.students);
+
+          // Remove any query parameters to clean the URL
+          if (hasBulkImportQuery && typeof window !== 'undefined') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
           return;
         }
 
@@ -83,6 +98,11 @@ export default function ClassDetailPage() {
               rollNo: data.class.startRollNumber.toString(),
             }));
           }
+
+          // Remove any query parameters to clean the URL
+          if (hasBulkImportQuery && typeof window !== 'undefined') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
         } else {
           setErrorMessage(data.error || "Failed to fetch class details");
         }
@@ -94,6 +114,19 @@ export default function ClassDetailPage() {
     };
 
     fetchClassDetails();
+
+    // Add a load listener to ensure we refresh data when navigating back from the bulk import page
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        fetchClassDetails();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
   }, [schoolId, classId]);
 
   const handleInputChange = (e) => {
@@ -214,8 +247,27 @@ export default function ClassDetailPage() {
         throw new Error(data.message || "Failed to import students");
       }
 
-      // Update the students list
-      setStudents(data.students);
+      // Update the students list with the latest data from the API response
+      if (data.students && Array.isArray(data.students)) {
+        setStudents(data.students);
+      } else {
+        // If no students data in response, force a fresh fetch from the API
+        const refreshResponse = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
+        const refreshData = await refreshResponse.json();
+
+        if (refreshData.success) {
+          // Update cache with fresh data
+          const cacheKey = `class:${schoolId}:${classId}`;
+          localStorage.setItem(cacheKey, JSON.stringify(refreshData));
+          localStorage.setItem(`${cacheKey}:timestamp`, Date.now().toString());
+
+          // Update state with fresh data
+          setClassData(refreshData.class);
+          setSchool(refreshData.class.school);
+          setStudents(refreshData.class.students);
+        }
+      }
+
       setSuccessMessage("Students imported successfully");
 
       // Reset the bulk import form
@@ -233,6 +285,114 @@ export default function ClassDetailPage() {
       setIsBulkImportModalOpen(false);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleExport = async () => {
+    try {
+      setIsLoading(true);
+
+      // Directly trigger file download by creating a link to the export endpoint
+      const exportUrl = `/api/schools/${schoolId}/classes/${classId}/export`;
+
+      // Create a temporary link element
+      const link = document.createElement('a');
+      link.href = exportUrl;
+      link.setAttribute('download', `class_students_${classId}.xlsx`);
+      document.body.appendChild(link);
+
+      // Trigger the download
+      link.click();
+
+      // Clean up
+      document.body.removeChild(link);
+
+      setSuccessMessage("Export started successfully");
+    } catch (error) {
+      setErrorMessage("Error exporting data: " + error.message);
+    } finally {
+      setIsLoading(false);
+      setIsExportModalOpen(false);
+    }
+  };
+
+  const handleViewQR = async (studentId) => {
+    try {
+      const student = students.find(s => s.id === studentId);
+      if (!student) return;
+
+      setSelectedStudent(student);
+
+      // Check if we already have the QR code data
+      if (student.qrCodeData) {
+        setSelectedQRCode(student.qrCodeData);
+        setIsQRModalOpen(true);
+        return;
+      }
+
+      // Fetch QR code if not available
+      setIsLoading(true);
+      const response = await fetch(`/api/students/${studentId}/qrcode`);
+      const data = await response.json();
+
+      if (data.success && data.qrCode) {
+        // Handle different QR code formats - could be a data URL or a string that needs parsing
+        let qrCodeImage = data.qrCode;
+
+        // If it's a JSON string and not already a data URL, try to parse it
+        if (typeof data.qrCode === 'string' && !data.qrCode.startsWith('data:image')) {
+          try {
+            // If it's already a base64 image
+            if (data.qrCode.startsWith('data:')) {
+              qrCodeImage = data.qrCode;
+            } else {
+              // If it's a JSON string with QR data, we'll need a different approach
+              // For now, we'll just display the data
+              const qrData = JSON.parse(data.qrCode);
+
+              // Update student with password from QR if available
+              if (qrData.password && !student.password) {
+                student.password = qrData.password;
+              }
+
+              // This would normally require generating a QR code client-side
+              // but for simplicity, we'll create a placeholder
+              qrCodeImage = `data:image/svg+xml;charset=utf-8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect width="200" height="200" fill="white"/><text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" font-family="monospace">QR Code</text></svg>`;
+            }
+          } catch (e) {
+            console.error("Error parsing QR code data:", e);
+            // Fallback to using the string as-is
+            qrCodeImage = data.qrCode;
+          }
+        }
+
+        // Update the student with the QR code data and any additional info
+        const updatedStudents = students.map(s => {
+          if (s.id === studentId) {
+            return {
+              ...s,
+              qrCodeData: qrCodeImage,
+              password: data.studentInfo?.password || s.password
+            };
+          }
+          return s;
+        });
+
+        setStudents(updatedStudents);
+        setSelectedStudent({
+          ...student,
+          password: data.studentInfo?.password || student.password,
+          qrCodeData: qrCodeImage
+        });
+        setSelectedQRCode(qrCodeImage);
+        setIsQRModalOpen(true);
+      } else {
+        setErrorMessage("Failed to retrieve QR code");
+      }
+    } catch (error) {
+      setErrorMessage("Error fetching QR code: " + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -345,6 +505,7 @@ export default function ClassDetailPage() {
                 <th className="px-4 py-3">Name</th>
                 <th className="px-4 py-3">Roll No.</th>
                 <th className="px-4 py-3">Username</th>
+                <th className="px-4 py-3">Password</th>
                 <th className="px-4 py-3">QR Code</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
@@ -357,8 +518,23 @@ export default function ClassDetailPage() {
                     <td className="px-4 py-3">{student.rollNo}</td>
                     <td className="px-4 py-3">{student.username}</td>
                     <td className="px-4 py-3">
+                      {student.password ? (
+                        student.password
+                      ) : (
+                        <span className="text-gray-400">•••••••••</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3">
                       {student.qrCode ? (
-                        <button className="text-blue-600 hover:underline">View QR</button>
+                        <button
+                          onClick={() => handleViewQR(student.id)}
+                          className="text-blue-600 hover:underline flex items-center"
+                        >
+                          <span className="mr-1">View QR</span>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                            <path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/>
+                          </svg>
+                        </button>
                       ) : (
                         <span className="text-gray-400">Not Generated</span>
                       )}
@@ -374,7 +550,7 @@ export default function ClassDetailPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="5" className="px-4 py-3 text-center text-gray-500">
+                  <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
                     No students found in this class.
                   </td>
                 </tr>
@@ -659,6 +835,136 @@ export default function ClassDetailPage() {
                   disabled={isLoading}
                 >
                   {isLoading ? "Importing..." : "Import Students"}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Export Modal */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Export Student Data</h2>
+              <button
+                onClick={() => {
+                  setIsExportModalOpen(false);
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
+                {successMessage}
+              </div>
+            )}
+
+            <div className="mb-6 text-sm text-gray-600">
+              <p>This will export all student data including:</p>
+              <ul className="list-disc list-inside mt-2">
+                <li>Roll Numbers</li>
+                <li>Names</li>
+                <li>Usernames</li>
+                <li>Passwords</li>
+                <li>QR Code status</li>
+              </ul>
+              <p className="mt-2 text-red-500 font-medium">Note: This includes sensitive information. Please ensure you're authorized to access this data.</p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleExport}
+                className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                disabled={isLoading}
+              >
+                {isLoading ? "Exporting..." : "Export Excel"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* QR Code Modal */}
+      {isQRModalOpen && selectedQRCode && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">QR Code: {selectedStudent.name}</h2>
+              <button
+                onClick={() => {
+                  setIsQRModalOpen(false);
+                  setSelectedQRCode(null);
+                  setSelectedStudent(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex flex-col items-center justify-center">
+              <div className="mb-4 rounded-lg bg-white p-2 shadow">
+                <img
+                  src={selectedQRCode}
+                  alt={`QR Code for ${selectedStudent.name}`}
+                  className="w-64 h-64"
+                />
+              </div>
+
+              <div className="mt-2 mb-4 text-sm">
+                <p><span className="font-semibold">Student:</span> {selectedStudent.name}</p>
+                <p><span className="font-semibold">Roll No:</span> {selectedStudent.rollNo}</p>
+                <p><span className="font-semibold">Username:</span> {selectedStudent.username}</p>
+                {selectedStudent.password && (
+                  <p><span className="font-semibold">Password:</span> {selectedStudent.password}</p>
+                )}
+              </div>
+
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    // Download QR code
+                    const link = document.createElement('a');
+                    link.href = selectedQRCode;
+                    link.download = `qrcode-${selectedStudent.name}-${selectedStudent.rollNo}.png`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                  }}
+                  className="rounded-md bg-blue-600 px-3 py-2 text-sm font-medium text-white hover:bg-blue-700"
+                >
+                  Download QR
+                </button>
+                <button
+                  onClick={() => {
+                    setIsQRModalOpen(false);
+                    setSelectedQRCode(null);
+                    setSelectedStudent(null);
+                  }}
+                  className="rounded-md border px-3 py-2 text-sm font-medium"
+                >
+                  Close
                 </button>
               </div>
             </div>
