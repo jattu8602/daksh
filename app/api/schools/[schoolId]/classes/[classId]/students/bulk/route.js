@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
-import QRCode from 'qrcode';
+import { generateQRCode } from "@/lib/qrcode";
 
 export async function POST(request) {
   try {
@@ -71,65 +71,61 @@ export async function POST(request) {
       );
     }
 
-    // Create students in bulk
-    const createdStudents = await prisma.$transaction(
-      students.map((student) => {
-        // Generate username based on name and roll number
-        const firstName = student.name.split(' ')[0].toLowerCase();
-        const classShortName = classData.name.toLowerCase().replace(/\s+/g, '').substring(0, 3);
-        const schoolCode = classData.school.code.toLowerCase();
-        const username = `${firstName}_${classShortName}_${schoolCode}_${student.rollNo}`;
+    // Prepare student data with QR codes
+    const studentData = await Promise.all(students.map(async (student) => {
+      // Generate username based on name and roll number
+      const firstName = student.name.split(' ')[0].toLowerCase();
+      const classShortName = classData.name.toLowerCase().replace(/\s+/g, '').substring(0, 3);
+      const schoolCode = classData.school.code.toLowerCase();
+      const username = `${firstName}_${classShortName}_${schoolCode}_${student.rollNo}`;
 
-        // Generate password
-        const password = Math.random().toString(36).substring(2, 15);
+      // Generate password
+      const password = Math.random().toString(36).substring(2, 15);
 
-        // Generate QR code data
-        const qrData = {
-          username,
-          password,
-          class: classData.name,
-          school: classData.school.name,
-          rollNo: student.rollNo
-        };
+      // Generate QR code data
+      const qrData = {
+        username,
+        password,
+        class: classData.name,
+        school: classData.school.name,
+        rollNo: student.rollNo
+      };
 
-        return prisma.student.create({
-          data: {
-            rollNo: parseInt(student.rollNo),
+      // Generate QR code image
+      const qrCode = await generateQRCode(JSON.stringify(qrData));
+
+      return {
+        rollNo: parseInt(student.rollNo),
+        name: student.name,
+        gender: student.gender,
+        username,
+        password,
+        qrCode,
+        user: {
+          create: {
             name: student.name,
-            gender: student.gender,
             username,
             password,
-            qrCode: JSON.stringify(qrData),
-            user: {
-              create: {
-                name: student.name,
-                username,
-                password,
-                role: "STUDENT"
-              }
-            },
-            class: {
-              connect: { id: classId }
-            }
-          },
+            role: "STUDENT",
+            qrCode
+          }
+        },
+        class: {
+          connect: { id: classId }
+        }
+      };
+    }));
+
+    // Create students in bulk
+    const createdStudents = await prisma.$transaction(
+      studentData.map(data =>
+        prisma.student.create({
+          data,
           include: {
             user: true
           }
-        });
-      })
-    );
-
-    // Generate QR codes for all students
-    await Promise.all(
-      createdStudents.map(async (student) => {
-        const qrData = JSON.parse(student.qrCode);
-        const qrCode = await QRCode.toDataURL(JSON.stringify(qrData));
-
-        await prisma.student.update({
-          where: { id: student.id },
-          data: { qrCode }
-        });
-      })
+        })
+      )
     );
 
     return NextResponse.json({
@@ -140,7 +136,7 @@ export async function POST(request) {
         rollNo: student.rollNo,
         username: student.user.username,
         password: student.user.password,
-        qrCode: student.qrCode ? true : false,
+        qrCode: true,
         userId: student.userId
       }))
     });

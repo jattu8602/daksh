@@ -46,6 +46,15 @@ export default function ClassDetailPage() {
   const [selectedQRCode, setSelectedQRCode] = useState(null);
   const [selectedStudent, setSelectedStudent] = useState(null);
 
+  // Add these state variables after the other state declarations
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isResetPasswordModalOpen, setIsResetPasswordModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [editFormData, setEditFormData] = useState({
+    name: "",
+    rollNo: "",
+  });
+
   // Fetch school, class and students on component mount with improved caching
   useEffect(() => {
     const fetchClassDetails = async () => {
@@ -443,6 +452,127 @@ export default function ClassDetailPage() {
     window.location.href = `${window.location.pathname}?refresh=true`;
   };
 
+  // Add these handlers after the other handlers
+  const handleEditClick = (student) => {
+    setSelectedStudent(student);
+    setEditFormData({
+      name: student.name,
+      rollNo: student.rollNo.toString(),
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleResetPasswordClick = (student) => {
+    setSelectedStudent(student);
+    setIsResetPasswordModalOpen(true);
+  };
+
+  const handleDeleteClick = (student) => {
+    setSelectedStudent(student);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`/api/students/${selectedStudent.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(editFormData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to update student");
+      }
+
+      // Update the student in the list
+      setStudents(students.map(student =>
+        student.id === selectedStudent.id ? {
+          ...student,
+          name: data.student.name,
+          rollNo: data.student.rollNo,
+        } : student
+      ));
+
+      setSuccessMessage("Student updated successfully");
+      setIsEditModalOpen(false);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`/api/students/${selectedStudent.id}/reset-password`, {
+        method: "POST",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to reset password");
+      }
+
+      // Update the student in the list
+      setStudents(students.map(student =>
+        student.id === selectedStudent.id ? {
+          ...student,
+          password: data.student.password,
+          qrCode: true,
+        } : student
+      ));
+
+      setSuccessMessage("Password reset successfully");
+      setIsResetPasswordModalOpen(false);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`/api/students/${selectedStudent.id}`, {
+        method: "DELETE",
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to delete student");
+      }
+
+      // Remove the student from the list
+      setStudents(students.filter(student => student.id !== selectedStudent.id));
+
+      setSuccessMessage("Student deleted successfully");
+      setIsDeleteModalOpen(false);
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (!school || !classData) {
     return <div className="p-6 text-center">Loading class information...</div>;
   }
@@ -629,9 +759,24 @@ export default function ClassDetailPage() {
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
-                        <button className="text-blue-600 hover:underline">Edit</button>
-                        <button className="text-blue-600 hover:underline">Reset Password</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
+                        <button
+                          onClick={() => handleEditClick(student)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleResetPasswordClick(student)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Reset Password
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(student)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -1055,6 +1200,191 @@ export default function ClassDetailPage() {
                   Close
                 </button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Edit Student</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSelectedStudent(null);
+                  setEditFormData({ name: "", rollNo: "" });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={editFormData.name}
+                  onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                  className="mt-1 block w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="mb-4">
+                <label htmlFor="rollNo" className="block text-sm font-medium text-gray-700">
+                  Roll Number
+                </label>
+                <input
+                  type="number"
+                  id="rollNo"
+                  name="rollNo"
+                  value={editFormData.rollNo}
+                  onChange={(e) => setEditFormData({ ...editFormData, rollNo: e.target.value })}
+                  className="mt-1 block w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setSelectedStudent(null);
+                    setEditFormData({ name: "", rollNo: "" });
+                  }}
+                  className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Updating..." : "Update Student"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Reset Password Modal */}
+      {isResetPasswordModalOpen && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Reset Password</h2>
+              <button
+                onClick={() => {
+                  setIsResetPasswordModalOpen(false);
+                  setSelectedStudent(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to reset the password for {selectedStudent.name}? This will generate a new password and QR code.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsResetPasswordModalOpen(false);
+                  setSelectedStudent(null);
+                }}
+                className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleResetPassword}
+                className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                disabled={isLoading}
+              >
+                {isLoading ? "Resetting..." : "Reset Password"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {isDeleteModalOpen && selectedStudent && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Delete Student</h2>
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedStudent(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            <div className="mb-6">
+              <p className="text-sm text-gray-600">
+                Are you sure you want to delete {selectedStudent.name}? This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSelectedStudent(null);
+                }}
+                className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                className="rounded-md bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Deleting..." : "Delete Student"}
+              </button>
             </div>
           </div>
         </div>
