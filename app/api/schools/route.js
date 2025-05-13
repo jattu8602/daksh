@@ -2,24 +2,28 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 // GET /api/schools - Get all schools
-export async function GET(request) {
+export async function GET() {
   try {
-    // Get all schools
     const schools = await prisma.school.findMany({
       orderBy: {
-        name: 'asc',
+        createdAt: "desc",
       },
     });
 
     return NextResponse.json({
-      schools,
       success: true,
+      schools,
     });
   } catch (error) {
     console.error("Error fetching schools:", error);
     return NextResponse.json(
-      { error: "Something went wrong", message: error.message },
-      { status: 500 }
+      {
+        success: false,
+        error: "Failed to fetch schools",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }
@@ -27,25 +31,42 @@ export async function GET(request) {
 // POST /api/schools - Create a new school
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const { name, code, email, phone } = body;
+    const { name, code, email, phone } = await request.json();
 
+    // Validate required fields
     if (!name || !code) {
       return NextResponse.json(
-        { error: "School name and code are required" },
-        { status: 400 }
+        {
+          success: false,
+          error: "Name and code are required",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    // Check if school code already exists
-    const existingSchool = await prisma.school.findUnique({
-      where: { code },
+    // Check if school with same code already exists
+    const existingSchool = await prisma.school.findFirst({
+      where: {
+        OR: [
+          { code },
+          ...(email ? [{ email }] : []),
+        ],
+      },
     });
 
     if (existingSchool) {
       return NextResponse.json(
-        { error: "School code already exists" },
-        { status: 400 }
+        {
+          success: false,
+          error: existingSchool.code === code
+            ? "A school with this code already exists"
+            : "A school with this email already exists",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
@@ -53,8 +74,8 @@ export async function POST(request) {
       data: {
         name,
         code,
-        email,
-        phone,
+        ...(email && { email }),
+        ...(phone && { phone }),
       },
     });
 
@@ -65,8 +86,13 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating school:", error);
     return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
+      {
+        success: false,
+        error: "Failed to create school",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

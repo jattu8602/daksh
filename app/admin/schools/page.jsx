@@ -75,7 +75,7 @@ export default function SchoolsPage() {
     setSuccessMessage("");
 
     try {
-      const response = await fetch("/api/schools/create", {
+      const response = await fetch("/api/schools", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -86,11 +86,12 @@ export default function SchoolsPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to create school");
+        throw new Error(data.error || data.message || "Failed to create school");
       }
 
       // Show the new school info
       setNewSchool({
+        id: data.school.id,
         name: data.school.name,
         code: data.school.code,
       });
@@ -247,7 +248,7 @@ export default function SchoolsPage() {
                 <p><span className="font-medium">Code:</span> {newSchool.code}</p>
                 <div className="mt-4 flex justify-center">
                   <Link
-                    href={`/admin/schools/${newSchool.id}/classes`}
+                    href={`/admin/schools/${newSchool.id}`}
                     className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
                   >
                     Add Classes to This School

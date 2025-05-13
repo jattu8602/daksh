@@ -3,31 +3,89 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import QRScanner from "./components/QRScanner";
 
 export default function StudentLogin() {
+  const router = useRouter();
   const [loginMethod, setLoginMethod] = useState("credentials");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   const handleCredentialLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setError("");
 
-    // This would be replaced with actual API call
-    console.log("Logging in with:", { username, password });
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username,
+          password,
+          role: "STUDENT",
+        }),
+      });
 
-    // Simulate API call
-    setTimeout(() => {
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Login failed");
+      }
+
+      // Store user data in session storage
+      sessionStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to student dashboard
+      router.push("/dashboard/home");
+    } catch (error) {
+      setError(error.message || "Failed to login. Please try again.");
+    } finally {
       setIsLoading(false);
-      // Redirect would happen here after successful login
-      window.location.href = "/dashboard/home";
-    }, 1500);
+    }
   };
 
-  const handleQRLogin = () => {
-    // QR code scanning logic would go here
-    console.log("QR login clicked");
+  const handleQRScanSuccess = async (qrData) => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/qr-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: qrData.username,
+          password: qrData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "QR login failed");
+      }
+
+      // Store user data in session storage
+      sessionStorage.setItem("user", JSON.stringify(data.user));
+
+      // Redirect to student dashboard
+      router.push("/dashboard/home");
+    } catch (error) {
+      setError(error.message || "Failed to login with QR code. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleQRScanError = (error) => {
+    setError(error);
   };
 
   return (
@@ -67,11 +125,14 @@ export default function StudentLogin() {
             </button>
           </div>
 
+          {error && (
+            <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+              {error}
+            </div>
+          )}
+
           {loginMethod === "credentials" ? (
-            <form
-              className="space-y-6"
-              onSubmit={handleCredentialLogin}
-            >
+            <form className="space-y-6" onSubmit={handleCredentialLogin}>
               <div>
                 <label
                   htmlFor="username"
@@ -122,15 +183,15 @@ export default function StudentLogin() {
             </form>
           ) : (
             <div className="flex flex-col items-center justify-center space-y-6">
-              <div className="h-48 w-48 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center">
-                <p className="text-gray-500">QR Code Scanner</p>
+              <div className="w-full max-w-sm">
+                <QRScanner
+                  onScanSuccess={handleQRScanSuccess}
+                  onScanError={handleQRScanError}
+                />
               </div>
-              <button
-                onClick={handleQRLogin}
-                className="flex w-full justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-              >
-                Scan QR Code
-              </button>
+              <p className="text-sm text-gray-500 text-center">
+                Scan your student QR code to login
+              </p>
             </div>
           )}
         </div>
