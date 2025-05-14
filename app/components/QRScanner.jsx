@@ -9,35 +9,23 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
   const [scanStatus, setScanStatus] = useState("initializing");
   const [cameraError, setCameraError] = useState(null);
   const containerRef = useRef(null);
-  const [isMounted, setIsMounted] = useState(false);
   const [retryKey, setRetryKey] = useState(0);
   const fileInputRef = useRef(null);
   const [uploadError, setUploadError] = useState(null);
 
   useEffect(() => {
-    setIsMounted(true);
-    return () => setIsMounted(false);
-  }, []);
-
-  useEffect(() => {
-    if (!isMounted) return;
-
     let scanner = null;
     let initializationTimeout = null;
+    let isUnmounted = false;
 
     const initializeScanner = async () => {
       try {
-        // Wait for the DOM to be ready
         await new Promise(resolve => setTimeout(resolve, 500));
-
-        // Check if the element exists
         const element = document.getElementById("qr-reader");
         if (!element) {
           initializationTimeout = setTimeout(initializeScanner, 500);
           return;
         }
-
-        // Initialize QR Scanner with default configuration
         scanner = new Html5QrcodeScanner(
           "qr-reader",
           {
@@ -52,10 +40,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
           },
           false
         );
-
         scannerRef.current = scanner;
-
-        // Start scanning
         scanner.render(
           (decodedText) => {
             processQrData(decodedText);
@@ -78,20 +63,19 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
             }
           }
         );
-
-        setIsInitialized(true);
-        setScanStatus("scanning");
+        if (!isUnmounted) {
+          setIsInitialized(true);
+          setScanStatus("scanning");
+        }
       } catch (error) {
         setScanStatus("error");
         setCameraError(error.message || "Failed to initialize QR scanner. Please refresh the page.");
         onScanError("Failed to initialize QR scanner. Please refresh the page.");
       }
     };
-
     initializeScanner();
-
-    // Cleanup
     return () => {
+      isUnmounted = true;
       if (initializationTimeout) clearTimeout(initializationTimeout);
       if (scannerRef.current) {
         try {
@@ -101,7 +85,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         }
       }
     };
-  }, [isMounted, onScanSuccess, onScanError, retryKey]);
+  }, [onScanSuccess, onScanError, retryKey]);
 
   const handleRetry = () => {
     setCameraError(null);
@@ -110,7 +94,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
     setRetryKey(prev => prev + 1);
   };
 
-  // Unified QR code data processing logic
   const processQrData = (decodedText) => {
     try {
       const qrData = JSON.parse(decodedText);
@@ -148,7 +131,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
     }
   };
 
-  // Handle file upload for QR image
   const handleFileChange = async (e) => {
     setUploadError(null);
     const file = e.target.files[0];
@@ -161,7 +143,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
     } catch (err) {
       setUploadError("Could not read a valid QR code from the image.");
     }
-    // Reset file input so the same file can be uploaded again if needed
     e.target.value = "";
   };
 
@@ -196,8 +177,6 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         return "Position the QR code within the frame or upload an image";
     }
   };
-
-  if (!isMounted) return null;
 
   if (!isInitialized) {
     return (
