@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 
 export function middleware(request) {
   const authHeader = request.headers.get('authorization');
-  
+
   if (!authHeader) {
     return NextResponse.json(
       { error: "Unauthorized" },

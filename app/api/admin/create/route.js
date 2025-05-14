@@ -5,6 +5,30 @@ import { generateQRCode } from "@/lib/qrcode";
 
 export async function POST(request) {
   try {
+    // Get the admin_auth_token from cookies
+    const cookie = request.headers.get("cookie") || "";
+    const match = cookie.match(/admin_auth_token=([^;]+)/);
+    const adminAuthToken = match ? match[1] : null;
+
+    if (!adminAuthToken) {
+      return NextResponse.json(
+        { message: "Unauthorized: No admin token" },
+        { status: 401 }
+      );
+    }
+
+    // Look up the user by id (token is user id)
+    const currentUser = await prisma.user.findUnique({
+      where: { id: adminAuthToken },
+    });
+
+    if (!currentUser || currentUser.role !== UserRole.SUPER_ADMIN) {
+      return NextResponse.json(
+        { message: "Forbidden: Only SUPERADMIN can create admins" },
+        { status: 403 }
+      );
+    }
+
     const { name, email, phone, createdBy } = await request.json();
 
     if (!name || !email) {

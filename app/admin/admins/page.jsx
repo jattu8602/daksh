@@ -21,15 +21,36 @@ export default function AdminsPage() {
   // New admin created info (to show credentials)
   const [newAdmin, setNewAdmin] = useState(null);
 
+  // Get current user from sessionStorage
+  const [currentUser, setCurrentUser] = useState(null);
+  useEffect(() => {
+    const userData = sessionStorage.getItem("user");
+    if (userData) {
+      try {
+        setCurrentUser(JSON.parse(userData));
+      } catch {}
+    }
+  }, []);
+
   // Fetch admins on component mount
   useEffect(() => {
-    // This would be replaced with an actual API call in production
-    // Mock data for now
-    const mockAdmins = [
-      { id: 1, name: "James Admin", email: "james@example.com", username: "james_admin", role: "ADMIN" },
-      { id: 2, name: "Sarah Manager", email: "sarah@example.com", username: "sarah_manager", role: "ADMIN" },
-    ];
-    setAdmins(mockAdmins);
+    async function fetchAdmins() {
+      setIsLoading(true);
+      try {
+        const response = await fetch("/api/admin/list");
+        const data = await response.json();
+        if (response.ok) {
+          setAdmins(data.admins);
+        } else {
+          setErrorMessage(data.error || "Failed to fetch admins");
+        }
+      } catch (error) {
+        setErrorMessage(error.message || "Failed to fetch admins");
+      } finally {
+        setIsLoading(false);
+      }
+    }
+    fetchAdmins();
   }, []);
 
   const handleInputChange = (e) => {
@@ -101,6 +122,28 @@ export default function AdminsPage() {
     }
   };
 
+  // Delete admin handler
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this admin?")) return;
+    setIsLoading(true);
+    setErrorMessage("");
+    try {
+      const response = await fetch("/api/admin/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to delete admin");
+      setAdmins((prev) => prev.filter((a) => a.id !== id));
+      setSuccessMessage("Admin deleted successfully");
+    } catch (error) {
+      setErrorMessage(error.message || "Failed to delete admin");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   const filteredAdmins = admins.filter(
     (admin) =>
       admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -108,16 +151,69 @@ export default function AdminsPage() {
       admin.username.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Edit admin modal state
+  const [editAdmin, setEditAdmin] = useState(null);
+  const [editForm, setEditForm] = useState({ name: '', email: '', username: '' });
+  const [editError, setEditError] = useState("");
+  const [editLoading, setEditLoading] = useState(false);
+
+  const openEditModal = (admin) => {
+    setEditAdmin(admin);
+    setEditForm({ name: admin.name, email: admin.email, username: admin.username });
+    setEditError("");
+  };
+  const closeEditModal = () => {
+    setEditAdmin(null);
+    setEditForm({ name: '', email: '', username: '' });
+    setEditError("");
+  };
+  const handleEditChange = (e) => {
+    setEditForm({ ...editForm, [e.target.name]: e.target.value });
+  };
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditLoading(true);
+    setEditError("");
+    try {
+      const response = await fetch("/api/admin/edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: editAdmin.id,
+          name: editForm.name,
+          email: editForm.email,
+          username: editForm.username,
+        }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || "Failed to update admin");
+      setAdmins((prev) => prev.map((a) => a.id === editAdmin.id ? {
+        ...a,
+        name: editForm.name,
+        email: editForm.email,
+        username: editForm.username,
+      } : a));
+      setSuccessMessage("Admin updated successfully");
+      closeEditModal();
+    } catch (error) {
+      setEditError(error.message || "Failed to update admin");
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Admins</h1>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
-        >
-          <span className="mr-2">+</span> Add Admin
-        </button>
+        {currentUser?.role === "SUPER_ADMIN" && (
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+          >
+            <span className="mr-2">+</span> Add Admin
+          </button>
+        )}
       </div>
 
       <div className="rounded-lg border bg-white shadow">
@@ -157,8 +253,14 @@ export default function AdminsPage() {
                     <td className="px-4 py-3">{admin.username}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
-                        <button className="text-blue-600 hover:underline">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
+                        {currentUser?.role === "SUPER_ADMIN" ? (
+                          <>
+                            <button className="text-blue-600 hover:underline" onClick={() => openEditModal(admin)}>Edit</button>
+                            <button className="text-red-600 hover:underline" onClick={() => handleDelete(admin.id)}>Delete</button>
+                          </>
+                        ) : (
+                          <span className="text-gray-400">View Only</span>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -276,6 +378,78 @@ export default function AdminsPage() {
                 </div>
               </form>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Edit Admin Modal */}
+      {editAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Edit Admin</h2>
+              <button
+                onClick={closeEditModal}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+            {editError && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">{editError}</div>
+            )}
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium">Full Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={editForm.name}
+                  onChange={handleEditChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium">Email</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={editForm.email}
+                  onChange={handleEditChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="mb-6">
+                <label className="mb-1 block text-sm font-medium">Username</label>
+                <input
+                  type="text"
+                  name="username"
+                  value={editForm.username}
+                  onChange={handleEditChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  required
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={closeEditModal}
+                  className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  disabled={editLoading}
+                >
+                  {editLoading ? "Saving..." : "Save Changes"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
