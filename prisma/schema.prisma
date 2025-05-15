@@ -132,3 +132,11 @@ model Mentor {
   // Index for better performance
   @@index([userId])
 }
+
+model Video {
+  id        Int      @id @default(autoincrement())
+  title     String
+  source    String
+  url       String
+  createdAt DateTime @default(now())
+}
