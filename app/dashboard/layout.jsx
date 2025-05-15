@@ -7,11 +7,11 @@ export default function DashboardLayout({ children }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/home", label: "Home", icon: "🏠" },
-    { href: "/explore", label: "Explore", icon: "🔍" },
-    { href: "/learn", label: "Learn", icon: "📚" },
-    { href: "/reels", label: "Reels", icon: "📱" },
-    { href: "/profile", label: "Profile", icon: "👤" },
+    { href: "/dashboard/home", label: "Home", icon: "🏠" },
+    { href: "/dashboard/explore", label: "Explore", icon: "🔍" },
+    { href: "/dashboard/learn", label: "Learn", icon: "📚" },
+    { href: "/dashboard/reels", label: "Reels", icon: "📱" },
+    { href: "/dashboard/profile", label: "Profile", icon: "👤" },
   ];
 
   return (

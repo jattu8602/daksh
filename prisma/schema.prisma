@@ -1,15 +1,13 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// prisma/schema.prisma
+// learn more: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
+  // MongoDB support is now GA; no need for previewFeatures
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mongodb"
   url      = env("DATABASE_URL")
 }
 
@@ -21,99 +19,90 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(uuid())
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  username  String   @unique
+  username  String     @unique
   password  String
   qrCode    String?
   role      UserRole
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  // Relations
-  student Student? @relation("StudentToUser")
-  mentor  Mentor?  @relation("MentorToUser")
-  admin   Admin?   @relation("AdminToUser")
+  // Relations (only name + relationName here)
+  student   Student?   @relation("StudentToUser")
+  mentor    Mentor?    @relation("MentorToUser")
+  admin     Admin?     @relation("AdminToUser")
 
-  // Indexes for better performance
-  @@index([username])
+  // keep a non-unique index on role
   @@index([role])
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  email     String?  @unique
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique @db.ObjectId
+  email     String?    @unique
   phone     String?
   createdBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  // Relations
-  user User @relation("AdminToUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  // Index for queries
-  @@index([userId])
+  // Child side declares fields+references
+  user      User       @relation("AdminToUser", fields: [userId], references: [id])
 }
 
 model School {
-  id        String   @id @default(uuid())
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  code      String   @unique
-  email     String?  @unique
+  code      String     @unique
+  email     String?    @unique
   phone     String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  // Relations
-  classes Class[]
+  classes   Class[]
 
-  // Indexes for better performance
-  @@index([code])
+  // keep an index on name only
   @@index([name])
 }
 
 model Class {
-  id              String   @id @default(uuid())
+  id              String    @id @default(auto()) @map("_id") @db.ObjectId
   name            String
-  schoolId        String
+  schoolId        String    @db.ObjectId
   totalStudents   Int?
   boys            Int?
   girls           Int?
-  startRollNumber Int      @default(1)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  startRollNumber Int       @default(1)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
 
-  // Relations
-  school   School    @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  students Student[]
+  school          School    @relation(fields: [schoolId], references: [id])
+  students        Student[]
 
-  // Indexes for better performance
   @@index([schoolId])
-  @@index([name])
   @@index([createdAt])
   @@index([totalStudents])
 }
 
 model Student {
-  id        String   @id @default(uuid())
-  user      User     @relation("StudentToUser", fields: [userId], references: [id], onDelete: Cascade)
-  userId    String   @unique
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique @db.ObjectId
   rollNo    Int
-  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
-  classId   String
+  classId   String     @db.ObjectId
   name      String
   gender    String
   username  String
   password  String
   qrCode    String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  // Indexes for better performance
+  // Child side declares fields+references
+  user      User       @relation("StudentToUser", fields: [userId], references: [id])
+  class     Class      @relation(fields: [classId], references: [id])
+
   @@index([classId])
   @@index([rollNo])
-  @@index([userId])
   @@index([username])
   @@index([createdAt])
   @@index([gender])
@@ -121,22 +110,19 @@ model Student {
 }
 
 model Mentor {
-  id        String   @id @default(uuid())
-  userId    String   @unique
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String     @unique @db.ObjectId
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
 
-  // Relations
-  user User @relation("MentorToUser", fields: [userId], references: [id], onDelete: Cascade)
-
-  // Index for better performance
-  @@index([userId])
+  // Child side declares fields+references
+  user      User       @relation("MentorToUser", fields: [userId], references: [id])
 }
 
 model Video {
-  id        Int      @id @default(autoincrement())
+  id        String     @id @default(auto()) @map("_id") @db.ObjectId
   title     String
   source    String
   url       String
-  createdAt DateTime @default(now())
+  createdAt DateTime   @default(now())
 }
