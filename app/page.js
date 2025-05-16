@@ -6,40 +6,43 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRScanner from "./components/QRScanner";
 import SplashScreen from './components/SplashScreen';
+import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
 
 export default function StudentLogin() {
   const router = useRouter();
   const [loginMethod, setLoginMethod] = useState("credentials");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkSession = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const response = await fetch("/api/auth/session", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.user?.role === "STUDENT") {
-          router.replace("/dashboard/home");
-        } else {
-          // Clear invalid token
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const response = await fetch("/api/auth/session", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await response.json();
+          if (data.success && data.user) {
+            if (data.user.role === "STUDENT") {
+              router.push("/dashboard/home");
+              return;
+            }
+          }
+          // If session is invalid, remove the token
+          localStorage.removeItem("token");
+        } catch (error) {
+          console.error("Session check error:", error);
           localStorage.removeItem("token");
         }
-      } catch (error) {
-        console.error("Session check error:", error);
-        localStorage.removeItem("token");
       }
+      setIsLoading(false);
     };
 
     checkSession();
@@ -160,6 +163,16 @@ export default function StudentLogin() {
   const handleQRScanError = (error) => {
     setError(error);
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-2xl font-semibold">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>

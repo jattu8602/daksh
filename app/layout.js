@@ -1,5 +1,6 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
+import { Toaster } from "react-hot-toast";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -46,6 +47,7 @@ export default function RootLayout({ children }) {
       </head>
       <body className={`${geist.className} min-h-screen bg-background antialiased`}>
         {children}
+        <Toaster position="top-center" />
       </body>
     </html>
   );
