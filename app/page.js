@@ -6,40 +6,46 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import QRScanner from "./components/QRScanner";
 import SplashScreen from './components/SplashScreen';
+import { useForm } from "react-hook-form";
+import { toast } from "react-hot-toast";
+import { QrReader } from "react-qr-reader";
 
 export default function StudentLogin() {
   const router = useRouter();
   const [loginMethod, setLoginMethod] = useState("credentials");
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
+  const [showQRScanner, setShowQRScanner] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
+  const { register, handleSubmit, formState: { errors } } = useForm();
 
   useEffect(() => {
-    // Check if user is already logged in
     const checkSession = async () => {
-      try {
-        const token = localStorage.getItem("token");
-        if (!token) return;
-
-        const response = await fetch("/api/auth/session", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
-
-        const data = await response.json();
-
-        if (data.success && data.user?.role === "STUDENT") {
-          router.replace("/dashboard/home");
-        } else {
-          // Clear invalid token
+      const token = localStorage.getItem("token");
+      if (token) {
+        try {
+          const response = await fetch("/api/auth/session", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          });
+          const data = await response.json();
+          if (data.success && data.user) {
+            if (data.user.role === "STUDENT") {
+              router.push("/dashboard/home");
+              return;
+            }
+          }
+          // If session is invalid, remove the token
+          localStorage.removeItem("token");
+        } catch (error) {
+          console.error("Session check error:", error);
           localStorage.removeItem("token");
         }
-      } catch (error) {
-        console.error("Session check error:", error);
-        localStorage.removeItem("token");
       }
+      setIsLoading(false);
     };
 
     checkSession();
@@ -102,64 +108,58 @@ export default function StudentLogin() {
     }
   };
 
-  const handleQRScanSuccess = async (qrData) => {
-    setIsLoading(true);
-    setError("");
-
-    try {
-      const response = await fetch("/api/auth/qr-login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          username: qrData.username,
-          password: qrData.password,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || "QR login failed");
-      }
-
-      if (data.success && data.user) {
-        // Create a new session
-        const sessionResponse = await fetch("/api/auth/session", {
+  const handleQRScan = async (result) => {
+    if (result && !isScanning) {
+      setIsScanning(true);
+      try {
+        const response = await fetch("/api/auth/qr-login", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            userId: data.user.id,
-          }),
+          body: JSON.stringify({ qrData: result.text }),
         });
 
-        const sessionData = await sessionResponse.json();
+        const data = await response.json();
 
-        if (!sessionResponse.ok) {
-          throw new Error("Failed to create session");
+        if (data.success) {
+          // Create a new session
+          const sessionResponse = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ userId: data.user.id }),
+          });
+
+          const sessionData = await sessionResponse.json();
+          if (sessionData.success) {
+            localStorage.setItem("token", sessionData.session.token);
+            router.push("/dashboard/home");
+          } else {
+            toast.error("Failed to create session");
+          }
+        } else {
+          toast.error(data.error || "Invalid QR code");
         }
-
-        // Store the session token
-        localStorage.setItem("token", sessionData.session.token);
-
-        // Redirect to student dashboard
-        router.replace("/dashboard/home");
-      } else {
-        throw new Error("Invalid response from server");
+      } catch (error) {
+        console.error("QR login error:", error);
+        toast.error("An error occurred during QR login");
+      } finally {
+        setIsScanning(false);
       }
-    } catch (error) {
-      setError(error.message || "Failed to login with QR code. Please try again.");
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const handleQRScanError = (error) => {
-    setError(error);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-2xl font-semibold">Loading...</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -259,9 +259,10 @@ export default function StudentLogin() {
             ) : (
               <div className="flex flex-col items-center justify-center space-y-6">
                 <div className="w-full max-w-sm">
-                  <QRScanner
-                    onScanSuccess={handleQRScanSuccess}
-                    onScanError={handleQRScanError}
+                  <QrReader
+                    constraints={{ facingMode: "environment" }}
+                    onResult={handleQRScan}
+                    className="w-full"
                   />
                 </div>
                 <p className="text-sm text-gray-500 text-center">
