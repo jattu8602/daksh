@@ -8,7 +8,6 @@ import QRScanner from "./components/QRScanner";
 import SplashScreen from './components/SplashScreen';
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
-import { QrReader } from "react-qr-reader";
 
 export default function StudentLogin() {
   const router = useRouter();
@@ -17,8 +16,6 @@ export default function StudentLogin() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showQRScanner, setShowQRScanner] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
   const { register, handleSubmit, formState: { errors } } = useForm();
 
   useEffect(() => {
@@ -108,47 +105,63 @@ export default function StudentLogin() {
     }
   };
 
-  const handleQRScan = async (result) => {
-    if (result && !isScanning) {
-      setIsScanning(true);
-      try {
-        const response = await fetch("/api/auth/qr-login", {
+  const handleQRScanSuccess = async (qrData) => {
+    setIsLoading(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/auth/qr-login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          username: qrData.username,
+          password: qrData.password,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "QR login failed");
+      }
+
+      if (data.success && data.user) {
+        // Create a new session
+        const sessionResponse = await fetch("/api/auth/session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
-          body: JSON.stringify({ qrData: result.text }),
+          body: JSON.stringify({
+            userId: data.user.id,
+          }),
         });
 
-        const data = await response.json();
+        const sessionData = await sessionResponse.json();
 
-        if (data.success) {
-          // Create a new session
-          const sessionResponse = await fetch("/api/auth/session", {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ userId: data.user.id }),
-          });
-
-          const sessionData = await sessionResponse.json();
-          if (sessionData.success) {
-            localStorage.setItem("token", sessionData.session.token);
-            router.push("/dashboard/home");
-          } else {
-            toast.error("Failed to create session");
-          }
-        } else {
-          toast.error(data.error || "Invalid QR code");
+        if (!sessionResponse.ok) {
+          throw new Error("Failed to create session");
         }
-      } catch (error) {
-        console.error("QR login error:", error);
-        toast.error("An error occurred during QR login");
-      } finally {
-        setIsScanning(false);
+
+        // Store the session token
+        localStorage.setItem("token", sessionData.session.token);
+
+        // Redirect to student dashboard
+        router.replace("/dashboard/home");
+      } else {
+        throw new Error("Invalid response from server");
       }
+    } catch (error) {
+      setError(error.message || "Failed to login with QR code. Please try again.");
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleQRScanError = (error) => {
+    setError(error);
   };
 
   if (isLoading) {
@@ -259,10 +272,9 @@ export default function StudentLogin() {
             ) : (
               <div className="flex flex-col items-center justify-center space-y-6">
                 <div className="w-full max-w-sm">
-                  <QrReader
-                    constraints={{ facingMode: "environment" }}
-                    onResult={handleQRScan}
-                    className="w-full"
+                  <QRScanner
+                    onScanSuccess={handleQRScanSuccess}
+                    onScanError={handleQRScanError}
                   />
                 </div>
                 <p className="text-sm text-gray-500 text-center">
