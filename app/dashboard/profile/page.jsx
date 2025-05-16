@@ -7,28 +7,57 @@ export default function StudentDashboard() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    // Get user data from session storage
-    const userData = sessionStorage.getItem("user");
-    if (!userData) {
-      router.push("/"); // Redirect to login if no user data
-      return;
-    }
-
-    try {
-      const parsedUser = JSON.parse(userData);
-      setUser(parsedUser);
-    } catch (error) {
-      console.error("Error parsing user data:", error);
-      router.push("/");
-    } finally {
-      setIsLoading(false);
-    }
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        router.push("/");
+        return;
+      }
+      try {
+        const response = await fetch("/api/auth/session", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+          console.log("User data:", data.user); // Debug log
+          setUser(data.user);
+        } else {
+          setError(data.error || "Failed to fetch user data");
+          localStorage.removeItem("token");
+          router.push("/");
+        }
+      } catch (error) {
+        console.error("Error fetching user data:", error);
+        setError("Failed to fetch user data");
+        localStorage.removeItem("token");
+        router.push("/");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUser();
   }, [router]);
 
-  const handleLogout = () => {
-    sessionStorage.removeItem("user");
+  const handleLogout = async () => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        await fetch("/api/auth/session", {
+          method: "DELETE",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      } catch (error) {
+        console.error("Error during logout:", error);
+      }
+    }
+    localStorage.removeItem("token");
     router.push("/");
   };
 
@@ -37,6 +66,16 @@ export default function StudentDashboard() {
       <div className="flex min-h-screen items-center justify-center">
         <div className="text-center">
           <div className="mb-4 text-2xl font-semibold">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-2xl font-semibold text-red-600">{error}</div>
         </div>
       </div>
     );

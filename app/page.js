@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -14,6 +14,36 @@ export default function StudentLogin() {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    // Check if user is already logged in
+    const checkSession = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        const response = await fetch("/api/auth/session", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.success && data.user?.role === "STUDENT") {
+          router.replace("/dashboard/home");
+        } else {
+          // Clear invalid token
+          localStorage.removeItem("token");
+        }
+      } catch (error) {
+        console.error("Session check error:", error);
+        localStorage.removeItem("token");
+      }
+    };
+
+    checkSession();
+  }, [router]);
 
   const handleCredentialLogin = async (e) => {
     e.preventDefault();
@@ -39,11 +69,32 @@ export default function StudentLogin() {
         throw new Error(data.error || "Login failed");
       }
 
-      // Store user data in session storage
-      sessionStorage.setItem("user", JSON.stringify(data.user));
+      if (data.success && data.user) {
+        // Create a new session
+        const sessionResponse = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+          }),
+        });
 
-      // Redirect to student dashboard
-      router.push("/dashboard/home");
+        const sessionData = await sessionResponse.json();
+
+        if (!sessionResponse.ok) {
+          throw new Error("Failed to create session");
+        }
+
+        // Store the session token
+        localStorage.setItem("token", sessionData.session.token);
+
+        // Redirect to student dashboard
+        router.replace("/dashboard/home");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       setError(error.message || "Failed to login. Please try again.");
     } finally {
@@ -73,11 +124,32 @@ export default function StudentLogin() {
         throw new Error(data.error || "QR login failed");
       }
 
-      // Store user data in session storage
-      sessionStorage.setItem("user", JSON.stringify(data.user));
+      if (data.success && data.user) {
+        // Create a new session
+        const sessionResponse = await fetch("/api/auth/session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            userId: data.user.id,
+          }),
+        });
 
-      // Redirect to student dashboard
-      router.push("/dashboard/home");
+        const sessionData = await sessionResponse.json();
+
+        if (!sessionResponse.ok) {
+          throw new Error("Failed to create session");
+        }
+
+        // Store the session token
+        localStorage.setItem("token", sessionData.session.token);
+
+        // Redirect to student dashboard
+        router.replace("/dashboard/home");
+      } else {
+        throw new Error("Invalid response from server");
+      }
     } catch (error) {
       setError(error.message || "Failed to login with QR code. Please try again.");
     } finally {
