@@ -42,7 +42,7 @@ export default function InstallPWA() {
 
     // Hide the install button if the app was installed
     if (outcome === "accepted") {
-      setShowInstallButton(false);
+      setShowInstallButton(true);
     }
   };
 
