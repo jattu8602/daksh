@@ -1,4 +1,4 @@
-import GroupChat from "@/components/chat-screens/group-chat"
+import GroupChat from "../../../components/chat-screens/group-chat"
 
 export default function GroupChatPage() {
   // Sample data for the group chat

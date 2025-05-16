@@ -1,4 +1,4 @@
-import DirectChat from "@/components/chat-screens/direct-chat"
+import DirectChat from "../../../components/chat-screens/direct-chat"
 
 export default function DirectChatPage() {
   // Sample data for the chat with mohit.panjwani_25

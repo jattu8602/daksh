@@ -1,4 +1,4 @@
-import GroupProfileScreen from "@/components/chat-screens/group-profile-screen"
+import GroupProfileScreen from "../../../components/chat-screens/group-profile-screen"
 
 export default function GroupProfilePage() {
   // Sample data for the group profile
