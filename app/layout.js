@@ -6,16 +6,18 @@ const geist = Geist({
   display: "swap",
 });
 
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  themeColor: "#ffffff",
+};
+
 export const metadata = {
   title: "Daksh - Student Portal",
   description: "A platform for students, mentors, and admins",
   manifest: "/manifest.json",
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   icons: {
     icon: [
       { url: "/icons/icon-192x192.png", sizes: "192x192", type: "image/png" },
@@ -30,7 +32,6 @@ export const metadata = {
     statusBarStyle: "default",
     title: "Daksh",
   },
-  themeColor: "#ffffff",
 };
 
 export default function RootLayout({ children }) {
