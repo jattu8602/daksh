@@ -17,10 +17,10 @@ export default function CommunityScreen({ activeTab, chats }) {
 
   return (
     <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
-     
+
       {/* Header */}
       <div className="flex items-center p-4">
-        <Link href="#" legacyBehavior>
+        <Link href="#" >
           <a className="text-black">
             <ArrowLeft size={24} />
           </a>
