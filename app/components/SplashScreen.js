@@ -22,7 +22,7 @@ export default function SplashScreen() {
         <img
           src="/icons/icon-192x192.png"
           alt="Daksh Logo"
-          className="w-24 h-24 animate-bounce"
+          className="w-24 h-24 animate-bounce rounded-sm"
         />
         <h1 className="text-2xl font-bold text-gray-800">Daksh</h1>
         <div className="w-16 h-1 bg-gray-200 rounded-full overflow-hidden">
