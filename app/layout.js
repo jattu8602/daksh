@@ -1,6 +1,7 @@
 import { Geist } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "react-hot-toast";
+import InstallPWA from "./components/InstallPWA";
 
 const geist = Geist({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default function RootLayout({ children }) {
       <body className={`${geist.className} min-h-screen bg-background antialiased`}>
         {children}
         <Toaster position="top-center" />
+        <InstallPWA />
       </body>
     </html>
   );
