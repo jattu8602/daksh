@@ -1,7 +1,6 @@
-import CommunityScreen from "@/components/chat-screens/community-screen"
+import CommunityScreen from "../../../components/chat-screens/community-screens"
 
-export default function CommunityPage() {
-  // Sample data for the community screen
+export default function MentorsPage() {
   const chats = [
     {
       id: 1,

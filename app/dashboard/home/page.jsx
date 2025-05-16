@@ -61,7 +61,7 @@ export default function FeedScreen() {
             </button>
           </Link>
 
-          <Link href="/dashboard/chat">
+          <Link href="/dashboard/community">
             <button className="focus:outline-none">
               <MessageCircle size={24} />
             </button>
