@@ -11,7 +11,6 @@ import yt_dlp
 import instaloader
 import boto3
 from botocore.config import Config
-import json
 
 # Configure logging
 logging.basicConfig(
@@ -190,7 +189,7 @@ def main():
     processor = VideoProcessor()
 
     results = asyncio.run(processor.process_videos(urls))
-    print(json.dumps(results))
+    print(results)
 
 if __name__ == "__main__":
     main()

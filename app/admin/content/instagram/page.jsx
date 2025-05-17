@@ -7,10 +7,11 @@ const InstagramContentPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [url, setUrl] = useState('');
-  const [title, setTitle] = useState('');
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [currentProgress, setCurrentProgress] = useState(0);
+  const [currentStage, setCurrentStage] = useState('');
 
   useEffect(() => {
     fetchVideos();
@@ -20,7 +21,7 @@ const InstagramContentPage = () => {
     setLoading(true);
     const res = await fetch('/api/admin/content');
     const data = await res.json();
-    setVideos((data.videos || []).filter(v => v.source === 'instagram'));
+    setVideos((data.videos || []).filter(v => v.sourcePlatform === 'instagram'));
     setLoading(false);
   }
 
@@ -28,30 +29,68 @@ const InstagramContentPage = () => {
     v.title.toLowerCase().includes(search.toLowerCase())
   );
 
+  async function pollJobStatus(jobId) {
+    let attempts = 0;
+    while (attempts < 60) { // poll for up to 5 minutes
+      const res = await fetch(`/api/admin/job-status?id=${jobId}`);
+      const data = await res.json();
+
+      // Update progress if available
+      if (data.progress !== undefined) {
+        setCurrentProgress(data.progress);
+      }
+      if (data.currentStage) {
+        setCurrentStage(data.currentStage);
+      }
+
+      if (data.status === 'success') {
+        setSuccess('Video uploaded successfully!');
+        setUrl('');
+        fetchVideos();
+        setUploading(false);
+        setCurrentProgress(0);
+        setCurrentStage('');
+        return;
+      } else if (data.status === 'error') {
+        setError(data.error || 'Upload failed');
+        setUploading(false);
+        setCurrentProgress(0);
+        setCurrentStage('');
+        return;
+      }
+      await new Promise(r => setTimeout(r, 2000)); // poll every 2 seconds
+      attempts++;
+    }
+    setError('Upload timed out.');
+    setUploading(false);
+    setCurrentProgress(0);
+    setCurrentStage('');
+  }
+
   async function handleUpload(e) {
     e.preventDefault();
     setUploading(true);
     setError('');
     setSuccess('');
+    setCurrentProgress(0);
+    setCurrentStage('starting');
     try {
       const res = await fetch('/api/admin/create/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url, type: 'instagram', title }),
+        body: JSON.stringify({ url }),
       });
       const data = await res.json();
-      if (data.success) {
-        setSuccess('Video uploaded successfully!');
-        setUrl('');
-        setTitle('');
-        fetchVideos();
+      if (data.jobId) {
+        pollJobStatus(data.jobId);
       } else {
-        setError(data.message || 'Upload failed');
+        setError(data.error || 'Upload failed');
+        setUploading(false);
       }
     } catch (err) {
       setError('Upload failed');
+      setUploading(false);
     }
-    setUploading(false);
   }
 
   return (
@@ -66,20 +105,31 @@ const InstagramContentPage = () => {
           className="border p-2 mr-2"
           required
         />
-        <input
-          type="text"
-          placeholder="Title"
-          value={title}
-          onChange={e => setTitle(e.target.value)}
-          className="border p-2 mr-2"
-          required
-        />
         <button type="submit" className="bg-pink-500 text-white px-4 py-2 rounded" disabled={uploading}>
           {uploading ? 'Uploading...' : 'Upload'}
         </button>
       </form>
       {error && <p className="text-red-500">{error}</p>}
       {success && <p className="text-green-600">{success}</p>}
+
+      {/* Progress Display */}
+      {uploading && (
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-sm font-medium text-gray-700">
+              {currentStage ? `${currentStage.charAt(0).toUpperCase() + currentStage.slice(1)}...` : 'Processing...'}
+            </span>
+            <span className="text-sm font-medium text-gray-700">{currentProgress}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div
+              className="bg-pink-500 h-2.5 rounded-full transition-all duration-300"
+              style={{ width: `${currentProgress}%` }}
+            ></div>
+          </div>
+        </div>
+      )}
+
       <input
         type="text"
         placeholder="Search by title..."
@@ -97,7 +147,7 @@ const InstagramContentPage = () => {
             <div key={video.id} className="video-item mb-6">
               <h3>{video.title}</h3>
               <video width="320" height="180" controls>
-                <source src={video.url} type="video/mp4" />
+                <source src={video.uploadUrl} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
             </div>

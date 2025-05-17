@@ -7,35 +7,22 @@ import { NextResponse } from 'next/server';
 
 export async function POST(request) {
   try {
-    const { url, type, title } = await request.json();
-    if (!url || !type) {
-      return NextResponse.json({ message: 'URL and type are required' }, { status: 400 });
+    const { url } = await request.json();
+    if (!url) {
+      return NextResponse.json({ error: 'No video URL provided' }, { status: 400 });
     }
-    const endpoint = type === 'youtube' ? '/download/youtube' : '/download/instagram';
-    // FastAPI service should be running at http://localhost:8000 from daksh/scraper_service
-    const fastapiUrl = `http://localhost:8000${endpoint}`;
-    const response = await axios.post(fastapiUrl, { url }, { responseType: 'stream' });
-    const filename = `${Date.now()}.mp4`;
-    const uploadDir = path.join(process.cwd(), 'public', 'videos');
-    if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir, { recursive: true });
-    const filePath = path.join(uploadDir, filename);
-    const writer = fs.createWriteStream(filePath);
-    response.data.pipe(writer);
-    await new Promise((resolve, reject) => {
-      writer.on('finish', resolve);
-      writer.on('error', reject);
-    });
-    // Save metadata to DB
-    const video = await prisma.video.create({
+
+    // Enqueue a new video job
+    const job = await prisma.videoJob.create({
       data: {
-        title: title || filename,
-        source: type,
-        url: `/videos/${filename}`,
+        url,
+        status: 'pending',
       },
     });
-    return NextResponse.json({ message: 'Video uploaded', video, success: true });
+
+    return NextResponse.json({ jobId: job.id });
   } catch (error) {
-    console.error('Error downloading video:', error);
-    return NextResponse.json({ error: 'Failed to download video', message: error.message }, { status: 500 });
+    console.error('Error in /api/admin/create/video:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
