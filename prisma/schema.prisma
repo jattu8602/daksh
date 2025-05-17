@@ -110,13 +110,28 @@ model Student {
 }
 
 model Mentor {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @unique @db.ObjectId
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId          String     @unique @db.ObjectId
+  isOrganic       Boolean    @default(true)
+  profilePhoto    String
+  tag             String     @default("organic")
+  email           String?
+  bio             String?
+  skills          String[]
+  socialLinks     Json?
+  createdByAdminId String?   @db.ObjectId
+  isActive        Boolean    @default(true)
+  loginLastAt     DateTime?
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
 
   // Child side declares fields+references
-  user      User       @relation("MentorToUser", fields: [userId], references: [id])
+  user            User       @relation("MentorToUser", fields: [userId], references: [id])
+
+  @@index([isOrganic])
+  @@index([tag])
+  @@index([createdByAdminId])
+  @@index([isActive])
 }
 
 model Video {

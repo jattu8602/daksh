@@ -1,0 +1,54 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# raw idea
+(admins can add all the mentors)they will add mentors in two ways first fill the mentor is oraganic creator or not by toggle button--- if organic( ask for profile photo , name , tag:organic , username , set password , confirm password, )              ,,,, (inorganic mentors cannot login in mentors page , admin can upload in their behaf by admin panel in content section )and if not organic ( then simple ask for profile photo , name , username , tag:inorganic )
+
+
+# better overview
+🔧 Key Requirements Recap:
+Admins and superadmin can add mentors.
+
+Organic mentors:
+
+Can log in.
+
+Have fields: profile photo, name, tag ("organic"), username, password, confirm password.
+
+Inorganic mentors:
+
+Cannot log in.
+
+Admins upload content on their behalf.
+
+Have fields: profile photo, name, username, tag ("inorganic").
+
+
+# fields
+| Field Name     | Type              | Description                           |
+| -------------- | ----------------- | ------------------------------------- |
+| `id`           | ObjectId / INT    | Primary key                           |
+| `isOrganic`    | Boolean           | `true` = organic, `false` = inorganic |
+| `profilePhoto` | String (URL)      | URL to the profile image              |
+| `name`         | String            | Full name of mentor                   |
+| `username`     | String            | Unique login/display username         |
+| `passwordHash` | String (nullable) | Only for organic mentors              |
+| `tag`          | String            | 'organic' or 'inorganic'              |
+| `createdAt`    | Date              | Auto timestamp                        |
+| `updatedAt`    | Date              | Auto timestamp                        |
+| `email`            | String (optional) | Useful for contact or future notifications                  |
+| `bio`              | Text (optional)   | Short intro about the mentor                                |
+| `skills`           | Array of Strings  | \["JavaScript", "AI", "UI/UX"], useful for filtering/search |
+| `socialLinks`      | JSON / Object     | Links like `{ linkedin: "", twitter: "" }`                  |
+| `createdByAdminId` | ObjectId / INT    | Which admin added this mentor                               |
+| `isActive`         | Boolean           | To soft-delete or deactivate mentors                        |
+| `loginLastAt`      | Date              | Last login timestamp (organic only)                         |
+
+
+
+
+
+
+

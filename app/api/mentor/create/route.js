@@ -1,21 +1,38 @@
 import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
-import { UserRole } from "@prisma/client";
-import { generateQRCode } from "@/lib/qrcode";
+import { PrismaClient } from "@prisma/client";
+import bcrypt from "bcryptjs";
 
-export async function POST(request) {
+const prisma = new PrismaClient();
+
+export async function POST(req) {
   try {
-    const { name, email, phone } = await request.json();
+    const {
+      name,
+      username,
+      password,
+      profilePhoto,
+      isOrganic,
+      email,
+      bio,
+      skills,
+      socialLinks,
+    } = await req.json();
 
-    if (!name) {
+    // Validate required fields
+    if (!name || !username || !profilePhoto) {
       return NextResponse.json(
-        { message: "Name is required" },
+        { message: "Name, username, and profile photo are required" },
         { status: 400 }
       );
     }
 
-    // Generate a username based on the name (lowercase, no spaces)
-    const username = name.toLowerCase().replace(/\s+/g, "_");
+    // For organic mentors, password is required
+    if (isOrganic && !password) {
+      return NextResponse.json(
+        { message: "Password is required for organic mentors" },
+        { status: 400 }
+      );
+    }
 
     // Check if username already exists
     const existingUser = await prisma.user.findUnique({
@@ -29,46 +46,51 @@ export async function POST(request) {
       );
     }
 
-    // Generate a random password
-    const password = Math.random().toString(36).slice(-8);
+    // Hash password if organic mentor
+    const passwordHash = isOrganic ? await bcrypt.hash(password, 10) : null;
 
-    // Generate QR code for the new mentor
-    const qrData = JSON.stringify({
-      username,
-      role: UserRole.MENTOR,
-    });
-    const qrCode = await generateQRCode(qrData);
-
-    // Create mentor user
-    const mentorUser = await prisma.user.create({
+    // Create user first
+    const user = await prisma.user.create({
       data: {
         name,
         username,
-        password,
-        role: UserRole.MENTOR,
-        qrCode,
-        mentor: {
-          create: {},
-        },
-      },
-      include: {
-        mentor: true,
+        password: passwordHash || "", // Empty string for inorganic mentors
+        role: "MENTOR",
       },
     });
 
-    // Remove password from response
-    const { password: _, ...mentorData } = mentorUser;
+    // Create mentor profile
+    const mentor = await prisma.mentor.create({
+      data: {
+        userId: user.id,
+        isOrganic,
+        profilePhoto,
+        tag: isOrganic ? "organic" : "inorganic",
+        email,
+        bio,
+        skills: skills || [],
+        socialLinks: socialLinks || {},
+        isActive: true,
+      },
+    });
 
+    // Return success response with credentials for organic mentors
     return NextResponse.json({
       message: "Mentor created successfully",
-      mentor: mentorData,
-      password, // Include the generated password in the response
-      success: true,
+      mentor: {
+        id: mentor.id,
+        name: user.name,
+        username: user.username,
+        isOrganic: mentor.isOrganic,
+        profilePhoto: mentor.profilePhoto,
+      },
+      // Only include password in response for organic mentors
+      ...(isOrganic && { password }),
     });
   } catch (error) {
     console.error("Error creating mentor:", error);
     return NextResponse.json(
-      { error: "Something went wrong", message: error.message },
+      { message: "Failed to create mentor" },
       { status: 500 }
     );
   }
