@@ -11,12 +11,16 @@
     "postinstall": "prisma generate"
   },
   "dependencies": {
+    "@aws-sdk/client-s3": "^3.812.0",
+    "@google/generative-ai": "^0.24.1",
+    "@prisma/client": "^6.8.2",
     "@shadcn/ui": "^0.0.4",
     "axios": "^1.9.0",
     "bcryptjs": "^3.0.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "framer-motion": "^12.11.4",
+    "fs-extra": "^11.3.0",
     "html5-qrcode": "^2.3.8",
     "lodash": "^4.17.21",
     "lucide-react": "^0.507.0",
@@ -29,10 +33,13 @@
     "react-hook-form": "^7.56.3",
     "react-hot-toast": "^2.5.2",
     "tailwind-merge": "^3.2.0",
-    "xlsx": "^0.18.5"
+    "tmp": "^0.2.3",
+    "xlsx": "^0.18.5",
+    "youtube-dl-exec": "^3.0.21",
+    "ytdl-core": "^4.11.4",
+    "ytdl-core-discord": "^1.3.1"
   },
   "devDependencies": {
-    "@prisma/client": "^6.8.2",
     "@tailwindcss/postcss": "^4",
     "@types/node": "22.15.3",
     "@types/react": "19.1.2",
