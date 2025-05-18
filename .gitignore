@@ -36,3 +36,5 @@ next-env.d.ts
 
 # temp directory for video downloads
 /temp/
+
+.env
