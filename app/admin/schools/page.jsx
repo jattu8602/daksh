@@ -27,6 +27,7 @@ export default function SchoolsPage() {
     const fetchSchools = async () => {
       try {
         setIsLoading(true);
+        setErrorMessage("");
 
         // Check for cached data
         const cachedData = sessionStorage.getItem('allSchools');
@@ -34,24 +35,40 @@ export default function SchoolsPage() {
         const isCacheValid = cachedTimestamp && (Date.now() - parseInt(cachedTimestamp)) < 300000; // 5 min cache
 
         if (cachedData && isCacheValid) {
+          console.log('Using cached data:', JSON.parse(cachedData));
           setSchools(JSON.parse(cachedData));
           setIsLoading(false);
           return;
         }
 
-        const response = await fetch('/api/schools');
-        const data = await response.json();
+        const response = await fetch('/api/schools', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+            'Cache-Control': 'no-cache'
+          },
+        });
 
-        if (data.success) {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        console.log('API Response:', data);
+
+        if (data.success && Array.isArray(data.schools)) {
+          console.log('Setting schools:', data.schools);
           setSchools(data.schools);
           // Cache the data
           sessionStorage.setItem('allSchools', JSON.stringify(data.schools));
           sessionStorage.setItem('allSchools:timestamp', Date.now().toString());
         } else {
-          setErrorMessage(data.error || "Failed to fetch schools");
+          throw new Error(data.error || "Invalid response format");
         }
       } catch (error) {
+        console.error('Error fetching schools:', error);
         setErrorMessage("Error fetching schools: " + error.message);
+        setSchools([]); // Reset schools on error
       } finally {
         setIsLoading(false);
       }
@@ -120,6 +137,7 @@ export default function SchoolsPage() {
 
   // Memoize the filtered schools to prevent unnecessary re-renders
   const filteredSchools = useMemo(() => {
+    console.log('Filtering schools:', schools);
     return schools.filter(
       (school) =>
         school.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,6 +146,9 @@ export default function SchoolsPage() {
         (school.phone && school.phone.includes(searchTerm))
     );
   }, [schools, searchTerm]);
+
+  console.log('Current schools state:', schools);
+  console.log('Filtered schools:', filteredSchools);
 
   return (
     <div className="space-y-6">

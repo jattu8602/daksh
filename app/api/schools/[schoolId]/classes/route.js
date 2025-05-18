@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
-  const schoolId = params.schoolId;
+  // in Next.js v15+, context.params is a Promise
+  const { schoolId } = await context.params;
+
+
   const url = new URL(request.url);
 
   // Get pagination parameters from query string
