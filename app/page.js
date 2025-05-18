@@ -9,6 +9,9 @@ import SplashScreen from './components/SplashScreen';
 import { useForm } from "react-hook-form";
 import { toast } from "react-hot-toast";
 
+
+
+
 export default function StudentLogin() {
   const router = useRouter();
   const [loginMethod, setLoginMethod] = useState("credentials");
