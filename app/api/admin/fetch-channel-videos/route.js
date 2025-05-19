@@ -99,64 +99,125 @@ export async function POST(request) {
         }, { status: 404 });
       }
 
-      // Fetch channel videos
-      const response = await fetch(
-        `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=50&type=video`
-      );
+      // Fetch ALL channel videos with pagination
+      let allVideos = [];
+      let nextPageToken = null;
+      let pageCount = 0;
+      const maxRetries = 3;
 
-      const data = await response.json();
-      if (!data.items) {
-        return NextResponse.json({ error: 'Failed to fetch channel videos' }, { status: 500 });
-      }
+      do {
+        try {
+          // Fetch videos page by page
+          const response = await fetch(
+            `https://www.googleapis.com/youtube/v3/search?key=${apiKey}&channelId=${channelId}&part=snippet,id&order=date&maxResults=50&type=video${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`
+          );
 
-      // Filter for shorts videos and format them
-      const videos = await Promise.all(
-        data.items
-          .filter(item => item.id.kind === 'youtube#video')
-          .map(async item => {
-            try {
-              // Get video details to check duration
-              const videoResponse = await fetch(
-                `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&part=contentDetails&id=${item.id.videoId}`
-              );
-              const videoData = await videoResponse.json();
+          const data = await response.json();
+          if (!data.items) {
+            break;
+          }
 
-              if (!videoData.items || videoData.items.length === 0) return null;
+          // Get video IDs for batch processing
+          const videoIds = data.items
+            .filter(item => item.id.kind === 'youtube#video')
+            .map(item => item.id.videoId);
 
-              // Check if it's a shorts video (duration <= 60 seconds)
-              const duration = videoData.items[0].contentDetails.duration;
-              const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
-              const hours = (match[1] && parseInt(match[1])) || 0;
-              const minutes = (match[2] && parseInt(match[2])) || 0;
-              const seconds = (match[3] && parseInt(match[3])) || 0;
-              const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+          if (videoIds.length > 0) {
+            // Fetch video details in batch
+            const videoResponse = await fetch(
+              `https://www.googleapis.com/youtube/v3/videos?key=${apiKey}&part=contentDetails,snippet,status&id=${videoIds.join(',')}`
+            );
+            const videoData = await videoResponse.json();
 
-              if (totalSeconds <= 60) {
-                return {
-                  url: `https://www.youtube.com/watch?v=${item.id.videoId}`,
-                  title: item.snippet.title,
-                  description: item.snippet.description,
-                  thumbnail: item.snippet.thumbnails.high.url,
-                  publishedAt: item.snippet.publishedAt,
-                  duration: totalSeconds
-                };
-              }
-              return null;
-            } catch (error) {
-              console.error('Error fetching video details:', error);
-              return null;
+            if (videoData.items) {
+              // Process videos and check for shorts
+              const processedVideos = videoData.items.map(video => {
+                // Skip if video is not available
+                if (video.status?.privacyStatus !== 'public') {
+                  return null;
+                }
+
+                // Check if it's a shorts video using multiple criteria
+                const duration = video.contentDetails.duration;
+                const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+                const hours = (match[1] && parseInt(match[1])) || 0;
+                const minutes = (match[2] && parseInt(match[2])) || 0;
+                const seconds = (match[3] && parseInt(match[3])) || 0;
+                const totalSeconds = hours * 3600 + minutes * 60 + seconds;
+
+                // Check for shorts indicators
+                const title = video.snippet.title.toLowerCase();
+                const description = video.snippet.description.toLowerCase();
+                const isShorts =
+                  totalSeconds <= 60 || // Duration check
+                  title.includes('#shorts') || // Title check
+                  description.includes('#shorts') || // Description check
+                  title.includes('short') || // Additional title checks
+                  title.includes('shorts') ||
+                  /^shorts?$/i.test(title) || // Exact match for "short" or "shorts"
+                  /^#shorts?$/i.test(title) || // Exact match for "#short" or "#shorts"
+                  video.snippet.tags?.some(tag =>
+                    tag.toLowerCase().includes('shorts') ||
+                    tag.toLowerCase().includes('short')
+                  ); // Tags check
+
+                if (isShorts) {
+                  return {
+                    url: `https://www.youtube.com/watch?v=${video.id}`,
+                    title: video.snippet.title,
+                    description: video.snippet.description,
+                    thumbnail: video.snippet.thumbnails.high.url,
+                    publishedAt: video.snippet.publishedAt,
+                    duration: totalSeconds,
+                    isShorts: true
+                  };
+                }
+                return null;
+              });
+
+              const validVideos = processedVideos.filter(video => video !== null);
+              allVideos = [...allVideos, ...validVideos];
+
+              console.log(`Processed page ${pageCount + 1}, found ${validVideos.length} shorts in this page`);
             }
-          })
-      );
+          }
 
-      // Filter out null values (non-shorts videos)
-      const shortsVideos = videos.filter(video => video !== null);
+          nextPageToken = data.nextPageToken;
+          pageCount++;
+
+          // Add a small delay to avoid hitting rate limits
+          await new Promise(resolve => setTimeout(resolve, 1000));
+
+        } catch (error) {
+          console.error(`Error processing page ${pageCount + 1}:`, error);
+          // Retry logic
+          let retryCount = 0;
+          while (retryCount < maxRetries) {
+            try {
+              await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
+              // Retry the same page
+              continue;
+            } catch (retryError) {
+              retryCount++;
+              if (retryCount === maxRetries) {
+                console.error('Max retries reached, moving to next page');
+                break;
+              }
+            }
+          }
+        }
+      } while (nextPageToken);
+
+      // Sort videos by publish date (newest first)
+      allVideos.sort((a, b) => new Date(b.publishedAt) - new Date(a.publishedAt));
 
       return NextResponse.json({
         success: true,
-        videos: shortsVideos,
+        videos: allVideos,
         channelId,
-        channelTitle: channelData.items[0].snippet.title
+        channelTitle: channelData.items[0].snippet.title,
+        totalVideos: allVideos.length,
+        pagesProcessed: pageCount
       });
     } catch (error) {
       console.error('Error fetching channel data:', error);
