@@ -36,31 +36,58 @@ async function downloadYouTubeVideo(url) {
       }))
     });
 
-    // Download the video
-    console.log('Downloading video...');
-    await execPromise(`yt-dlp "${url}" -o "${outputPath}" -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4`);
+    // Try multiple download approaches
+    let downloadSuccess = false;
+    const downloadAttempts = [
+      // First attempt: Best quality with format selection
+      `yt-dlp "${url}" -o "${outputPath}" -f "bestvideo[ext=mp4]+bestaudio[ext=m4a]/best[ext=mp4]/best" --merge-output-format mp4`,
+      // Second attempt: Simple best quality
+      `yt-dlp "${url}" -o "${outputPath}" -f "best"`,
+      // Third attempt: Most compatible format
+      `yt-dlp "${url}" -o "${outputPath}" -f "worst[ext=mp4]"`
+    ];
 
-    // Wait a moment to ensure file is written
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    for (const [index, command] of downloadAttempts.entries()) {
+      try {
+        console.log(`Download attempt ${index + 1} with command:`, command);
+        const { stdout, stderr } = await execPromise(command);
+        console.log(`Download attempt ${index + 1} stdout:`, stdout);
+        if (stderr) console.log(`Download attempt ${index + 1} stderr:`, stderr);
 
-    // Check if file exists
-    const exists = await fs.pathExists(outputPath);
-    console.log('File exists:', exists);
+        // Check if file exists
+        const exists = await fs.pathExists(outputPath);
+        console.log(`File exists after attempt ${index + 1}:`, exists);
 
-    if (!exists) {
-      throw new Error('Downloaded file not found');
+        if (exists) {
+          // Verify the file exists and has content
+          const stats = await fs.stat(outputPath);
+          console.log('File stats:', {
+            size: stats.size,
+            created: stats.birthtime,
+            modified: stats.mtime
+          });
+
+          if (stats.size > 0) {
+            downloadSuccess = true;
+            break;
+          } else {
+            console.log(`File is empty after attempt ${index + 1}, trying next attempt...`);
+            await fs.remove(outputPath);
+          }
+        } else {
+          console.log(`File not found after attempt ${index + 1}, trying next attempt...`);
+        }
+      } catch (error) {
+        console.error(`Error in download attempt ${index + 1}:`, error);
+        // Continue to next attempt
+      }
     }
 
-    // Verify the file exists and has content
-    const stats = await fs.stat(outputPath);
-    console.log('File stats:', {
-      size: stats.size,
-      created: stats.birthtime,
-      modified: stats.mtime
-    });
-
-    if (stats.size === 0) {
-      throw new Error('Downloaded file is empty');
+    if (!downloadSuccess) {
+      // List directory contents for debugging
+      const files = await fs.readdir(tempDir);
+      console.log('Contents of temp directory:', files);
+      throw new Error('All download attempts failed');
     }
 
     return {
