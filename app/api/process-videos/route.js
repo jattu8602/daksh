@@ -4,8 +4,7 @@ import path from 'path';
 
 export async function POST(request) {
   try {
-    const body = await request.json();
-    const urls = body.urls;
+    const { urls } = await request.json();
 
     if (!Array.isArray(urls) || urls.length === 0) {
       return NextResponse.json(
@@ -15,7 +14,7 @@ export async function POST(request) {
     }
 
     // Validate URLs
-    const validUrls = urls.filter((url) => {
+    const validUrls = urls.filter(url => {
       try {
         new URL(url);
         return url.includes('youtube.com') ||
@@ -33,7 +32,7 @@ export async function POST(request) {
       );
     }
 
-    // Run the Python script
+    // Path to your Python script in the 'video_processor' directory
     const scriptPath = path.join(process.cwd(), 'video_processor', 'video_processor.py');
     const pythonProcess = spawn('python', [scriptPath, ...validUrls]);
 

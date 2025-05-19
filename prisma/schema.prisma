@@ -135,11 +135,45 @@ model Mentor {
 }
 
 model Video {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  title     String
-  source    String
-  url       String
-  createdAt DateTime   @default(now())
+  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  title           String
+  source          String
+  sourcePlatform  String     // 'youtube', 'instagram', or 'unknown'
+  url             String
+  metaDescription String?
+  videoHashtags   VideoHashtag[]
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+
+  @@index([title])
+  @@index([source])
+  @@index([sourcePlatform])
+  @@index([createdAt])
+}
+
+model Hashtag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  tag       String   @unique
+  videos    VideoHashtag[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([createdAt])
+}
+
+model VideoHashtag {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId   String   @db.ObjectId
+  hashtagId String   @db.ObjectId
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  video     Video    @relation(fields: [videoId], references: [id])
+  hashtag   Hashtag  @relation(fields: [hashtagId], references: [id])
+
+  @@unique([videoId, hashtagId])
+  @@index([videoId])
+  @@index([hashtagId])
 }
 
 model Session {
@@ -152,4 +186,16 @@ model Session {
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model VideoJob {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  url          String
+  status       String   // 'pending', 'processing', 'success', 'error'
+  result       Json?
+  error        String?
+  progress     Int      @default(0)
+  currentStage String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
