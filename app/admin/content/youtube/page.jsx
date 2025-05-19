@@ -8,6 +8,8 @@ const YoutubeContentPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [url, setUrl] = useState('');
+  const [channelUrl, setChannelUrl] = useState('');
+  const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'channel'
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
@@ -22,6 +24,8 @@ const YoutubeContentPage = () => {
   const [fetching, setFetching] = useState(false);
   const [fetched, setFetched] = useState(false);
   const [jobId, setJobId] = useState(null);
+  const [channelVideos, setChannelVideos] = useState([]);
+  const [channelFetching, setChannelFetching] = useState(false);
 
   useEffect(() => {
     fetchVideos();
@@ -155,89 +159,266 @@ const YoutubeContentPage = () => {
     handleGenerateMeta();
   };
 
+  async function handleChannelFetch(e) {
+    e.preventDefault();
+    setChannelFetching(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch('/api/admin/fetch-channel-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ channelUrl: channelUrl }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setChannelVideos(data.videos);
+        setSuccess(`Found ${data.videos.length} shorts videos in the channel`);
+      } else {
+        setError(data.error || 'Failed to fetch channel videos');
+      }
+    } catch (err) {
+      setError('Failed to fetch channel videos');
+    }
+    setChannelFetching(false);
+  }
+
+  async function handleChannelUpload() {
+    if (channelVideos.length === 0) {
+      setError('No videos to upload');
+      return;
+    }
+
+    setUploading(true);
+    setError('');
+    setSuccess('');
+    setCurrentProgress(0);
+    setCurrentStage('starting');
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (let i = 0; i < channelVideos.length; i++) {
+      const video = channelVideos[i];
+      setCurrentStage(`Processing video ${i + 1} of ${channelVideos.length}`);
+      setCurrentProgress((i / channelVideos.length) * 100);
+
+      try {
+        const res = await fetch('/api/admin/create/video', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ url: video.url }),
+        });
+        const data = await res.json();
+
+        if (data.jobId) {
+          // Wait for the job to complete
+          let jobComplete = false;
+          let attempts = 0;
+          while (!jobComplete && attempts < 60) {
+            const statusRes = await fetch(`/api/admin/job-status?id=${data.jobId}`);
+            const statusData = await statusRes.json();
+
+            if (statusData.status === 'success') {
+              // Generate meta description and hashtags
+              const metaRes = await fetch('/api/ai/generate-meta', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: video.title,
+                  originalDesc: video.description
+                }),
+              });
+              const metaData = await metaRes.json();
+
+              // Upload the video
+              const uploadRes = await fetch('/api/admin/upload/video', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  title: video.title,
+                  description: video.description,
+                  metaDescription: metaData.description,
+                  hashtags: metaData.hashtags,
+                  jobId: data.jobId
+                }),
+              });
+
+              if (uploadRes.ok) {
+                successCount++;
+              } else {
+                failCount++;
+              }
+              jobComplete = true;
+            } else if (statusData.status === 'error') {
+              failCount++;
+              jobComplete = true;
+            }
+            await new Promise(r => setTimeout(r, 2000));
+            attempts++;
+          }
+        }
+      } catch (err) {
+        failCount++;
+      }
+    }
+
+    setCurrentProgress(100);
+    setCurrentStage('completed');
+    setSuccess(`Upload complete. ${successCount} videos uploaded successfully, ${failCount} failed.`);
+    setUploading(false);
+    fetchVideos();
+  }
+
   return (
     <div className="youtube-content-page p-6">
       <h1 className="text-2xl font-bold mb-6">YouTube Content</h1>
-      <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <form className="mb-4 space-y-4">
-          <input
-            type="text"
-            placeholder="YouTube Video URL"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            className="border p-2 rounded-lg w-full"
-            required
-            disabled={fetching || fetched}
-          />
+
+      {/* Upload Mode Toggle */}
+      <div className="mb-6">
+        <div className="flex gap-4 mb-4">
           <button
-            type="button"
-            className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors w-full"
-            onClick={handleFetch}
-            disabled={fetching || fetched || !url}
+            className={`px-4 py-2 rounded-lg ${uploadMode === 'single' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setUploadMode('single')}
           >
-            {fetching ? 'Fetching...' : 'Fetch'}
+            Single Video Upload
           </button>
-          {fetched && (
-            <>
-              <input
-                type="text"
-                placeholder="Title"
-                value={title}
-                onChange={e => setTitle(e.target.value)}
-                className="border p-2 rounded-lg w-full"
-                required
-              />
-              <textarea
-                placeholder="Original Description"
-                value={description}
-                onChange={e => setDescription(e.target.value)}
-                className="border p-2 rounded-lg w-full"
-                rows={3}
-              />
-              <div className="bg-gray-50 rounded-lg p-4 mb-2">
-                <div className="flex items-center justify-between mb-2">
-                  <label className="font-semibold">AI Meta Description</label>
-                  <button
-                    type="button"
-                    className="text-blue-600 hover:underline text-sm"
-                    onClick={handleRegenerate}
-                    disabled={regenLoading}
-                  >
-                    {regenLoading ? 'Regenerating...' : 'Regenerate'}
-                  </button>
-                </div>
-                <textarea
-                  value={metaDescription}
-                  onChange={e => setMetaDescription(e.target.value)}
-                  className="border p-2 rounded-lg w-full mb-2"
-                  rows={3}
-                  placeholder="AI-generated meta description will appear here"
+          <button
+            className={`px-4 py-2 rounded-lg ${uploadMode === 'channel' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setUploadMode('channel')}
+          >
+            Channel Upload
+          </button>
+        </div>
+      </div>
+
+      <div className="bg-white rounded-lg shadow p-6 mb-6">
+        {uploadMode === 'single' ? (
+          <form className="mb-4 space-y-4">
+            <input
+              type="text"
+              placeholder="YouTube Video URL"
+              value={url}
+              onChange={e => setUrl(e.target.value)}
+              className="border p-2 rounded-lg w-full"
+              required
+              disabled={fetching || fetched}
+            />
+            <button
+              type="button"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors w-full"
+              onClick={handleFetch}
+              disabled={fetching || fetched || !url}
+            >
+              {fetching ? 'Fetching...' : 'Fetch'}
+            </button>
+            {fetched && (
+              <>
+                <input
+                  type="text"
+                  placeholder="Title"
+                  value={title}
+                  onChange={e => setTitle(e.target.value)}
+                  className="border p-2 rounded-lg w-full"
+                  required
                 />
-                <div className="mb-2">
-                  <label className="font-semibold">Hashtags</label>
-                  <input
-                    type="text"
-                    value={hashtags.join(' ')}
-                    onChange={e => setHashtags(e.target.value.split(/\s+/).filter(Boolean))}
-                    className="border p-2 rounded-lg w-full mt-1"
-                    placeholder="#hashtag1 #hashtag2"
+                <textarea
+                  placeholder="Original Description"
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  className="border p-2 rounded-lg w-full"
+                  rows={3}
+                />
+                <div className="bg-gray-50 rounded-lg p-4 mb-2">
+                  <div className="flex items-center justify-between mb-2">
+                    <label className="font-semibold">AI Meta Description</label>
+                    <button
+                      type="button"
+                      className="text-blue-600 hover:underline text-sm"
+                      onClick={handleRegenerate}
+                      disabled={regenLoading}
+                    >
+                      {regenLoading ? 'Regenerating...' : 'Regenerate'}
+                    </button>
+                  </div>
+                  <textarea
+                    value={metaDescription}
+                    onChange={e => setMetaDescription(e.target.value)}
+                    className="border p-2 rounded-lg w-full mb-2"
+                    rows={3}
+                    placeholder="AI-generated meta description will appear here"
                   />
+                  <div className="mb-2">
+                    <label className="font-semibold">Hashtags</label>
+                    <input
+                      type="text"
+                      value={hashtags.join(' ')}
+                      onChange={e => setHashtags(e.target.value.split(/\s+/).filter(Boolean))}
+                      className="border p-2 rounded-lg w-full mt-1"
+                      placeholder="#hashtag1 #hashtag2"
+                    />
+                  </div>
                 </div>
+                <button
+                  type="button"
+                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors w-full"
+                  onClick={handleUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? 'Uploading...' : 'Upload'}
+                </button>
+              </>
+            )}
+          </form>
+        ) : (
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="YouTube Channel URL or ID"
+              value={channelUrl}
+              onChange={e => setChannelUrl(e.target.value)}
+              className="border p-2 rounded-lg w-full"
+              required
+              disabled={channelFetching}
+            />
+            <button
+              type="button"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors w-full"
+              onClick={handleChannelFetch}
+              disabled={channelFetching || !channelUrl}
+            >
+              {channelFetching ? 'Fetching Channel...' : 'Fetch Channel Videos'}
+            </button>
+
+            {channelVideos.length > 0 && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Found {channelVideos.length} shorts videos</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  {channelVideos.map((video, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <img src={video.thumbnail} alt={video.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                      <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(video.publishedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors w-full"
+                  onClick={handleChannelUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? 'Uploading...' : 'Upload All Videos'}
+                </button>
               </div>
-              <button
-                type="button"
-                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors w-full"
-                onClick={handleUpload}
-                disabled={uploading}
-              >
-                {uploading ? 'Uploading...' : 'Upload'}
-              </button>
-            </>
-          )}
-        </form>
+            )}
+          </div>
+        )}
         {error && <p className="text-red-500">{error}</p>}
         {success && <p className="text-green-600">{success}</p>}
-        {fetching && (
+        {(fetching || uploading) && (
           <div className="mb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-gray-700">
@@ -247,7 +428,7 @@ const YoutubeContentPage = () => {
             </div>
             <div className="w-full bg-gray-200 rounded-full h-2.5">
               <div
-                className="bg-red-500 h-2.5 rounded-full transition-all duration-300"
+                className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
                 style={{ width: `${currentProgress}%` }}
               ></div>
             </div>
