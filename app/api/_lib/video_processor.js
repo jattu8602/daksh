@@ -5,17 +5,20 @@ const util = require('util');
 const execPromise = util.promisify(exec);
 
 async function downloadYouTubeVideo(url) {
+  let tempDir;
+  let outputPath;
+
   try {
     console.log('Starting video download for URL:', url);
 
     // Create temp directory in project root
-    const tempDir = path.join(process.cwd(), 'temp');
+    tempDir = path.join(process.cwd(), 'temp');
     await fs.ensureDir(tempDir);
     console.log('Temp directory:', tempDir);
 
     // Generate unique filename using timestamp
     const timestamp = Date.now();
-    const outputPath = path.join(tempDir, `${timestamp}.mp4`);
+    outputPath = path.join(tempDir, `${timestamp}.mp4`);
     console.log('Output path:', outputPath);
 
     // First get video info
@@ -69,8 +72,8 @@ async function downloadYouTubeVideo(url) {
     console.error('Error downloading video:', error);
     // Clean up any partial downloads
     try {
-      if (error.path) {
-        await fs.remove(error.path);
+      if (outputPath) {
+        await fs.remove(outputPath);
       }
     } catch (cleanupError) {
       console.error('Error cleaning up:', cleanupError);
