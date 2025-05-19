@@ -168,23 +168,23 @@ const YoutubeContentPage = () => {
       <div className="bg-white rounded-lg shadow p-4 md:p-6 mb-6">
         <form className="mb-4 space-y-4">
           <div className="flex flex-col md:flex-row gap-4">
-            <input
-              type="text"
-              placeholder="YouTube Video URL"
-              value={url}
-              onChange={e => setUrl(e.target.value)}
+          <input
+            type="text"
+            placeholder="YouTube Video URL"
+            value={url}
+            onChange={e => setUrl(e.target.value)}
               className="border p-2 rounded-lg flex-grow"
-              required
-              disabled={fetching || fetched}
-            />
-            <button
-              type="button"
+            required
+            disabled={fetching || fetched}
+          />
+          <button
+            type="button"
               className="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition-colors whitespace-nowrap"
-              onClick={handleFetch}
-              disabled={fetching || fetched || !url}
-            >
+            onClick={handleFetch}
+            disabled={fetching || fetched || !url}
+          >
               {fetching ? 'Fetching...' : 'Fetch Video'}
-            </button>
+          </button>
           </div>
 
           {fetched && (
@@ -201,63 +201,63 @@ const YoutubeContentPage = () => {
                     />
                   </div>
                 )}
-                <input
-                  type="text"
-                  placeholder="Title"
-                  value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  className="border p-2 rounded-lg w-full"
-                  required
-                />
-                <textarea
-                  placeholder="Original Description"
-                  value={description}
-                  onChange={e => setDescription(e.target.value)}
-                  className="border p-2 rounded-lg w-full"
+              <input
+                type="text"
+                placeholder="Title"
+                value={title}
+                onChange={e => setTitle(e.target.value)}
+                className="border p-2 rounded-lg w-full"
+                required
+              />
+              <textarea
+                placeholder="Original Description"
+                value={description}
+                onChange={e => setDescription(e.target.value)}
+                className="border p-2 rounded-lg w-full"
                   rows={4}
-                />
+              />
               </div>
 
               {/* AI Generation Section */}
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <label className="font-semibold">AI Meta Description</label>
-                    <button
-                      type="button"
-                      className="text-blue-600 hover:underline text-sm"
-                      onClick={handleRegenerate}
-                      disabled={regenLoading}
-                    >
-                      {regenLoading ? 'Regenerating...' : 'Regenerate'}
-                    </button>
-                  </div>
-                  <textarea
-                    value={metaDescription}
-                    onChange={e => setMetaDescription(e.target.value)}
+                <div className="flex items-center justify-between mb-2">
+                  <label className="font-semibold">AI Meta Description</label>
+                  <button
+                    type="button"
+                    className="text-blue-600 hover:underline text-sm"
+                    onClick={handleRegenerate}
+                    disabled={regenLoading}
+                  >
+                    {regenLoading ? 'Regenerating...' : 'Regenerate'}
+                  </button>
+                </div>
+                <textarea
+                  value={metaDescription}
+                  onChange={e => setMetaDescription(e.target.value)}
                     className="border p-2 rounded-lg w-full mb-4"
                     rows={4}
-                    placeholder="AI-generated meta description will appear here"
-                  />
+                  placeholder="AI-generated meta description will appear here"
+                />
                   <div>
                     <label className="font-semibold block mb-2">Hashtags</label>
-                    <input
-                      type="text"
-                      value={hashtags.join(' ')}
-                      onChange={e => setHashtags(e.target.value.split(/\s+/).filter(Boolean))}
+                  <input
+                    type="text"
+                    value={hashtags.join(' ')}
+                    onChange={e => setHashtags(e.target.value.split(/\s+/).filter(Boolean))}
                       className="border p-2 rounded-lg w-full"
-                      placeholder="#hashtag1 #hashtag2"
-                    />
-                  </div>
+                    placeholder="#hashtag1 #hashtag2"
+                  />
                 </div>
-                <button
-                  type="button"
-                  className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors w-full"
-                  onClick={handleUpload}
-                  disabled={uploading}
-                >
+              </div>
+              <button
+                type="button"
+                className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition-colors w-full"
+                onClick={handleUpload}
+                disabled={uploading}
+              >
                   {uploading ? 'Uploading...' : 'Upload to Cloudflare'}
-                </button>
+              </button>
               </div>
             </div>
           )}
@@ -287,13 +287,13 @@ const YoutubeContentPage = () => {
       {/* Video List */}
       <div className="bg-white rounded-lg shadow p-4 md:p-6">
         <div className="mb-6">
-          <input
-            type="text"
-            placeholder="Search by title..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
+        <input
+          type="text"
+          placeholder="Search by title..."
+          value={search}
+          onChange={e => setSearch(e.target.value)}
             className="border p-2 w-full rounded-lg"
-          />
+        />
         </div>
 
         {loading ? (
@@ -312,17 +312,17 @@ const YoutubeContentPage = () => {
               >
                 <div className="relative aspect-video">
                   <video className="w-full h-full object-cover" controls>
-                    <source src={video.url} type="video/mp4" />
-                    Your browser does not support the video tag.
-                  </video>
+                  <source src={video.url} type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
                 </div>
                 <div className="p-4">
                   <h3 className="font-semibold mb-2 line-clamp-2">{video.title}</h3>
-                  {video.metaDescription && (
+                {video.metaDescription && (
                     <p className="text-sm text-gray-600 line-clamp-2">
-                      {video.metaDescription}
-                    </p>
-                  )}
+                    {video.metaDescription}
+                  </p>
+                )}
                 </div>
               </div>
             ))}
