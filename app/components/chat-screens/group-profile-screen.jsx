@@ -4,13 +4,13 @@ import { ArrowLeft, Settings, UserPlus, Search, Bell, LogOut } from "lucide-reac
 import { motion } from "framer-motion"
 import Link from "next/link"
 
-export default function GroupProfileScreen({ groupName, groupAvatar, members }) {
+export default function GroupProfileScreen({ groupName, groupAvatar, members, backUrl }) {
   return (
-    <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
-    
+    <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto fixed inset-0">
+
       {/* Header */}
-      <div className="flex items-center p-4">
-        <Link href="/mobile/group-chat" className="text-black">
+      <div className="flex items-center p-4 border-b border-gray-200 bg-white">
+        <Link href={backUrl || "/dashboard/community/school"} className="text-black">
           <ArrowLeft size={24} />
         </Link>
         <h1 className="text-lg font-medium text-center flex-1">{groupName}</h1>
