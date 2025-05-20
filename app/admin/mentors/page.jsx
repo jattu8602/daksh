@@ -39,6 +39,8 @@ export default function MentorsPage() {
     bio: "",
     skills: [],
     socialLinks: {},
+    subject: "",
+    language: "",
   });
 
   // New mentor created info (to show credentials)
@@ -201,6 +203,8 @@ export default function MentorsPage() {
         bio: "",
         skills: [],
         socialLinks: {},
+        subject: "",
+        language: "",
       });
       setUploadedImage(null);
     } catch (error) {
@@ -240,7 +244,11 @@ export default function MentorsPage() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mentors.map((mentor) => (
-              <div key={mentor.id} className="bg-white rounded-lg shadow-md overflow-hidden">
+              <Link
+                key={mentor.id}
+                href={`/admin/mentors/${mentor.id}`}
+                className="block bg-white rounded-lg shadow-md overflow-hidden hover:ring-2 hover:ring-blue-400 transition"
+              >
                 <div className="relative h-48 w-full">
                   <Image
                     src={mentor.profilePhoto}
@@ -275,14 +283,51 @@ export default function MentorsPage() {
                     </div>
                   )}
                   <div className="mt-4 flex space-x-2">
-                    <button className="text-blue-600 hover:underline text-sm">View QR</button>
+                    <button
+                      className="text-blue-600 hover:underline text-sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        setIsAddingMentor(true);
+                        setFormData({
+                          ...mentor,
+                          password: '',
+                          confirmPassword: '',
+                        });
+                        setIsOrganic(mentor.isOrganic);
+                        setUploadedImage(mentor.profilePhoto);
+                      }}
+                    >
+                      Edit
+                    </button>
                     {mentor.isOrganic && (
-                      <button className="text-blue-600 hover:underline text-sm">Reset Password</button>
+                      <button className="text-blue-600 hover:underline text-sm" onClick={e => e.preventDefault()}>Reset Password</button>
                     )}
-                    <button className="text-red-600 hover:underline text-sm">Delete</button>
+                    <button
+                      className="text-red-600 hover:underline text-sm"
+                      onClick={async (e) => {
+                        e.preventDefault();
+                        if (window.confirm('Are you sure you want to delete this mentor?')) {
+                          setIsLoading(true);
+                          setErrorMessage("");
+                          try {
+                            const res = await fetch(`/api/mentor/${mentor.id}`, { method: 'DELETE' });
+                            const data = await res.json();
+                            if (!res.ok) throw new Error(data.message || 'Failed to delete mentor');
+                            fetchMentors(1);
+                            setSuccessMessage('Mentor deleted successfully');
+                          } catch (err) {
+                            setErrorMessage(err.message || 'Failed to delete mentor');
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }
+                      }}
+                    >
+                      Delete
+                    </button>
                   </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
 
@@ -457,6 +502,33 @@ export default function MentorsPage() {
                         {usernameStatus.message}
                       </p>
                     )}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Subject</label>
+                    <input
+                      type="text"
+                      name="subject"
+                      value={formData.subject}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Enter subject (e.g. Physics, Math)"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">Language</label>
+                    <input
+                      type="text"
+                      name="language"
+                      value={formData.language}
+                      onChange={handleInputChange}
+                      className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      placeholder="Enter language (e.g. English, Hindi)"
+                      required
+                    />
                   </div>
                 </div>
 

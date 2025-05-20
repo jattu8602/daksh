@@ -16,6 +16,12 @@ export async function POST(req) {
       bio,
       skills,
       socialLinks,
+      subject,
+      language,
+      reels,
+      videos,
+      highlights,
+      posts,
     } = await req.json();
 
     // Validate required fields
@@ -70,6 +76,12 @@ export async function POST(req) {
         bio,
         skills: skills || [],
         socialLinks: socialLinks || {},
+        subject,
+        language,
+        reels: reels || {},
+        videos: videos || {},
+        highlights: highlights || {},
+        posts: posts || {},
         isActive: true,
       },
     });

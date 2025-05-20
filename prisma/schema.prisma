@@ -119,6 +119,12 @@ model Mentor {
   bio             String?
   skills          String[]
   socialLinks     Json?
+  subject         String?
+  language        String?
+  reels           Json?
+  videos          Json?
+  highlights      Json?
+  posts           Json?
   createdByAdminId String?   @db.ObjectId
   isActive        Boolean    @default(true)
   loginLastAt     DateTime?
