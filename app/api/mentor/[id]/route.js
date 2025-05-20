@@ -24,6 +24,54 @@ export async function GET(req, { params }) {
   }
 }
 
+export async function PATCH(req, { params }) {
+  const { id } = params;
+  try {
+    const body = await req.json();
+    // Update mentor fields
+    const mentor = await prisma.mentor.update({
+      where: { id },
+      data: {
+        profilePhoto: body.profilePhoto,
+        tag: body.tag,
+        email: body.email,
+        bio: body.bio,
+        skills: body.skills,
+        socialLinks: body.socialLinks,
+        subject: body.subject,
+        language: body.language,
+        reels: body.reels,
+        videos: body.videos,
+        highlights: body.highlights,
+        posts: body.posts,
+        isOrganic: body.isOrganic,
+      },
+      include: { user: true },
+    });
+    // Update user fields (name, username)
+    await prisma.user.update({
+      where: { id: mentor.userId },
+      data: {
+        name: body.name,
+        username: body.username,
+      },
+    });
+    // Return updated mentor
+    const updatedMentor = await prisma.mentor.findUnique({
+      where: { id },
+      include: {
+        user: {
+          select: { name: true, username: true },
+        },
+      },
+    });
+    return NextResponse.json({ mentor: updatedMentor });
+  } catch (error) {
+    console.error("Error updating mentor:", error);
+    return NextResponse.json({ message: "Failed to update mentor" }, { status: 500 });
+  }
+}
+
 export async function DELETE(req, { params }) {
   const { id } = params;
   try {

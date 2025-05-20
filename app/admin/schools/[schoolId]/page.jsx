@@ -35,62 +35,29 @@ export default function SchoolDetailPage() {
     const fetchSchoolAndClasses = async () => {
       try {
         setIsLoading(true);
+        setErrorMessage("");
 
-        // Check for cached data
-        const schoolCacheKey = `school:${schoolId}`;
-        const classesCacheKey = `school:${schoolId}:classes`;
+        // Fetch both in parallel
+        const [schoolResponse, classesResponse] = await Promise.all([
+          fetch(`/api/schools/${schoolId}?no-cache=true`),
+          fetch(`/api/schools/${schoolId}/classes?no-cache=true`)
+        ]);
 
-        const schoolCache = sessionStorage.getItem(schoolCacheKey);
-        const classesCache = sessionStorage.getItem(classesCacheKey);
-        const cacheTimestamp = sessionStorage.getItem(`${schoolCacheKey}:timestamp`);
-        const isCacheValid = cacheTimestamp && (Date.now() - parseInt(cacheTimestamp)) < 300000; // 5 min cache
+        // Parse both responses
+        const schoolJson = await schoolResponse.json();
+        const classesJson = await classesResponse.json();
 
-        let schoolData, classesData;
-
-        // Use cache if available and valid
-        if (schoolCache && classesCache && isCacheValid) {
-          schoolData = JSON.parse(schoolCache);
-          classesData = JSON.parse(classesCache);
-
-          setSchool(schoolData);
-          setClasses(classesData);
-          setIsLoading(false);
+        if (schoolJson.success) {
+          setSchool(schoolJson.school);
         } else {
-          // Clear any existing cache
-          sessionStorage.removeItem(schoolCacheKey);
-          sessionStorage.removeItem(classesCacheKey);
-          sessionStorage.removeItem(`${schoolCacheKey}:timestamp`);
+          setErrorMessage(schoolJson.error || "Failed to fetch school details");
+        }
 
-          // Fetch both in parallel
-          const [schoolResponse, classesResponse] = await Promise.all([
-            fetch(`/api/schools/${schoolId}?no-cache=true`),
-            fetch(`/api/schools/${schoolId}/classes?no-cache=true`)
-          ]);
-
-          // Parse both responses
-          const schoolJson = await schoolResponse.json();
-          const classesJson = await classesResponse.json();
-
-          if (schoolJson.success) {
-            setSchool(schoolJson.school);
-            sessionStorage.setItem(schoolCacheKey, JSON.stringify(schoolJson.school));
-          } else {
-            setErrorMessage(schoolJson.error || "Failed to fetch school details");
-          }
-
-          if (classesJson.success) {
-            // Handle the updated classes API response format
-            const classesArray = classesJson.classes || [];
-            setClasses(classesArray);
-            sessionStorage.setItem(classesCacheKey, JSON.stringify(classesArray));
-
-            console.log("Classes loaded:", classesArray.length);
-          } else {
-            setErrorMessage(classesJson.error || "Failed to fetch classes");
-          }
-
-          // Save timestamp for cache validation
-          sessionStorage.setItem(`${schoolCacheKey}:timestamp`, Date.now().toString());
+        if (classesJson.success) {
+          const classesArray = classesJson.classes || [];
+          setClasses(classesArray);
+        } else {
+          setErrorMessage(classesJson.error || "Failed to fetch classes");
         }
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -101,17 +68,7 @@ export default function SchoolDetailPage() {
     };
 
     fetchSchoolAndClasses();
-
-    // Clear session storage on unmount
-    return () => {
-      // We don't want to clear session storage entirely, as it may affect other pages
-    };
   }, [schoolId]);
-
-  // Add a debug render for classes
-  useEffect(() => {
-    console.log("Classes in state:", classes);
-  }, [classes]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -241,8 +198,31 @@ export default function SchoolDetailPage() {
     );
   }, [classes, searchTerm]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading school information...</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!school) {
-    return <div className="p-6 text-center">Loading school information...</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="text-red-600">Failed to load school information</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-black text-white rounded-md hover:bg-gray-800"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

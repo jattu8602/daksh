@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
-  const schoolId = params.schoolId;
+  // Ensure params is awaited
+  const { schoolId } = params;
 
   // Parse URL for cache control options
   const url = new URL(request.url);

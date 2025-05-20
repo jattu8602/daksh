@@ -164,33 +164,42 @@ export default function MentorsPage() {
     }
 
     try {
-      const response = await fetch("/api/mentor/create", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.message || "Failed to create mentor");
+      let response, data;
+      if (formData.id) {
+        // Editing existing mentor
+        response = await fetch(`/api/mentor/${formData.id}`, {
+          method: "PATCH",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+        data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to update mentor");
+        setSuccessMessage("Mentor updated successfully");
+        setIsAddingMentor(false);
+        fetchMentors(1);
+      } else {
+        // Creating new mentor
+        response = await fetch("/api/mentor/create", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(formData),
+        });
+        data = await response.json();
+        if (!response.ok) throw new Error(data.message || "Failed to create mentor");
+        // Show the new mentor credentials
+        setNewMentor({
+          name: data.mentor.name,
+          username: data.mentor.username,
+          password: data.password,
+          isOrganic: data.mentor.isOrganic,
+        });
+        fetchMentors(1);
+        setSuccessMessage("Mentor created successfully");
       }
-
-      // Show the new mentor credentials
-      setNewMentor({
-        name: data.mentor.name,
-        username: data.mentor.username,
-        password: data.password,
-        isOrganic: data.mentor.isOrganic,
-      });
-
-      // Refresh the mentors list
-      fetchMentors(1);
-
-      setSuccessMessage("Mentor created successfully");
-
       // Reset form
       setFormData({
         name: "",
@@ -290,6 +299,7 @@ export default function MentorsPage() {
                         setIsAddingMentor(true);
                         setFormData({
                           ...mentor,
+                          id: mentor.id,
                           password: '',
                           confirmPassword: '',
                         });
@@ -599,7 +609,7 @@ export default function MentorsPage() {
                     className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
                     disabled={isLoading || (formData.username && !usernameStatus.available)}
                   >
-                    {isLoading ? "Creating..." : "Add Mentor"}
+                    {isLoading ? (formData.id ? "Updating..." : "Creating...") : (formData.id ? "Update Mentor" : "Add Mentor")}
                   </button>
                 </div>
               </form>
