@@ -1,0 +1,13 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# GroupChat group in school section in community section
+1. Every students have automatically their group named on their class and by default photo of group groupphoto.png
+2. if any new student gets added in any class then he will be added in this group automatically
+3. student can only send the text message in this group
+4. on clicking on top of the group  a new page group-profile-screen.jsx opens up there students can see all the students in their class
+5. full screen view for chatscreen and group profile view
+6. analyze prisma schema for better understanding
+7. use proper structure for api folder and designing

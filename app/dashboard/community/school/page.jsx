@@ -1,11 +1,43 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { Phone } from "lucide-react";
 
 export default function SchoolPage() {
+  const [user, setUser] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+      try {
+        const response = await fetch("/api/auth/session", {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          setError(data.error || "Failed to fetch user data");
+        }
+      } catch (error) {
+        setError("Failed to fetch user data");
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchUser();
+  }, []);
+
   const chats = [
     {
       id: 1,
@@ -82,9 +114,53 @@ export default function SchoolPage() {
     },
   ];
 
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mb-4 text-2xl font-semibold">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       <AnimatePresence>
+        {/* Class Group Chat at the top */}
+        {user && user.student && user.student.class && (
+          <motion.div
+            key={"class-group"}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, x: -100 }}
+            transition={{ duration: 0.3 }}
+          >
+            <Link href={`/dashboard/community/school/group-chat/${user.student.class.id}`}>
+              <div className="flex items-center p-4 border-b border-gray-100 hover:bg-gray-50 transition-colors bg-blue-50">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full overflow-hidden mr-3">
+                    <img
+                      src={"/images/groupphoto.png"}
+                      alt={user.student.class.name}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-center">
+                    <h3 className="font-medium truncate">Official {user.student.class.name}</h3>
+                    <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">
+                      Class Group
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600 truncate">Class group for all students of {user.student.class.name}</p>
+                </div>
+              </div>
+            </Link>
+          </motion.div>
+        )}
+        {/* Other chats */}
         {chats.map((chat, index) => (
           <motion.div
             key={chat.id}

@@ -89,38 +89,47 @@ export default function CommunityLayout({ children }) {
     setSearchValue(e.target.value);
   }, []);
 
+  // Detect if on group chat screen
+  const isGroupChatScreen = /\/dashboard\/community\/school\/group-chat\/.+/.test(pathname);
+  const isGroupProfileScreen = /\/dashboard\/community\/school\/group-profile\/.+/.test(pathname);
+  const isFullScreenView = isGroupChatScreen || isGroupProfileScreen;
+
   return (
     <div className="min-h-screen max-w-md mx-auto flex flex-col bg-white">
-      <CommunityHeader />
+      {/* Only show header if not in full screen view */}
+      {!isFullScreenView && <CommunityHeader />}
 
-      {/* Search Bar */}
-      <motion.div
-        className="sticky top-[50px] z-40 bg-white px-4 py-2"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        aria-label="Search community"
-      >
-        <div className="flex items-center w-full bg-gray-100 rounded-lg px-3 py-2">
-          <Search size={18} className="text-gray-500 mr-2" aria-hidden="true" />
-          <input
-            type="search"
-            role="searchbox"
-            placeholder="Search..."
-            className="w-full bg-transparent border-none outline-none text-sm"
-            value={searchValue}
-            onChange={handleSearchChange}
-          />
-        </div>
-      </motion.div>
+      {/* Search Bar - hide on full screen views */}
+      {!isFullScreenView && (
+        <motion.div
+          className="sticky top-[50px] z-40 bg-white px-4 py-2"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          aria-label="Search community"
+        >
+          <div className="flex items-center w-full bg-gray-100 rounded-lg px-3 py-2">
+            <Search size={18} className="text-gray-500 mr-2" aria-hidden="true" />
+            <input
+              type="search"
+              role="searchbox"
+              placeholder="Search..."
+              className="w-full bg-transparent border-none outline-none text-sm"
+              value={searchValue}
+              onChange={handleSearchChange}
+            />
+          </div>
+        </motion.div>
+      )}
 
-      <CommunityTabs activeTab={activeTab} />
+      {/* Tabs - hide on full screen views */}
+      {!isFullScreenView && <CommunityTabs activeTab={activeTab} />}
 
       {/* Content */}
       <AnimatePresence mode="wait">
         <motion.main
           key={pathname}
-          className="flex-1 overflow-y-auto px-4 py-3"
+          className={`flex-1 overflow-y-auto ${!isFullScreenView ? 'px-4 py-3' : ''}`}
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -10 }}

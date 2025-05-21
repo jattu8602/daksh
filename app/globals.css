@@ -132,6 +132,21 @@
   }
 }
 
+
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;
+
+  scrollbar-width: none;
+
+}
+
+
+
 .animate-progress {
   animation: progress 1.5s ease-in-out infinite;
 }

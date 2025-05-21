@@ -12,10 +12,12 @@ export default function SearchScreen() {
 
   const tabs = [
     { id: "all", name: "All" },
-    { id: "account", name: "Account" },
     { id: "posts", name: "Posts" },
     { id: "shots", name: "Shots" },
     { id: "videos", name: "Videos" },
+    { id: "audios", name: "Audios" },
+    { id: "docs", name: "Docs" },
+    { id: "books", name: "Books" },
   ];
 
   const searchItems = [
@@ -70,7 +72,7 @@ export default function SearchScreen() {
 
       {/* Tabs */}
       <motion.div
-        className="flex space-x-2 px-5 overflow-x-auto "
+        className="flex space-x-2 px-5 overflow-x-auto hide-scrollbar"
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: 0.1 }}
