@@ -45,6 +45,7 @@ export default function VideoAssignmentModal({ isOpen, onClose, videoIds, onAssi
 
     try {
       const newAssignments = [];
+      let alreadyAssignedError = false;
       // Process each video assignment sequentially
       for (let i = 0; i < videoIds.length; i++) {
         const videoId = videoIds[i];
@@ -61,6 +62,10 @@ export default function VideoAssignmentModal({ isOpen, onClose, videoIds, onAssi
 
           const data = await res.json();
           if (!res.ok) {
+            // If already assigned error, set flag
+            if (data.error && data.error.includes('already assigned')) {
+              alreadyAssignedError = true;
+            }
             throw new Error(data.error || `Failed to assign video ${i + 1}`);
           }
 
@@ -88,6 +93,12 @@ export default function VideoAssignmentModal({ isOpen, onClose, videoIds, onAssi
 
         // Update progress
         setProgress(((i + 1) / videoIds.length) * 100);
+      }
+
+      if (alreadyAssignedError) {
+        setError('Content already assigned');
+        setLoading(false);
+        return;
       }
 
       onAssign(newAssignments);

@@ -76,6 +76,24 @@ export async function POST(request) {
       );
     }
 
+    // Check if video is already assigned to any mentor
+    const alreadyAssigned = await prisma.videoAssignment.findFirst({
+      where: { videoId },
+      include: {
+        mentor: {
+          include: {
+            user: { select: { name: true } }
+          }
+        }
+      }
+    });
+    if (alreadyAssigned) {
+      return NextResponse.json({
+        error: 'This video is already assigned to a mentor',
+        assignment: alreadyAssigned
+      }, { status: 400 });
+    }
+
     // Check if assignment already exists
     const existingAssignment = await prisma.videoAssignment.findFirst({
       where: {

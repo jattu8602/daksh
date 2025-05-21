@@ -230,6 +230,7 @@ const ContentPage = () => {
                         setIsAssignmentModalOpen(true);
                       }}
                       className="mt-3 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                      disabled={video.assignments && video.assignments.length > 0}
                     >
                       Assign
                     </button>
