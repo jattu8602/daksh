@@ -8,6 +8,7 @@ export default function MentorProfilePage() {
   const [mentor, setMentor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [activeTab, setActiveTab] = useState("videos");
 
   useEffect(() => {
     async function fetchMentor() {
@@ -37,15 +38,6 @@ export default function MentorProfilePage() {
     return <div className="min-h-screen flex items-center justify-center">Mentor not found</div>;
   }
 
-  // Stats placeholders (replace with real stats if available)
-  const stats = {
-    totalViews: 0,
-    videos: 0,
-    shorts: 0,
-    highlights: 0,
-    posts: 0,
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 p-8">
       <div className="max-w-3xl mx-auto">
@@ -64,42 +56,123 @@ export default function MentorProfilePage() {
               <p className="text-gray-600 mb-1">@{mentor.user?.username || mentor.username}</p>
               {mentor.email && <p className="text-gray-600 mb-1">{mentor.email}</p>}
               {mentor.bio && <p className="text-gray-700 mb-2">{mentor.bio}</p>}
-              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">{mentor.tag || (mentor.isOrganic ? "Organic Mentor" : "Inorganic Mentor")}</span>
+              <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
+                {mentor.tag || (mentor.isOrganic ? "Organic Mentor" : "Inorganic Mentor")}
+              </span>
             </div>
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-4 mb-8">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{stats.totalViews}</span>
-            <span className="text-xs text-gray-500 mt-1">Total Views</span>
-          </div>
-          <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{stats.videos}</span>
+            <span className="text-lg font-semibold">{mentor.contentCounts?.videos || 0}</span>
             <span className="text-xs text-gray-500 mt-1">Videos</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{stats.shorts}</span>
+            <span className="text-lg font-semibold">{mentor.contentCounts?.shorts || 0}</span>
             <span className="text-xs text-gray-500 mt-1">Shorts</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{stats.highlights}</span>
+            <span className="text-lg font-semibold">{mentor.contentCounts?.highlights || 0}</span>
             <span className="text-xs text-gray-500 mt-1">Highlights</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{stats.posts}</span>
+            <span className="text-lg font-semibold">{mentor.contentCounts?.post || 0}</span>
             <span className="text-xs text-gray-500 mt-1">Posts</span>
           </div>
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex space-x-6 border-b mb-4">
-            <button className="pb-2 border-b-2 border-blue-600 font-medium text-blue-700">Videos (0)</button>
-            <button className="pb-2 text-gray-500">Shorts (0)</button>
-            <button className="pb-2 text-gray-500">Highlights (0)</button>
-            <button className="pb-2 text-gray-500">Posts (0)</button>
+            <button
+              onClick={() => setActiveTab("videos")}
+              className={`pb-2 ${
+                activeTab === "videos"
+                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
+                  : "text-gray-500"
+              }`}
+            >
+              Videos ({mentor.contentCounts?.videos || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("shorts")}
+              className={`pb-2 ${
+                activeTab === "shorts"
+                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
+                  : "text-gray-500"
+              }`}
+            >
+              Shorts ({mentor.contentCounts?.shorts || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("highlights")}
+              className={`pb-2 ${
+                activeTab === "highlights"
+                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
+                  : "text-gray-500"
+              }`}
+            >
+              Highlights ({mentor.contentCounts?.highlights || 0})
+            </button>
+            <button
+              onClick={() => setActiveTab("post")}
+              className={`pb-2 ${
+                activeTab === "post"
+                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
+                  : "text-gray-500"
+              }`}
+            >
+              Posts ({mentor.contentCounts?.post || 0})
+            </button>
           </div>
-          <div className="text-center text-gray-400 py-8">No content available</div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {mentor.contentByType?.[activeTab]?.length > 0 ? (
+              mentor.contentByType[activeTab].map((video) => (
+                <div key={video.id} className="bg-gray-50 rounded-lg overflow-hidden">
+                  <div className="relative aspect-video">
+                    {video.thumbnailUrl ? (
+                      <Image
+                        src={video.thumbnailUrl}
+                        alt={video.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : (
+                      <video className="w-full h-full object-cover" controls>
+                        <source src={video.url} type="video/mp4" />
+                        Your browser does not support the video tag.
+                      </video>
+                    )}
+                  </div>
+                  <div className="p-4">
+                    <h3 className="font-semibold mb-2 line-clamp-2">{video.title}</h3>
+                    {video.metaDescription && (
+                      <p className="text-sm text-gray-600 line-clamp-2">
+                        {video.metaDescription}
+                      </p>
+                    )}
+                    {video.hashtags && video.hashtags.length > 0 && (
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {video.hashtags.map((tag, index) => (
+                          <span
+                            key={index}
+                            className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="col-span-full text-center text-gray-400 py-8">
+                No {activeTab} available
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

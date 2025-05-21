@@ -3,14 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import VideoAssignmentModal from '../../components/admin/VideoAssignmentModal';
 
 const ContentPage = () => {
   const [videos, setVideos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [activeTab, setActiveTab] = useState('videos'); // 'videos' or 'reels'
+  const [activeTab, setActiveTab] = useState('videos');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
+  const [selectedVideos, setSelectedVideos] = useState(new Set());
+  const [isAssignmentModalOpen, setIsAssignmentModalOpen] = useState(false);
   const videosPerPage = 12;
 
   useEffect(() => {
@@ -36,7 +39,7 @@ const ContentPage = () => {
 
   const filteredVideos = videos.filter(v => {
     const matchesSearch = v.title.toLowerCase().includes(search.toLowerCase());
-    const isReel = v.duration < 60; // Assuming videos under 60 seconds are reels
+    const isReel = v.duration < 60;
     return matchesSearch && (activeTab === 'reels' ? isReel : !isReel);
   });
 
@@ -44,6 +47,38 @@ const ContentPage = () => {
     if (!loading && hasMore) {
       setPage(prev => prev + 1);
     }
+  };
+
+  const handleAssign = async (assignments) => {
+    // assignments is an array of assignment objects (with mentor and user info)
+    setVideos(prev => prev.map(video => {
+      const assignmentForThisVideo = assignments.find(a => a.videoId === video.id);
+      if (assignmentForThisVideo) {
+        return {
+          ...video,
+          assignments: [...(video.assignments || []), assignmentForThisVideo]
+        };
+      }
+      return video;
+    }));
+    setSelectedVideos(new Set());
+  };
+
+  const toggleVideoSelection = (videoId) => {
+    setSelectedVideos(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(videoId)) {
+        newSet.delete(videoId);
+      } else {
+        newSet.add(videoId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleBulkAssign = () => {
+    if (selectedVideos.size === 0) return;
+    setIsAssignmentModalOpen(true);
   };
 
   return (
@@ -104,6 +139,29 @@ const ContentPage = () => {
           </div>
         </div>
 
+        {/* Bulk Actions */}
+        {selectedVideos.size > 0 && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg flex items-center justify-between">
+            <span className="text-blue-700">
+              {selectedVideos.size} video{selectedVideos.size !== 1 ? 's' : ''} selected
+            </span>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setSelectedVideos(new Set())}
+                className="px-3 py-1 text-gray-600 hover:text-gray-800"
+              >
+                Clear Selection
+              </button>
+              <button
+                onClick={handleBulkAssign}
+                className="px-4 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              >
+                Assign Selected
+              </button>
+            </div>
+          </div>
+        )}
+
         {/* Video Grid */}
         {loading && page === 1 ? (
           <div className="flex justify-center items-center h-32">
@@ -117,27 +175,39 @@ const ContentPage = () => {
               {filteredVideos.map((video) => (
                 <div
                   key={video.id}
-                  className="video-item bg-gray-50 rounded-lg overflow-hidden hover:shadow-lg transition-shadow"
+                  className={`video-item bg-gray-50 rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${
+                    selectedVideos.has(video.id) ? 'ring-2 ring-blue-500' : ''
+                  }`}
                 >
-                  <div className="relative aspect-video">
-                    {video.thumbnailUrl ? (
-                      <Image
-                        src={video.thumbnailUrl}
-                        alt={video.title}
-                        fill
-                        className="object-cover"
+                  <div className="relative">
+                    <div className="absolute top-2 left-2 z-10">
+                      <input
+                        type="checkbox"
+                        checked={selectedVideos.has(video.id)}
+                        onChange={() => toggleVideoSelection(video.id)}
+                        className="w-5 h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
                       />
-                    ) : (
-                      <video className="w-full h-full object-cover" controls>
-                        <source src={video.url} type="video/mp4" />
-                        Your browser does not support the video tag.
-                      </video>
-                    )}
-                    {video.duration && (
-                      <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
-                        {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
-                      </div>
-                    )}
+                    </div>
+                    <div className="relative aspect-video">
+                      {video.thumbnailUrl ? (
+                        <Image
+                          src={video.thumbnailUrl}
+                          alt={video.title}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : (
+                        <video className="w-full h-full object-cover" controls>
+                          <source src={video.url} type="video/mp4" />
+                          Your browser does not support the video tag.
+                        </video>
+                      )}
+                      {video.duration && (
+                        <div className="absolute bottom-2 right-2 bg-black bg-opacity-75 text-white px-2 py-1 rounded text-sm">
+                          {Math.floor(video.duration / 60)}:{(video.duration % 60).toString().padStart(2, '0')}
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold mb-2 line-clamp-2">{video.title}</h3>
@@ -146,6 +216,24 @@ const ContentPage = () => {
                         {video.metaDescription}
                       </p>
                     )}
+                    {video.assignments && video.assignments.length > 0 && (
+                      <div className="mt-2 text-sm text-gray-500">
+                        Assigned to: {video.assignments
+                          .map(a => a.mentor?.user?.name || 'Unknown Mentor')
+                          .filter(name => name)
+                          .join(', ')}
+                      </div>
+                    )}
+                    <button
+                      onClick={() => {
+                        setSelectedVideos(new Set([video.id]));
+                        setIsAssignmentModalOpen(true);
+                      }}
+                      className="mt-3 w-full bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors"
+                      disabled={video.assignments && video.assignments.length > 0}
+                    >
+                      Assign
+                    </button>
                   </div>
                 </div>
               ))}
@@ -166,6 +254,19 @@ const ContentPage = () => {
           </>
         )}
       </div>
+
+      {/* Assignment Modal */}
+      {selectedVideos.size > 0 && (
+        <VideoAssignmentModal
+          isOpen={isAssignmentModalOpen}
+          onClose={() => {
+            setIsAssignmentModalOpen(false);
+            setSelectedVideos(new Set());
+          }}
+          videoIds={Array.from(selectedVideos)}
+          onAssign={handleAssign}
+        />
+      )}
     </div>
   );
 };

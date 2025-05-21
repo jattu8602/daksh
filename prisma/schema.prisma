@@ -132,6 +132,7 @@ model Mentor {
   loginLastAt     DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+  videoAssignments VideoAssignment[]
 
   // Child side declares fields+references
   user            User       @relation("MentorToUser", fields: [userId], references: [id])
@@ -150,6 +151,7 @@ model Video {
   url             String
   metaDescription String?
   videoHashtags   VideoHashtag[]
+  assignments     VideoAssignment[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -221,4 +223,21 @@ model Message {
   @@index([classId])
   @@index([senderId])
   @@index([createdAt])
+}
+
+model VideoAssignment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId     String   @db.ObjectId
+  mentorId    String   @db.ObjectId
+  contentType String   // 'videos', 'shots', 'post', 'highlights'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  video       Video    @relation(fields: [videoId], references: [id])
+  mentor      Mentor   @relation(fields: [mentorId], references: [id])
+
+  @@unique([videoId, mentorId, contentType])
+  @@index([videoId])
+  @@index([mentorId])
+  @@index([contentType])
 }

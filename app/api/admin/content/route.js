@@ -25,6 +25,19 @@ export async function GET(request) {
           include: {
             hashtag: true
           }
+        },
+        assignments: {
+          include: {
+            mentor: {
+              include: {
+                user: {
+                  select: {
+                    name: true
+                  }
+                }
+              }
+            }
+          }
         }
       }
     });
