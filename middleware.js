@@ -15,6 +15,7 @@ export function middleware(request) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
+  
 
   // Check if the path is for the mentor dashboard (excluding login)
   if (path.startsWith('/mentor') && !path.includes('/mentor/login')) {
