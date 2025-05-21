@@ -4,7 +4,7 @@ import { PrismaClient } from "@prisma/client";
 const prisma = new PrismaClient();
 
 export async function GET(req, { params }) {
-  const { id } = params;
+  const id = await params.id;
   try {
     const mentor = await prisma.mentor.findUnique({
       where: { id },
@@ -12,12 +12,64 @@ export async function GET(req, { params }) {
         user: {
           select: { name: true, username: true },
         },
+        videoAssignments: {
+          include: {
+            video: {
+              include: {
+                videoHashtags: {
+                  include: {
+                    hashtag: true
+                  }
+                }
+              }
+            }
+          }
+        }
       },
     });
+
     if (!mentor) {
       return NextResponse.json({ message: "Mentor not found" }, { status: 404 });
     }
-    return NextResponse.json({ mentor });
+
+    // Group assignments by content type
+    const contentByType = {
+      videos: [],
+      shorts: [],
+      post: [],
+      highlights: []
+    };
+
+    mentor.videoAssignments.forEach(assignment => {
+      // Validate content type
+      if (!contentByType.hasOwnProperty(assignment.contentType)) {
+        console.warn(`Invalid content type: ${assignment.contentType}`);
+        return;
+      }
+
+      const video = {
+        ...assignment.video,
+        hashtags: assignment.video.videoHashtags.map(vh => vh.hashtag.tag),
+        thumbnailUrl: assignment.video.url.includes('youtube.com') || assignment.video.url.includes('youtu.be')
+          ? `https://img.youtube.com/vi/${assignment.video.url.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/\s]{11})/)?.[1]}/maxresdefault.jpg`
+          : null
+      };
+      contentByType[assignment.contentType].push(video);
+    });
+
+    // Add content counts to mentor object
+    const mentorWithContent = {
+      ...mentor,
+      contentCounts: {
+        videos: contentByType.videos.length,
+        shorts: contentByType.shorts.length,
+        post: contentByType.post.length,
+        highlights: contentByType.highlights.length
+      },
+      contentByType
+    };
+
+    return NextResponse.json({ mentor: mentorWithContent });
   } catch (error) {
     console.error("Error fetching mentor:", error);
     return NextResponse.json({ message: "Failed to fetch mentor" }, { status: 500 });

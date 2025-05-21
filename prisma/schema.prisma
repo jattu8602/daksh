@@ -78,6 +78,7 @@ model Class {
 
   school          School    @relation(fields: [schoolId], references: [id])
   students        Student[]
+  messages        Message[]
 
   @@index([schoolId])
   @@index([createdAt])
@@ -100,6 +101,7 @@ model Student {
   // Child side declares fields+references
   user      User       @relation("StudentToUser", fields: [userId], references: [id])
   class     Class      @relation(fields: [classId], references: [id])
+  messages  Message[]  @relation("StudentMessages")
 
   @@index([classId])
   @@index([rollNo])
@@ -130,6 +132,7 @@ model Mentor {
   loginLastAt     DateTime?
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
+  videoAssignments VideoAssignment[]
 
   // Child side declares fields+references
   user            User       @relation("MentorToUser", fields: [userId], references: [id])
@@ -148,6 +151,7 @@ model Video {
   url             String
   metaDescription String?
   videoHashtags   VideoHashtag[]
+  assignments     VideoAssignment[]
   createdAt       DateTime   @default(now())
   updatedAt       DateTime   @updatedAt
 
@@ -204,4 +208,36 @@ model VideoJob {
   currentStage String?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+}
+
+model Message {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  classId   String   @db.ObjectId
+  senderId  String   @db.ObjectId
+  text      String
+  createdAt DateTime @default(now())
+
+  class     Class    @relation(fields: [classId], references: [id])
+  sender    Student  @relation("StudentMessages", fields: [senderId], references: [id])
+
+  @@index([classId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model VideoAssignment {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoId     String   @db.ObjectId
+  mentorId    String   @db.ObjectId
+  contentType String   // 'videos', 'shots', 'post', 'highlights'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  video       Video    @relation(fields: [videoId], references: [id])
+  mentor      Mentor   @relation(fields: [mentorId], references: [id])
+
+  @@unique([videoId, mentorId, contentType])
+  @@index([videoId])
+  @@index([mentorId])
+  @@index([contentType])
 }
