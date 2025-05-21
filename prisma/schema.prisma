@@ -79,7 +79,6 @@ model Class {
   school          School    @relation(fields: [schoolId], references: [id])
   students        Student[]
   messages        Message[]
-  messages        Message[]
 
   @@index([schoolId])
   @@index([createdAt])
@@ -102,7 +101,6 @@ model Student {
   // Child side declares fields+references
   user      User       @relation("StudentToUser", fields: [userId], references: [id])
   class     Class      @relation(fields: [classId], references: [id])
-  messages  Message[]  @relation("StudentMessages")
   messages  Message[]  @relation("StudentMessages")
 
   @@index([classId])
