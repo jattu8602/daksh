@@ -5,20 +5,20 @@ import { generateQRCode } from "@/lib/qrcode";
 
 export async function POST(request) {
   try {
-    const { name, classId, rollNo } = await request.json();
+    const { name, classId, rollNo, gender } = await request.json();
 
-    if (!name || !classId || !rollNo) {
+    if (!name || !classId || !rollNo || !gender) {
       return NextResponse.json(
-        { message: "Student name, class ID, and roll number are required" },
+        { message: "Student name, class ID, roll number, and gender are required" },
         { status: 400 }
       );
     }
 
-    // Check if the class exists and get class and school details
+    // Check if the class exists and get class details including current students
     const classData = await prisma.class.findUnique({
       where: { id: classId },
       include: {
-        school: true,
+        students: true,
       },
     });
 
@@ -44,24 +44,22 @@ export async function POST(request) {
       );
     }
 
-    // Generate username based on name, class and school code
-    // Format: firstname_classShortName_schoolCode
-    const firstName = name.split(' ')[0].toLowerCase();
-    const classShortName = classData.name.toLowerCase().replace(/\s+/g, '').substring(0, 3);
-    const schoolCode = classData.school.code.toLowerCase();
-    const username = `${firstName}_${classShortName}_${schoolCode}`;
+    // Generate username based on name, class name, and roll number (simplified)
+    const username = `${name.split(' ')[0].toLowerCase()}_${classData.name.toLowerCase().replace(/\s+/g, '')}_${rollNo}`;
 
     // Generate a random password
     const password = Math.random().toString(36).slice(-8);
 
-    // Generate QR code for the new student
+    // Generate QR code data
     const qrData = JSON.stringify({
       username,
       role: UserRole.STUDENT,
+      classId,
+      rollNo: parseInt(rollNo),
     });
     const qrCode = await generateQRCode(qrData);
 
-    // Create student user
+    // Create student user and nested student
     const studentUser = await prisma.user.create({
       data: {
         name,
@@ -73,23 +71,30 @@ export async function POST(request) {
           create: {
             rollNo: parseInt(rollNo),
             classId,
+            gender: gender.toUpperCase(), // Store gender as uppercase
           },
         },
       },
       include: {
-        student: {
-          include: {
-            class: {
-              include: {
-                school: true,
-              },
-            },
-          },
-        },
+        student: true,
       },
     });
 
-    // Remove password from response
+    // Update class student counts
+    const updatedTotalStudents = (classData.totalStudents || 0) + 1;
+    const updatedBoys = gender.toUpperCase() === 'M' ? (classData.boys || 0) + 1 : (classData.boys || 0);
+    const updatedGirls = gender.toUpperCase() === 'F' ? (classData.girls || 0) + 1 : (classData.girls || 0);
+
+    await prisma.class.update({
+      where: { id: classId },
+      data: {
+        totalStudents: updatedTotalStudents,
+        boys: updatedBoys,
+        girls: updatedGirls,
+      },
+    });
+
+    // Remove password from response for security
     const { password: _, ...studentData } = studentUser;
 
     return NextResponse.json({
@@ -99,7 +104,6 @@ export async function POST(request) {
       success: true,
     });
   } catch (error) {
-    console.error("Error creating student:", error);
     return NextResponse.json(
       { error: "Something went wrong", message: error.message },
       { status: 500 }

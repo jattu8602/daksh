@@ -1,38 +1,65 @@
 import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
-// GET /api/classes - Get all classes
+// GET /api/classes - Get all common classes
 export async function GET() {
   try {
     const classes = await prisma.class.findMany({
-      include: {
-        school: true,
-        students: true,
+      where: {
+        isCommon: true,
       },
       orderBy: {
         createdAt: "desc",
-      },
+      }
     });
 
+    // Get the count of schools and sum of students for each common class
+    const classStats = await Promise.all(
+      classes.map(async (cls) => {
+        const schoolClasses = await prisma.class.findMany({
+          where: {
+            name: cls.name,
+            isCommon: false,
+          },
+          select: {
+            totalStudents: true,
+          }
+        });
+
+        const totalStudents = schoolClasses.reduce((sum, schoolClass) => sum + (schoolClass.totalStudents || 0), 0);
+        const schoolCount = schoolClasses.length;
+
+        return {
+          id: cls.id,
+          schoolCount,
+          totalStudents
+        };
+      })
+    );
+
     // Transform the data to match the frontend format
-    const transformedClasses = classes.map(cls => ({
-      id: cls.id,
-      name: cls.name,
-      students: cls.students.length,
-      schools: 1, // Since each class belongs to one school
-      hasImage: false, // You can add a logo field to the Class model if needed
-    }));
+    const transformedClasses = classes.map(cls => {
+      const stats = classStats.find(s => s.id === cls.id);
+      return {
+        id: cls.id,
+        name: cls.name,
+        totalStudents: stats?.totalStudents || 0,
+        totalSchools: stats?.schoolCount || 0,
+        isCommon: true,
+        hasImage: false,
+      };
+    });
 
     return NextResponse.json({
       success: true,
       classes: transformedClasses,
     });
   } catch (error) {
-    console.error("Error fetching classes:", error);
+    console.error("Error fetching common classes:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to fetch classes",
+        error: "Failed to fetch common classes",
       },
       {
         status: 500,
@@ -41,67 +68,86 @@ export async function GET() {
   }
 }
 
-// POST /api/classes - Create a new class
+// POST /api/classes - Create a new common class
 export async function POST(request) {
   try {
-    const { name, schoolId } = await request.json();
+    const body = await request.json();
 
-    if (!name || !schoolId) {
+    const { name } = body;
+
+    if (!name) {
       return NextResponse.json(
         {
           success: false,
-          error: "Class name and school ID are required",
+          error: "Class name is required",
         },
         { status: 400 }
       );
     }
 
-    // Check if the school exists
-    const school = await prisma.school.findUnique({
-      where: { id: schoolId },
+    // Check if a common class with the same name already exists
+    const existingClass = await prisma.class.findFirst({
+      where: {
+        name: name.trim(),
+        isCommon: true,
+      },
     });
 
-    if (!school) {
+    if (existingClass) {
       return NextResponse.json(
         {
           success: false,
-          error: "School not found",
+          error: "A common class with this name already exists",
         },
-        { status: 404 }
+        { status: 400 }
       );
     }
 
-    // Create the class
+    // Create the class as common
     const newClass = await prisma.class.create({
       data: {
-        name,
-        schoolId,
-        startRollNumber: 1,
+        name: name.trim(),
+        isCommon: true,
+        startRollNumber: 1, // Default for common classes?
       },
       include: {
-        school: true,
-      },
+        _count: {
+          select: {
+            students: true,
+          }
+        }
+      }
     });
 
-    // Transform the response to match the frontend format
+    // Get the count of schools using this common class
+    const schoolCount = await prisma.class.count({
+      where: {
+        name: newClass.name,
+        isCommon: false,
+      }
+    });
+
+    // Transform the response to match the frontend format (for the new class card)
     const transformedClass = {
       id: newClass.id,
       name: newClass.name,
-      students: 0,
-      schools: 1,
+      totalStudents: newClass._count.students,
+      totalSchools: schoolCount,
+      isCommon: true,
       hasImage: false,
     };
 
     return NextResponse.json({
       success: true,
       class: transformedClass,
+      message: "Common class created successfully",
     });
   } catch (error) {
-    console.error("Error creating class:", error);
+    console.error("Error creating common class:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Failed to create class",
+        error: error.message || "Failed to create common class",
       },
       { status: 500 }
     );

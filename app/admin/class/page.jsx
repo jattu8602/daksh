@@ -28,13 +28,10 @@ import {
 export default function ClassesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [className, setClassName] = useState('')
-  const [classLogo, setClassLogo] = useState(null)
   const [classes, setClasses] = useState([])
   const [isLoading, setIsLoading] = useState(false)
-  const [schools, setSchools] = useState([])
-  const [selectedSchoolId, setSelectedSchoolId] = useState('')
 
-  // Fetch classes and schools on component mount
+  // Fetch classes on component mount
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -43,13 +40,6 @@ export default function ClassesPage() {
         const classesData = await classesResponse.json()
         if (classesData.success) {
           setClasses(classesData.classes)
-        }
-
-        // Fetch schools
-        const schoolsResponse = await fetch('/api/schools')
-        const schoolsData = await schoolsResponse.json()
-        if (schoolsData.success) {
-          setSchools(schoolsData.schools)
         }
       } catch (error) {
         console.error('Error fetching data:', error)
@@ -66,11 +56,6 @@ export default function ClassesPage() {
       return
     }
 
-    if (!selectedSchoolId) {
-      toast.error('Please select a school')
-      return
-    }
-
     setIsLoading(true)
     try {
       const response = await fetch('/api/classes', {
@@ -80,7 +65,6 @@ export default function ClassesPage() {
         },
         body: JSON.stringify({
           name: className.trim(),
-          schoolId: selectedSchoolId,
         }),
       })
 
@@ -94,8 +78,6 @@ export default function ClassesPage() {
       toast.success('Class created successfully')
       setIsDialogOpen(false)
       setClassName('')
-      setClassLogo(null)
-      setSelectedSchoolId('')
     } catch (error) {
       toast.error(error.message || 'Failed to create class')
       console.error('Error creating class:', error)
@@ -129,29 +111,10 @@ export default function ClassesPage() {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Plus className="h-5 w-5" />
-                Create New Class
+                Create New Common Class
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="school">School</Label>
-                <Select
-                  value={selectedSchoolId}
-                  onValueChange={setSelectedSchoolId}
-                  disabled={isLoading}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a school" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {schools.map((school) => (
-                      <SelectItem key={school.id} value={school.id}>
-                        {school.name} ({school.code})
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="className">Class Name</Label>
                 <Input
@@ -161,19 +124,7 @@ export default function ClassesPage() {
                   onChange={(e) => setClassName(e.target.value)}
                   disabled={isLoading}
                 />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="classLogo">Class Logo</Label>
-                <Input
-                  id="classLogo"
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => setClassLogo(e.target.files?.[0] || null)}
-                  disabled={isLoading}
-                />
-                <p className="text-sm text-muted-foreground">
-                  Upload an image for the class logo
-                </p>
+
               </div>
               <div className="flex gap-3">
                 <Button
@@ -181,7 +132,7 @@ export default function ClassesPage() {
                   className="flex-1"
                   disabled={isLoading}
                 >
-                  {isLoading ? 'Creating...' : 'Create Class'}
+                  {isLoading ? 'Creating...' : 'Create Common Class'}
                 </Button>
                 <Button
                   variant="outline"
@@ -226,20 +177,20 @@ export default function ClassesPage() {
                     <div className="flex items-center gap-2">
                       <Users className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        Students
+                        Total Students
                       </span>
                     </div>
-                    <Badge variant="secondary">{classItem.students}</Badge>
+                    <Badge variant="secondary">{classItem.totalStudents || 0}</Badge>
                   </div>
 
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <School className="h-4 w-4 text-muted-foreground" />
                       <span className="text-sm text-muted-foreground">
-                        Schools
+                        Total Schools
                       </span>
                     </div>
-                    <Badge variant="outline">{classItem.schools}</Badge>
+                    <Badge variant="outline">{classItem.totalSchools || 0}</Badge>
                   </div>
                 </div>
               </CardContent>
@@ -250,3 +201,4 @@ export default function ClassesPage() {
     </div>
   )
 }
+

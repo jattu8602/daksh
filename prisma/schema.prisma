@@ -68,7 +68,8 @@ model School {
 model Class {
   id              String    @id @default(auto()) @map("_id") @db.ObjectId
   name            String
-  schoolId        String    @db.ObjectId
+  schoolId        String?   @db.ObjectId
+  isCommon        Boolean   @default(false)
   totalStudents   Int?
   boys            Int?
   girls           Int?
@@ -76,13 +77,14 @@ model Class {
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
-  school          School    @relation(fields: [schoolId], references: [id])
+  school          School?   @relation(fields: [schoolId], references: [id])
   students        Student[]
   messages        Message[]
 
   @@index([schoolId])
   @@index([createdAt])
   @@index([totalStudents])
+  @@index([isCommon])
 }
 
 model Student {

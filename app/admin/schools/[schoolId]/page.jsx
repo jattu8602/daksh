@@ -21,19 +21,37 @@ export default function SchoolDetailPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
 
-  // Class form state
+  // Add state for all classes
+  const [allClasses, setAllClasses] = useState([]);
+
+  // Update class form state
   const [classFormData, setClassFormData] = useState({
-    name: "",
-    totalStudents: "",
-    boys: "",
-    girls: "",
+    classId: "",
     startRollNumber: "1",
   });
 
   // New class created info
   const [newClass, setNewClass] = useState(null);
 
+  // Add state for export modal
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
+  // Fetch all classes on component mount
+  useEffect(() => {
+    const fetchAllClasses = async () => {
+      try {
+        const response = await fetch('/api/classes');
+        const data = await response.json();
+        if (data.success) {
+          setAllClasses(data.classes);
+          console.log("All classes for dropdown:", data.classes);
+        }
+      } catch (error) {
+        console.error('Error fetching classes:', error);
+      }
+    };
+    fetchAllClasses();
+  }, []);
 
   // Fetch school and its classes on component mount
   useEffect(() => {
@@ -96,8 +114,9 @@ export default function SchoolDetailPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          ...classFormData,
+          classId: classFormData.classId,
           schoolId,
+          startRollNumber: classFormData.startRollNumber,
         }),
       });
 
@@ -107,33 +126,19 @@ export default function SchoolDetailPage() {
         throw new Error(data.message || "Failed to create class");
       }
 
-      // Show the new class info
       setNewClass(data.class);
-
-      // Clear cache and refresh classes
       sessionStorage.removeItem(`school:${schoolId}:classes`);
       sessionStorage.removeItem(`school:${schoolId}:classes:timestamp`);
-
-      // Fetch fresh data
       const classesResponse = await fetch(`/api/schools/${schoolId}/classes?no-cache=true`);
       const classesData = await classesResponse.json();
-
       if (classesData.success) {
         setClasses(classesData.classes || []);
       }
-
       setSuccessMessage("Class created successfully");
-
-      // Reset form
       setClassFormData({
-        name: "",
-        totalStudents: "",
-        boys: "",
-        girls: "",
+        classId: "",
         startRollNumber: "1",
       });
-
-      // Close the modal
       setIsAddClassModalOpen(false);
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
@@ -145,10 +150,7 @@ export default function SchoolDetailPage() {
   const handleEditClassClick = (cls) => {
     setClassToEdit(cls);
     setClassFormData({
-      name: cls.name,
-      totalStudents: cls.totalStudents || "",
-      boys: cls.boys || "",
-      girls: cls.girls || "",
+      classId: cls.id,
       startRollNumber: cls.startRollNumber || "1",
     });
     setIsEditClassModalOpen(true);
@@ -190,10 +192,7 @@ export default function SchoolDetailPage() {
       setIsEditClassModalOpen(false);
       setClassToEdit(null);
       setClassFormData({
-        name: "",
-        totalStudents: "",
-        boys: "",
-        girls: "",
+        classId: "",
         startRollNumber: "1",
       });
     } catch (error) {
@@ -471,10 +470,7 @@ export default function SchoolDetailPage() {
                   setErrorMessage("");
                   setSuccessMessage("");
                   setClassFormData({
-                    name: "",
-                    totalStudents: "",
-                    boys: "",
-                    girls: "",
+                    classId: "",
                     startRollNumber: "1",
                   });
                 }}
@@ -498,49 +494,21 @@ export default function SchoolDetailPage() {
 
             <form onSubmit={handleEditClassSubmit}>
               <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Class Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={classFormData.name}
+                <label className="mb-1 block text-sm font-medium">Select Class</label>
+                <select
+                  name="classId"
+                  value={classFormData.classId}
                   onChange={handleInputChange}
                   className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Enter class name"
                   required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Total Students</label>
-                <input
-                  type="number"
-                  name="totalStudents"
-                  value={classFormData.totalStudents}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  min="0"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Boys</label>
-                <input
-                  type="number"
-                  name="boys"
-                  value={classFormData.boys}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  min="0"
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Girls</label>
-                <input
-                  type="number"
-                  name="girls"
-                  value={classFormData.girls}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  min="0"
-                />
+                >
+                  <option value="">Select a class</option>
+                  {allClasses.map((cls) => (
+                    <option key={cls.id} value={cls.id}>
+                      {cls.name}
+                    </option>
+                  ))}
+                </select>
               </div>
               <div className="mb-6">
                 <label className="mb-1 block text-sm font-medium">Start Roll Number</label>
@@ -550,7 +518,7 @@ export default function SchoolDetailPage() {
                   value={classFormData.startRollNumber}
                   onChange={handleInputChange}
                   className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  min="1"
+                  placeholder="e.g., 101"
                   required
                 />
               </div>
@@ -563,10 +531,7 @@ export default function SchoolDetailPage() {
                     setErrorMessage("");
                     setSuccessMessage("");
                     setClassFormData({
-                      name: "",
-                      totalStudents: "",
-                      boys: "",
-                      girls: "",
+                      classId: "",
                       startRollNumber: "1",
                     });
                   }}
@@ -641,6 +606,7 @@ export default function SchoolDetailPage() {
         </div>
       )}
 
+      {/* Add Class Modal */}
       {isAddClassModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
           <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
@@ -687,65 +653,33 @@ export default function SchoolDetailPage() {
             ) : (
               <form onSubmit={handleAddClass}>
                 <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">Class Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={classFormData.name}
+                  <label className="mb-1 block text-sm font-medium">Select Class</label>
+                  <select
+                    name="classId"
+                    value={classFormData.classId}
                     onChange={handleInputChange}
                     className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="e.g., 10th Grade - A"
+                    required
+                  >
+                    <option value="">Select a class</option>
+                    {allClasses.map((cls) => (
+                      <option key={cls.id} value={cls.id}>
+                        {cls.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="mb-6">
+                  <label className="mb-1 block text-sm font-medium">Start Roll Number</label>
+                  <input
+                    type="number"
+                    name="startRollNumber"
+                    value={classFormData.startRollNumber}
+                    onChange={handleInputChange}
+                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    placeholder="e.g., 101"
                     required
                   />
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">Total Students</label>
-                    <input
-                      type="number"
-                      name="totalStudents"
-                      value={classFormData.totalStudents}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Total count"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">Start Roll Number</label>
-                    <input
-                      type="number"
-                      name="startRollNumber"
-                      value={classFormData.startRollNumber}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="e.g., 101"
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">Boys</label>
-                    <input
-                      type="number"
-                      name="boys"
-                      value={classFormData.boys}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Number of boys"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-1 block text-sm font-medium">Girls</label>
-                    <input
-                      type="number"
-                      name="girls"
-                      value={classFormData.girls}
-                      onChange={handleInputChange}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Number of girls"
-                    />
-                  </div>
                 </div>
                 <div className="flex justify-end space-x-3">
                   <button

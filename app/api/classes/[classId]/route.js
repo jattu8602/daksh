@@ -163,7 +163,6 @@ export async function DELETE(request, { params }) {
       message: "Class and all associated data deleted successfully",
     });
   } catch (error) {
-    console.error("Error deleting class:", error);
     return NextResponse.json(
       {
         success: false,
