@@ -9,10 +9,10 @@ export default function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="rounded-lg border bg-white shadow">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="font-semibold">Recent Activity</h2>
-            <button className="text-sm text-blue-600 hover:underline">View All</button>
+        <div className="rounded-lg border border-border bg-background shadow">
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <h2 className="font-semibold text-foreground">Recent Activity</h2>
+            <button className="text-sm text-primary hover:underline">View All</button>
           </div>
           <div className="p-4">
             <div className="space-y-4">
@@ -23,8 +23,8 @@ export default function AdminDashboard() {
                 { type: "Student", action: "exported", subject: "Class 9 Data", time: "2 days ago", user: "Admin Sarah" },
                 { type: "Mentor", action: "added", subject: "Mary Johnson", time: "3 days ago", user: "Super Admin" },
               ].map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 text-sm">
-                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <div key={index} className="flex items-start space-x-3 text-sm text-foreground">
+                  <span className="flex h-8 w-8 items-center justify-center rounded-full bg-muted text-primary">
                     {activity.type === "Student" ? "👨‍🎓" :
                      activity.type === "Class" ? "👨‍🏫" :
                      activity.type === "School" ? "🏫" : "👨‍💼"}
@@ -35,7 +35,7 @@ export default function AdminDashboard() {
                       {activity.action} {activity.type.toLowerCase()}{" "}
                       <span className="font-medium">{activity.subject}</span>
                     </p>
-                    <p className="text-gray-500">{activity.time}</p>
+                    <p className="text-sm text-muted-foreground">{activity.time}</p>
                   </div>
                 </div>
               ))}
@@ -43,10 +43,10 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        <div className="rounded-lg border bg-white shadow">
-          <div className="flex items-center justify-between p-4 border-b">
-            <h2 className="font-semibold">Schools Overview</h2>
-            <button className="text-sm text-blue-600 hover:underline">View All</button>
+        <div className="rounded-lg border border-border bg-background shadow">
+          <div className="flex items-center justify-between border-b border-border p-4">
+            <h2 className="font-semibold text-foreground">Schools Overview</h2>
+            <button className="text-sm text-primary hover:underline">View All</button>
           </div>
           <div className="p-4">
             <div className="space-y-4">
@@ -57,10 +57,10 @@ export default function AdminDashboard() {
                 { name: "Valley Middle School", students: 254, classes: 9 },
                 { name: "Hillside Preparatory", students: 204, classes: 7 },
               ].map((school, index) => (
-                <div key={index} className="flex items-center justify-between border-b pb-3">
+                <div key={index} className="flex items-center justify-between border-b border-border pb-3">
                   <div>
-                    <h3 className="font-medium">{school.name}</h3>
-                    <div className="mt-1 flex text-xs text-gray-500">
+                    <h3 className="font-medium text-foreground">{school.name}</h3>
+                    <div className="mt-1 flex text-xs text-muted-foreground">
                       <span className="flex items-center">
                         <span className="mr-1">👨‍🎓</span> {school.students} students
                       </span>
@@ -69,7 +69,7 @@ export default function AdminDashboard() {
                       </span>
                     </div>
                   </div>
-                  <button className="rounded-md border px-2 py-1 text-xs font-medium hover:bg-gray-50">
+                  <button className="rounded-md border border-border px-2 py-1 text-xs font-medium text-foreground hover:bg-muted">
                     Manage
                   </button>
                 </div>
@@ -79,15 +79,15 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white shadow">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="font-semibold">Recent Exports</h2>
-          <button className="text-sm text-blue-600 hover:underline">View All</button>
+      <div className="rounded-lg border border-border bg-background shadow">
+        <div className="flex items-center justify-between border-b border-border p-4">
+          <h2 className="font-semibold text-foreground">Recent Exports</h2>
+          <button className="text-sm text-primary hover:underline">View All</button>
         </div>
         <div className="overflow-x-auto">
-          <table className="w-full">
+          <table className="w-full text-sm text-foreground">
             <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
+              <tr className="border-b border-border bg-muted text-left text-xs font-medium text-muted-foreground">
                 <th className="px-4 py-3">File Name</th>
                 <th className="px-4 py-3">Type</th>
                 <th className="px-4 py-3">Date</th>
@@ -96,7 +96,7 @@ export default function AdminDashboard() {
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
-            <tbody className="text-sm">
+            <tbody>
               {[
                 { name: "Springfield_High_Students.xlsx", type: "Excel", date: "2023-06-15", size: "2.4 MB", by: "Admin Sarah" },
                 { name: "Riverside_Academy_Classes.xlsx", type: "Excel", date: "2023-06-12", size: "1.8 MB", by: "Admin Mike" },
@@ -104,14 +104,14 @@ export default function AdminDashboard() {
                 { name: "Valley_School_Summary.pdf", type: "PDF", date: "2023-06-05", size: "3.6 MB", by: "Admin Sarah" },
                 { name: "All_Schools_Report.xlsx", type: "Excel", date: "2023-06-01", size: "5.2 MB", by: "Super Admin" },
               ].map((file, index) => (
-                <tr key={index} className="border-b">
+                <tr key={index} className="border-b border-border">
                   <td className="px-4 py-3 font-medium">{file.name}</td>
                   <td className="px-4 py-3">{file.type}</td>
                   <td className="px-4 py-3">{file.date}</td>
                   <td className="px-4 py-3">{file.size}</td>
                   <td className="px-4 py-3">{file.by}</td>
                   <td className="px-4 py-3">
-                    <button className="mr-2 text-blue-600 hover:underline">Download</button>
+                    <button className="text-primary hover:underline">Download</button>
                   </td>
                 </tr>
               ))}
@@ -127,16 +127,16 @@ function Card({ title, value, change, icon }) {
   const isPositive = change.startsWith("+");
 
   return (
-    <div className="rounded-lg border bg-white p-4 shadow">
+    <div className="rounded-lg border border-border bg-background p-4 shadow">
       <div className="flex items-start justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-500">{title}</p>
-          <p className="mt-1 text-2xl font-bold">{value}</p>
+          <p className="text-sm font-medium text-muted-foreground">{title}</p>
+          <p className="mt-1 text-2xl font-bold text-foreground">{value}</p>
           <p className={`mt-1 text-sm ${isPositive ? "text-green-600" : "text-red-600"}`}>
             {change} since last month
           </p>
         </div>
-        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-2xl text-blue-600">
+        <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted text-2xl text-primary">
           {icon}
         </div>
       </div>

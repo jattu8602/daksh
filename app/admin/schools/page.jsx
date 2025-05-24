@@ -152,200 +152,205 @@ export default function SchoolsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <h1 className="text-2xl font-bold">Schools</h1>
-        <button
-          onClick={() => setIsAddModalOpen(true)}
-          className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
-        >
-          <span className="mr-2">+</span> Add School
-        </button>
-      </div>
+    <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+    <h1 className="text-2xl font-bold text-foreground">Schools</h1>
+    <button
+      onClick={() => setIsAddModalOpen(true)}
+      className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 focus:outline-none"
+    >
+      <span className="mr-2">+</span> Add School
+    </button>
+  </div>
 
-      <div className="rounded-lg border bg-white shadow">
-        <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center w-full">
-            <div className="relative w-full sm:max-w-xs">
+  <div className="rounded-lg border bg-background shadow">
+    <div className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center w-full">
+        <div className="relative w-full sm:max-w-xs">
+          <input
+            type="text"
+            placeholder="Search schools..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full rounded-md border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+          />
+          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+            <span className="text-muted-foreground">🔍</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div className="overflow-x-auto">
+      <table className="w-full">
+        <thead>
+          <tr className="border-b bg-muted text-left text-xs font-medium text-muted-foreground">
+            <th className="px-4 py-3">Name</th>
+            <th className="px-4 py-3">Code</th>
+            <th className="px-4 py-3">Email</th>
+            <th className="px-4 py-3">Phone</th>
+            <th className="px-4 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody className="text-sm text-foreground">
+          {filteredSchools.length > 0 ? (
+            filteredSchools.map((school) => (
+              <tr key={school.id} className="border-b">
+                <td className="px-4 py-3 font-medium">{school.name}</td>
+                <td className="px-4 py-3">{school.code}</td>
+                <td className="px-4 py-3">{school.email || "-"}</td>
+                <td className="px-4 py-3">{school.phone || "-"}</td>
+                <td className="px-4 py-3">
+                  <div className="flex items-center space-x-2">
+                    <Link
+                      href={`/admin/schools/${school.id}`}
+                      className="text-primary hover:underline"
+                    >
+                      View Classes
+                    </Link>
+                    <button className="text-primary hover:underline">Edit</button>
+                    <button className="text-destructive hover:underline">Delete</button>
+                  </div>
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan={5} className="px-4 py-3 text-center text-muted-foreground">
+                No schools found.
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+    </div>
+
+    <div className="flex items-center justify-between p-4">
+      <p className="text-sm text-muted-foreground">
+        Showing <span className="font-medium">{filteredSchools.length}</span> of{" "}
+        <span className="font-medium">{schools.length}</span> schools
+      </p>
+    </div>
+  </div>
+
+  {isAddModalOpen && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+      <div className="w-full max-w-md rounded-lg bg-background p-6 shadow-lg border">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-xl font-bold text-foreground">Add New School</h2>
+          <button
+            onClick={() => {
+              setIsAddModalOpen(false);
+              setNewSchool(null);
+              setErrorMessage("");
+              setSuccessMessage("");
+            }}
+            className="text-muted-foreground hover:text-foreground"
+          >
+            ✕
+          </button>
+        </div>
+
+        {errorMessage && (
+          <div className="mb-4 rounded bg-red-100 dark:bg-red-950 p-3 text-sm text-red-600 dark:text-red-400">
+            {errorMessage}
+          </div>
+        )}
+
+        {successMessage && (
+          <div className="mb-4 rounded bg-green-100 dark:bg-green-950 p-3 text-sm text-green-600 dark:text-green-400">
+            {successMessage}
+          </div>
+        )}
+
+        {newSchool ? (
+          <div className="mb-6 rounded-lg bg-muted p-4 text-sm">
+            <h3 className="mb-2 font-semibold text-foreground">School Created Successfully</h3>
+            <p>
+              <span className="font-medium">Name:</span> {newSchool.name}
+            </p>
+            <p>
+              <span className="font-medium">Code:</span> {newSchool.code}
+            </p>
+            <div className="mt-4 flex justify-center">
+              <Link
+                href={`/admin/schools/${newSchool.id}`}
+                className="rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+              >
+                Add Classes to This School
+              </Link>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-foreground">School Name</label>
               <input
                 type="text"
-                placeholder="Search schools..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                name="name"
+                value={formData.name}
+                onChange={handleInputChange}
+                className="w-full rounded-md border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter school name"
+                required
               />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-                <span className="text-gray-400">🔍</span>
-              </div>
             </div>
-          </div>
-        </div>
-
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-                <th className="px-4 py-3">Name</th>
-                <th className="px-4 py-3">Code</th>
-                <th className="px-4 py-3">Email</th>
-                <th className="px-4 py-3">Phone</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {filteredSchools.length > 0 ? (
-                filteredSchools.map((school) => (
-                  <tr key={school.id} className="border-b">
-                    <td className="px-4 py-3 font-medium">{school.name}</td>
-                    <td className="px-4 py-3">{school.code}</td>
-                    <td className="px-4 py-3">{school.email || "-"}</td>
-                    <td className="px-4 py-3">{school.phone || "-"}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center space-x-2">
-                        <Link
-                          href={`/admin/schools/${school.id}`}
-                          className="text-blue-600 hover:underline"
-                        >
-                          View Classes
-                        </Link>
-                        <button className="text-blue-600 hover:underline">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              ) : (
-                <tr>
-                  <td colSpan="5" className="px-4 py-3 text-center text-gray-500">
-                    No schools found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        <div className="flex items-center justify-between p-4">
-          <p className="text-sm text-gray-500">
-            Showing <span className="font-medium">{filteredSchools.length}</span> of{" "}
-            <span className="font-medium">{schools.length}</span> schools
-          </p>
-        </div>
-      </div>
-
-      {isAddModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-xl font-bold">Add New School</h2>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-foreground">School Code</label>
+              <input
+                type="text"
+                name="code"
+                value={formData.code}
+                onChange={handleInputChange}
+                className="w-full rounded-md border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="e.g., SCH001"
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label className="mb-1 block text-sm font-medium text-foreground">Email (Optional)</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleInputChange}
+                className="w-full rounded-md border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter school email"
+              />
+            </div>
+            <div className="mb-6">
+              <label className="mb-1 block text-sm font-medium text-foreground">Phone (Optional)</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleInputChange}
+                className="w-full rounded-md border bg-background px-3 py-2 text-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+                placeholder="Enter school phone number"
+              />
+            </div>
+            <div className="flex justify-end space-x-3">
               <button
-                onClick={() => {
-                  setIsAddModalOpen(false);
-                  setNewSchool(null);
-                  setErrorMessage("");
-                  setSuccessMessage("");
-                }}
-                className="text-gray-400 hover:text-gray-600"
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="rounded-md border px-3 py-2 text-sm font-medium text-foreground hover:bg-muted"
+                disabled={isLoading}
               >
-                ✕
+                Cancel
+              </button>
+              <button
+                type="submit"
+                className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90"
+                disabled={isLoading}
+              >
+                {isLoading ? "Creating..." : "Add School"}
               </button>
             </div>
-
-            {errorMessage && (
-              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
-                {errorMessage}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
-                {successMessage}
-              </div>
-            )}
-
-            {newSchool ? (
-              <div className="mb-6 rounded-lg bg-blue-50 p-4 text-sm">
-                <h3 className="mb-2 font-semibold">School Created Successfully</h3>
-                <p><span className="font-medium">Name:</span> {newSchool.name}</p>
-                <p><span className="font-medium">Code:</span> {newSchool.code}</p>
-                <div className="mt-4 flex justify-center">
-                  <Link
-                    href={`/admin/schools/${newSchool.id}`}
-                    className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                  >
-                    Add Classes to This School
-                  </Link>
-                </div>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit}>
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">School Name</label>
-                  <input
-                    type="text"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Enter school name"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">School Code</label>
-                  <input
-                    type="text"
-                    name="code"
-                    value={formData.code}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="e.g., SCH001"
-                    required
-                  />
-                </div>
-                <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">Email (Optional)</label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Enter school email"
-                  />
-                </div>
-                <div className="mb-6">
-                  <label className="mb-1 block text-sm font-medium">Phone (Optional)</label>
-                  <input
-                    type="tel"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    placeholder="Enter school phone number"
-                  />
-                </div>
-                <div className="flex justify-end space-x-3">
-                  <button
-                    type="button"
-                    onClick={() => setIsAddModalOpen(false)}
-                    className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
-                    disabled={isLoading}
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    type="submit"
-                    className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? "Creating..." : "Add School"}
-                  </button>
-                </div>
-              </form>
-            )}
-          </div>
-        </div>
-      )}
+          </form>
+        )}
+      </div>
     </div>
+  )}
+</div>
+
   );
 }

@@ -1,5 +1,7 @@
 "use client";
 
+import { ThemeProvider } from "@/components/theme-provider";
+import { ModeToggle } from "@/components/theme-toggle";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -26,18 +28,22 @@ export default function AdminLayout({ children }) {
     return <>{children}</>;
   }
 
-  return (
-    <div className="flex h-screen bg-gray-100">
+  return( 
+  
+    <div className="flex h-screen ">
       {/* Sidebar */}
       <aside
-        className={`bg-white fixed inset-y-0 z-50 flex flex-col border-r transition-all duration-300 ${
+        className={` fixed inset-y-0 z-50 flex flex-col border-r transition-all duration-300 ${
           isSidebarOpen ? "w-64" : "w-20"
         } lg:static`}
       >
         <div className="flex h-14 items-center border-b px-4">
+          <div className="flex w-full items-center justify-between">
           <h1 className={`font-bold text-lg ${isSidebarOpen ? "block" : "hidden"}`}>
             Daksh Admin
           </h1>
+          <ModeToggle />
+          </div>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border lg:hidden"
@@ -53,18 +59,17 @@ export default function AdminLayout({ children }) {
               return (
                 <li key={item.href}>
                   <Link
-                    href={item.href}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
-                      isActive
-                        ? "bg-gray-100 text-black"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
-                    }`}
-                  >
-                    <span className="text-xl">{item.icon}</span>
-                    <span className={isSidebarOpen ? "block" : "hidden"}>
-                      {item.label}
-                    </span>
-                  </Link>
+                  href={item.href}
+                  className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-muted text-foreground"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  }`}
+                >
+                  <span className="text-xl">{item.icon}</span>
+                  <span className={isSidebarOpen ? "block" : "hidden"}>{item.label}</span>
+                </Link>
+
                 </li>
               );
             })}
@@ -92,7 +97,7 @@ export default function AdminLayout({ children }) {
 
       {/* Main content */}
       <main className="flex flex-1 flex-col overflow-hidden">
-        <header className="flex h-14 items-center gap-4 border-b bg-white px-4 lg:px-6">
+        <header className="flex h-14 items-center gap-4 border-b bg-white dark:bg-gray-900 px-4 lg:px-6">
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border lg:hidden"
@@ -117,5 +122,6 @@ export default function AdminLayout({ children }) {
         <div className="flex-1 overflow-auto p-4 lg:p-6">{children}</div>
       </main>
     </div>
+    
   );
 }
