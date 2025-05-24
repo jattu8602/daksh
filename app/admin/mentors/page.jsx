@@ -224,15 +224,15 @@ export default function MentorsPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen ">
       {!isAddingMentor ? (
         // List View
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Mentors</h1>
+            <h1 className="text-2xl font-bold ">Mentors</h1>
             <button
               onClick={() => setIsAddingMentor(true)}
-              className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+              className="inline-flex items-center justify-center rounded-md  px-4 py-2 text-sm text-gray-300 dark:text-gray-800 font-medium bg-gray-900 dark:bg-gray-300 hover:bg-gray-800 focus:outline-none"
             >
               <span className="mr-2">+</span> Add Mentor
             </button>
@@ -256,7 +256,7 @@ export default function MentorsPage() {
               <Link
                 key={mentor.id}
                 href={`/admin/mentors/${mentor.id}`}
-                className="block bg-white rounded-lg shadow-md overflow-hidden hover:ring-2 hover:ring-blue-400 transition"
+                className="block dark:bg-gray-800 rounded-lg shadow-md overflow-hidden hover:ring-2 hover:ring-blue-400 transition"
               >
                 <div className="relative h-48 w-full">
                   <Image
@@ -270,21 +270,21 @@ export default function MentorsPage() {
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">{mentor.name}</h3>
                     <span className={`px-2 py-1 rounded-full text-xs ${
-                      mentor.isOrganic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
+                      mentor.isOrganic ? ' text-green-800' : 'text-gray-800'
                     }`}>
                       {mentor.isOrganic ? 'Organic' : 'Inorganic'}
                     </span>
                   </div>
                   <p className="text-gray-600 mb-2">@{mentor.username}</p>
                   {mentor.bio && (
-                    <p className="text-sm text-gray-600 mb-2">{mentor.bio}</p>
+                    <p className="text-sm  mb-2">{mentor.bio}</p>
                   )}
                   {mentor.skills && mentor.skills.length > 0 && (
                     <div className="flex flex-wrap gap-2 mb-2">
                       {mentor.skills.map((skill, index) => (
                         <span
                           key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
+                          className="px-2 py-1  text-gray-600 rounded-full text-xs"
                         >
                           {skill}
                         </span>
@@ -367,9 +367,9 @@ export default function MentorsPage() {
       ) : (
         // Add Mentor Form View
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className=" rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Add New Mentor</h2>
+              <h2 className="text-2xl font-bold ">Add New Mentor</h2>
               <button
                 onClick={() => {
                   setIsAddingMentor(false);
@@ -390,13 +390,13 @@ export default function MentorsPage() {
             )}
 
             {successMessage && (
-              <div className="mb-6 rounded bg-green-50 p-4 text-sm text-green-600">
+              <div className="mb-6 rounded p-4 text-sm text-green-600">
                 {successMessage}
               </div>
             )}
 
             {newMentor ? (
-              <div className="mb-6 rounded-lg bg-blue-50 p-6 text-sm">
+              <div className="mb-6 rounded-lg p-6 text-sm">
                 <h3 className="mb-4 text-lg font-semibold">New Mentor Credentials</h3>
                 <div className="space-y-2">
                   <p><span className="font-medium">Name:</span> {newMentor.name}</p>
@@ -408,7 +408,7 @@ export default function MentorsPage() {
                 <p className="mt-4 text-xs text-gray-600">Please save these credentials securely. The password cannot be recovered later.</p>
                 <button
                   onClick={() => setIsAddingMentor(false)}
-                  className="mt-4 rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  className="mt-4 rounded-md bg-black px-4 py-2 text-sm font-medium  hover:bg-gray-800"
                 >
                   Back to Mentors
                 </button>

@@ -53,14 +53,14 @@ export default function RootLayout({ children }) {
       <body
         className={`${geist.className} min-h-screen bg-background antialiased`}
       >
-        {/* <ThemeProvider
+        <ThemeProvider
           attribute="class"
           defaultTheme="dark"
           enableSystem
           disableTransitionOnChange
-        > */}
+        >
         {children}
-        {/* </ThemeProvider> */}
+        </ThemeProvider>
         <Toaster position="top-center" />
         <InstallPWA />
       </body>
