@@ -1,5 +1,5 @@
 "use client"
-import { Heart, MessageCircle, Share, Bookmark, Home, Search, PlusSquare, Play, User } from "lucide-react"
+import { Heart, MessageCircle, Share, Bookmark,Send, Home, Search, PlusSquare, Play, User } from "lucide-react"
 import Link from "next/link"
 import { useState } from "react"
 import Image from "next/image"
@@ -63,7 +63,7 @@ export default function FeedScreen() {
 
           <Link href="/dashboard/community">
             <button className="focus:outline-none">
-              <MessageCircle size={24} />
+              <Send size={24} />
             </button>
           </Link>
         </div>
