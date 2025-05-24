@@ -30,6 +30,7 @@ export async function GET(request, { params }) {
         boys: true,
         girls: true,
         startRollNumber: true,
+        section: true,
         _count: {
           select: {
             students: true

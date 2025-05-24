@@ -28,13 +28,11 @@ export default function ClassDetailPage() {
 
   // Bulk import state
   const [bulkImportData, setBulkImportData] = useState({
-    students: Array(10).fill({
+    students: Array(5).fill({
       name: "",
       rollNo: "",
       gender: ""
     }),
-    availableBoys: classData?.totalStudents || 0,
-    availableGirls: 0,
     startRollNumber: classData?.startRollNumber || 1
   });
 
@@ -57,10 +55,14 @@ export default function ClassDetailPage() {
 
   // Fetch school, class and students on component mount with improved caching
   useEffect(() => {
-    const fetchClassDetails = async () => {
+    const fetchClassDetails = async (forceRefresh = false) => {
       try {
         console.log("Fetching class details for:", schoolId, classId);
         setIsLoading(true);
+
+        // Check URL for no-cache parameter FIRST
+        const url = new URL(window.location.href);
+        const noCacheUrlParam = url.searchParams.get('no-cache') === 'true';
 
         // Check for cached data
         const cacheKey = `class:${schoolId}:${classId}`;
@@ -68,32 +70,45 @@ export default function ClassDetailPage() {
         const cachedTimestamp = localStorage.getItem(`${cacheKey}:timestamp`);
         const isCacheValid = cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < 60000); // 1 min cache
 
-        // Check URL for refresh parameter
-        const url = new URL(window.location.href);
-        const shouldRefresh = url.searchParams.get('refresh') === 'true';
-        const noCache = url.searchParams.get('no-cache') === 'true';
+        // Determine if we should use cache or force refresh
+        // Prioritize noCacheUrlParam over cache validity
+        const shouldFetchFresh = forceRefresh || noCacheUrlParam || !cachedData || !isCacheValid;
 
-        // Use cache if available, valid, and not refreshing
-        if (cachedData && isCacheValid && !shouldRefresh && !noCache) {
+        // Use cache if available, valid, and not fetching fresh
+        if (!shouldFetchFresh) {
           console.log("Using cached data");
           const data = JSON.parse(cachedData);
           setClassData(data.class);
           setSchool(data.class.school);
           setStudents(data.class.students || []);
           setIsLoading(false);
+
+          // Clean up no-cache parameter from URL after using cache
+          if (noCacheUrlParam && typeof window !== 'undefined') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+
           return;
         }
 
-        // Clear cache if refreshing
-        if (shouldRefresh || noCache) {
+        // Clear cache if fetching fresh
+        if (shouldFetchFresh) {
           console.log("Clearing cache and fetching fresh data");
           localStorage.removeItem(cacheKey);
           localStorage.removeItem(`${cacheKey}:timestamp`);
+
+          // Clean up no-cache parameter from URL after clearing cache
+          if (noCacheUrlParam && typeof window !== 'undefined') {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
         }
 
         console.log("Making API request for fresh data");
+        // Add no-cache parameter to API request when fetching fresh
+        const noCacheParam = shouldFetchFresh ? '&no-cache=true' : '';
+
         // First fetch minimal data for quick initial render
-        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}?minimal=true${noCache ? '&no-cache=true' : ''}`);
+        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}?minimal=true${noCacheParam}`);
 
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
@@ -121,7 +136,7 @@ export default function ClassDetailPage() {
 
           // If we have more than 10 students, fetch the full data in the background
           if (data.class.students?.length > 10) {
-            const fullResponse = await fetch(`/api/schools/${schoolId}/classes/${classId}${noCache ? '?no-cache=true' : ''}`);
+            const fullResponse = await fetch(`/api/schools/${schoolId}/classes/${classId}${noCacheParam}`);
             if (fullResponse.ok) {
               const fullData = await fullResponse.json();
               if (fullData.success) {
@@ -129,13 +144,13 @@ export default function ClassDetailPage() {
                 // Update cache with full data
                 localStorage.setItem(cacheKey, JSON.stringify(fullData));
                 localStorage.setItem(`${cacheKey}:timestamp`, Date.now().toString());
+
+                // Clean up no-cache parameter from URL after updating cache
+                if (noCacheUrlParam && typeof window !== 'undefined') {
+                  window.history.replaceState({}, document.title, window.location.pathname);
+                }
               }
             }
-          }
-
-          // Remove any query parameters to clean the URL
-          if (shouldRefresh && typeof window !== 'undefined') {
-            window.history.replaceState({}, document.title, window.location.pathname);
           }
         } else {
           throw new Error(data.error || "Failed to fetch class details");
@@ -150,11 +165,6 @@ export default function ClassDetailPage() {
 
     fetchClassDetails();
   }, [schoolId, classId]);
-
-  // Add debugging for students state changes
-  useEffect(() => {
-    console.log("Students state updated:", students?.length || 0, "students");
-  }, [students]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -216,6 +226,10 @@ export default function ClassDetailPage() {
         name: "",
         rollNo: (parseInt(studentFormData.rollNo) + 1).toString(),
       });
+
+      // Refresh the student list after successful creation
+      fetchClassDetails(true); // Pass true to force refresh
+
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
     } finally {
@@ -228,93 +242,58 @@ export default function ClassDetailPage() {
     setErrorMessage("");
     setSuccessMessage("");
 
+    // Filter out empty rows
+    const studentsToImport = bulkImportData.students.filter(student =>
+      student.name.trim() !== "" && student.rollNo !== "" && student.gender !== ""
+    );
+
+    if (studentsToImport.length === 0) {
+      setErrorMessage("Please fill in at least one student row.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Validate input
-      const errors = [];
-      bulkImportData.students.forEach((student, index) => {
-        if (!student.name.trim()) {
-          errors.push(`Student at row ${index + 1} has no name`);
-        }
-        if (!student.gender) {
-          errors.push(`Student at row ${index + 1} has no gender`);
-        }
-        if (!student.rollNo) {
-          errors.push(`Student at row ${index + 1} has no roll number`);
-        }
-      });
-
-      if (errors.length > 0) {
-        throw new Error(errors.join("\n"));
-      }
-
-      // Calculate roll numbers if not provided
-      const studentsWithRolls = bulkImportData.students.map((student, index) => {
-        if (!student.rollNo) {
-          return {
-            ...student,
-            rollNo: bulkImportData.startRollNumber + index
-          };
-        }
-        return student;
-      });
-
       const response = await fetch(`/api/schools/${schoolId}/classes/${classId}/students/bulk`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          students: studentsWithRolls,
-          classId,
-        }),
+        body: JSON.stringify({ students: studentsToImport, classId }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to import students");
+        throw new Error(data.error || "Failed to import students");
       }
 
-      // Update the students list with the latest data from the API response
-      if (data.students && Array.isArray(data.students)) {
-        setStudents(data.students);
-      } else {
-        // If no students data in response, force a fresh fetch from the API
-        const refreshResponse = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
-        const refreshData = await refreshResponse.json();
-
-        if (refreshData.success) {
-          // Update cache with fresh data
-          const cacheKey = `class:${schoolId}:${classId}`;
-          localStorage.setItem(cacheKey, JSON.stringify(refreshData));
-          localStorage.setItem(`${cacheKey}:timestamp`, Date.now().toString());
-
-          // Update state with fresh data
-          setClassData(refreshData.class);
-          setSchool(refreshData.class.school);
-          setStudents(refreshData.class.students);
-        }
-      }
-
-      setSuccessMessage("Students imported successfully");
-
-      // Reset the bulk import form
-      setBulkImportData({
-        students: Array(10).fill({
-          name: "",
-          rollNo: "",
-          gender: ""
-        }),
-        availableBoys: classData?.totalStudents || 0,
-        availableGirls: 0,
-        startRollNumber: classData?.startRollNumber || 1
-      });
-
-      setIsBulkImportModalOpen(false);
+      setSuccessMessage(`Successfully imported ${data.students.length} students.`);
+      // Optionally refresh the student list on the main page
+      fetchClassDetails(true); // Pass true to force refresh and clear cache
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Add more student fields for bulk import
+  const handleAddMoreStudents = () => {
+    const currentStudentsCount = bulkImportData.students.length;
+    const maxStudents = 1000;
+    const studentsToAdd = Math.min(5, maxStudents - currentStudentsCount);
+
+    if (studentsToAdd > 0) {
+      const newFields = Array(studentsToAdd).fill({
+        name: "",
+        rollNo: "",
+        gender: ""
+      });
+      setBulkImportData(prev => ({
+        ...prev,
+        students: [...prev.students, ...newFields]
+      }));
     }
   };
 
@@ -430,7 +409,6 @@ export default function ClassDetailPage() {
   const filteredStudents = useMemo(() => {
     // Ensure students is an array before filtering
     if (!Array.isArray(students)) {
-      console.warn("Students is not an array:", students);
       return [];
     }
 
@@ -945,53 +923,26 @@ export default function ClassDetailPage() {
                   <div className="flex-1">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Total Students:</span>
-                      <span className="font-medium text-gray-900">{bulkImportData.availableBoys + bulkImportData.availableGirls}</span>
+                      <span className="font-medium text-gray-900">{classData.totalStudents || 0}</span>
                     </div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Boys:</span>
-                      <span className="font-medium text-blue-600">{bulkImportData.availableBoys}</span>
+                      <span className="font-medium text-blue-600">{classData.boys || 0}</span>
                     </div>
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm text-gray-600">Girls:</span>
-                      <span className="font-medium text-pink-600">{bulkImportData.availableGirls}</span>
+                      <span className="font-medium text-pink-600">{classData.girls || 0}</span>
                     </div>
                     <div className="flex items-center justify-between">
                       <span className="text-sm text-gray-600">Start Roll No:</span>
-                      <span className="font-medium text-gray-900">{bulkImportData.startRollNumber}</span>
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm text-gray-600">Available Tags:</span>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => setBulkImportData(prev => ({
-                            ...prev,
-                            availableBoys: Math.max(0, prev.availableBoys - 1)
-                          }))}
-                          className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
-                          disabled={bulkImportData.availableBoys <= 0}
-                        >
-                          Boy
-                        </button>
-                        <button
-                          onClick={() => setBulkImportData(prev => ({
-                            ...prev,
-                            availableGirls: Math.max(0, prev.availableGirls - 1)
-                          }))}
-                          className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm hover:bg-pink-200"
-                          disabled={bulkImportData.availableGirls <= 0}
-                        >
-                          Girl
-                        </button>
-                      </div>
+                      <span className="font-medium text-gray-900">{classData.startRollNumber}</span>
                     </div>
                   </div>
                 </div>
               </div>
 
               {/* Student List */}
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-96">
                 <table className="min-w-full">
                   <thead>
                     <tr>
@@ -1010,11 +961,10 @@ export default function ClassDetailPage() {
                             onChange={(e) => {
                               const newStudents = [...bulkImportData.students];
                               newStudents[index].name = e.target.value;
-                              setBulkImportData({ students: newStudents });
+                              setBulkImportData({ ...bulkImportData, students: newStudents });
                             }}
                             className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             placeholder="Enter student name"
-                            required
                           />
                         </td>
                         <td className="px-4 py-2">
@@ -1023,7 +973,7 @@ export default function ClassDetailPage() {
                             onChange={(e) => {
                               const newStudents = [...bulkImportData.students];
                               newStudents[index].gender = e.target.value;
-                              setBulkImportData({ students: newStudents });
+                              setBulkImportData({ ...bulkImportData, students: newStudents });
                             }}
                             className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                           >
@@ -1039,11 +989,10 @@ export default function ClassDetailPage() {
                             onChange={(e) => {
                               const newStudents = [...bulkImportData.students];
                               newStudents[index].rollNo = e.target.value;
-                              setBulkImportData({ students: newStudents });
+                              setBulkImportData({ ...bulkImportData, students: newStudents });
                             }}
                             className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                             placeholder="Roll Number"
-                            required
                           />
                         </td>
                       </tr>
@@ -1051,6 +1000,17 @@ export default function ClassDetailPage() {
                   </tbody>
                 </table>
               </div>
+
+              {bulkImportData.students.length < 1000 && (
+                <button
+                  type="button"
+                  onClick={handleAddMoreStudents}
+                  className="mt-4 px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 w-full"
+                  disabled={isLoading}
+                >
+                  Add More Students (Max 1000)
+                </button>
+              )}
 
               {/* Actions */}
               <div className="flex justify-end space-x-3">

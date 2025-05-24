@@ -84,3 +84,170 @@ export async function GET(request, { params }) {
     );
   }
 }
+
+// DELETE /api/schools/[schoolId] - Delete a school
+export async function DELETE(request, { params }) {
+  try {
+    const { schoolId } = params;
+
+    if (!schoolId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "School ID is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if the school exists
+    const school = await prisma.school.findUnique({
+      where: { id: schoolId },
+      include: {
+        classes: {
+          include: {
+            students: true,
+          },
+        },
+      },
+    });
+
+    if (!school) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "School not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check if the school has any classes with students
+    const hasStudents = school.classes.some(cls => cls.students.length > 0);
+    if (hasStudents) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Cannot delete school with existing students. Please remove all students first.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Delete all classes first (cascade delete will handle students)
+    await prisma.class.deleteMany({
+      where: { schoolId },
+    });
+
+    // Delete the school
+    await prisma.school.delete({
+      where: { id: schoolId },
+    });
+
+    return NextResponse.json({
+      success: true,
+      message: "School deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting school:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to delete school",
+      },
+      { status: 500 }
+    );
+  }
+}
+
+// PUT /api/schools/[schoolId] - Update a school
+export async function PUT(request, { params }) {
+  try {
+    const { schoolId } = params;
+
+    if (!schoolId) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "School ID is required",
+        },
+        { status: 400 }
+      );
+    }
+
+    const body = await request.json();
+    const { name, code, email, phone } = body;
+
+    // Validate required fields
+    if (!name || !code) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Name and code are required",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Check if the school exists
+    const existingSchool = await prisma.school.findUnique({
+      where: { id: schoolId },
+    });
+
+    if (!existingSchool) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "School not found",
+        },
+        { status: 404 }
+      );
+    }
+
+    // Check if the code is already taken by another school
+    if (code !== existingSchool.code) {
+      const codeExists = await prisma.school.findFirst({
+        where: {
+          code,
+          id: { not: schoolId },
+        },
+      });
+
+      if (codeExists) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: "School code already exists",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Update the school
+    const updatedSchool = await prisma.school.update({
+      where: { id: schoolId },
+      data: {
+        name,
+        code,
+        email: email || null,
+        phone: phone || null,
+      },
+    });
+
+    return NextResponse.json({
+      success: true,
+      school: updatedSchool,
+      message: "School updated successfully",
+    });
+  } catch (error) {
+    console.error("Error updating school:", error);
+    return NextResponse.json(
+      {
+        success: false,
+        error: "Failed to update school",
+      },
+      { status: 500 }
+    );
+  }
+}
