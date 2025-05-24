@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
-    const { classId, schoolId, startRollNumber } = await request.json();
+    const { classId, schoolId, startRollNumber, section } = await request.json();
 
     if (!classId || !schoolId) {
       return NextResponse.json(
@@ -36,11 +36,12 @@ export async function POST(request) {
        );
      }
 
-    // Check if a class with the same name already exists in this school
+    // Check if a class with the same name and section already exists in this school
     const existingClassInSchool = await prisma.class.findFirst({
       where: {
         name: commonClass.name,
         schoolId,
+        section: section || null,
       },
     });
 
@@ -58,6 +59,7 @@ export async function POST(request) {
         schoolId,
         startRollNumber: startRollNumber ? parseInt(startRollNumber) : 1,
         isCommon: false, // This is a school-specific class
+        section: section || null,
       },
       include: {
         school: {

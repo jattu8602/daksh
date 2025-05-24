@@ -4,6 +4,9 @@ import { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
 import toast from "react-hot-toast";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 
 export default function SchoolDetailPage() {
   const params = useParams();
@@ -28,6 +31,7 @@ export default function SchoolDetailPage() {
   const [classFormData, setClassFormData] = useState({
     classId: "",
     startRollNumber: "1",
+    section: "",
   });
 
   // New class created info
@@ -117,6 +121,7 @@ export default function SchoolDetailPage() {
           classId: classFormData.classId,
           schoolId,
           startRollNumber: classFormData.startRollNumber,
+          section: classFormData.section.trim(),
         }),
       });
 
@@ -138,6 +143,7 @@ export default function SchoolDetailPage() {
       setClassFormData({
         classId: "",
         startRollNumber: "1",
+        section: "",
       });
       setIsAddClassModalOpen(false);
     } catch (error) {
@@ -152,6 +158,7 @@ export default function SchoolDetailPage() {
     setClassFormData({
       classId: cls.id,
       startRollNumber: cls.startRollNumber || "1",
+      section: cls.section || "",
     });
     setIsEditClassModalOpen(true);
   };
@@ -194,6 +201,7 @@ export default function SchoolDetailPage() {
       setClassFormData({
         classId: "",
         startRollNumber: "1",
+        section: "",
       });
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
@@ -395,6 +403,7 @@ export default function SchoolDetailPage() {
               <thead>
                 <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
                   <th className="px-4 py-3">Class Name</th>
+                  <th className="px-4 py-3">Section</th>
                   <th className="px-4 py-3">Total Students</th>
                   <th className="px-4 py-3">Boys</th>
                   <th className="px-4 py-3">Girls</th>
@@ -407,6 +416,7 @@ export default function SchoolDetailPage() {
                   filteredClasses.map((cls) => (
                     <tr key={cls.id} className="border-b">
                       <td className="px-4 py-3 font-medium">{cls.name}</td>
+                      <td className="px-4 py-3">{cls.section || '-'}</td>
                       <td className="px-4 py-3">{cls.totalStudents || 0}</td>
                       <td className="px-4 py-3">{cls.boys || 0}</td>
                       <td className="px-4 py-3">{cls.girls || 0}</td>
@@ -437,7 +447,7 @@ export default function SchoolDetailPage() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="6" className="px-4 py-3 text-center text-gray-500">
+                    <td colSpan="7" className="px-4 py-3 text-center text-gray-500">
                       {classes && Array.isArray(classes) && classes.length === 0
                         ? "No classes found for this school."
                         : "Error loading classes. Please refresh the page."}
@@ -472,6 +482,7 @@ export default function SchoolDetailPage() {
                   setClassFormData({
                     classId: "",
                     startRollNumber: "1",
+                    section: "",
                   });
                 }}
                 className="text-gray-400 hover:text-gray-600"
@@ -495,21 +506,38 @@ export default function SchoolDetailPage() {
             <form onSubmit={handleEditClassSubmit}>
               <div className="mb-4">
                 <label className="mb-1 block text-sm font-medium">Select Class</label>
-                <select
+                <Select
                   name="classId"
                   value={classFormData.classId}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
+                  onValueChange={(value) => setClassFormData({ ...classFormData, classId: value })}
+                  disabled={isLoading}
                 >
-                  <option value="">Select a class</option>
-                  {allClasses.map((cls) => (
-                    <option key={cls.id} value={cls.id}>
-                      {cls.name}
-                    </option>
-                  ))}
-                </select>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a class" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {allClasses.map((classOption) => (
+                      <SelectItem key={classOption.id} value={classOption.id}>
+                        {classOption.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
+
+              {/* Section Input */}
+              <div className="space-y-2">
+                <Label htmlFor="section">Section</Label>
+                <Input
+                  id="section"
+                  name="section"
+                  placeholder="e.g., A, B, Red, etc."
+                  value={classFormData.section}
+                  onChange={handleInputChange}
+                  disabled={isLoading}
+                />
+              </div>
+
               <div className="mb-6">
                 <label className="mb-1 block text-sm font-medium">Start Roll Number</label>
                 <input
@@ -533,6 +561,7 @@ export default function SchoolDetailPage() {
                     setClassFormData({
                       classId: "",
                       startRollNumber: "1",
+                      section: "",
                     });
                   }}
                   className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
@@ -652,25 +681,44 @@ export default function SchoolDetailPage() {
               </div>
             ) : (
               <form onSubmit={handleAddClass}>
+                {/* Class Selection */}
                 <div className="mb-4">
                   <label className="mb-1 block text-sm font-medium">Select Class</label>
-                  <select
+                  <Select
                     name="classId"
                     value={classFormData.classId}
-                    onChange={handleInputChange}
-                    className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    required
+                    onValueChange={(value) => setClassFormData({ ...classFormData, classId: value })}
+                    disabled={isLoading}
                   >
-                    <option value="">Select a class</option>
-                    {allClasses.map((cls) => (
-                      <option key={cls.id} value={cls.id}>
-                        {cls.name}
-                      </option>
-                    ))}
-                  </select>
+                    <SelectTrigger className="w-full">
+                      <SelectValue placeholder="Select a class" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allClasses.map((classOption) => (
+                        <SelectItem key={classOption.id} value={classOption.id}>
+                          {classOption.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-                <div className="mb-6">
-                  <label className="mb-1 block text-sm font-medium">Start Roll Number</label>
+
+                {/* Section Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="section">Section</Label>
+                  <Input
+                    id="section"
+                    name="section"
+                    placeholder="e.g., A, B, Red, etc."
+                    value={classFormData.section}
+                    onChange={handleInputChange}
+                    disabled={isLoading}
+                  />
+                </div>
+
+                {/* Start Roll Number Input */}
+                <div className="space-y-2">
+                  <Label htmlFor="startRollNumber">Start Roll Number</Label>
                   <input
                     type="number"
                     name="startRollNumber"
@@ -681,12 +729,19 @@ export default function SchoolDetailPage() {
                     required
                   />
                 </div>
+
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
-                    onClick={() => setIsAddClassModalOpen(false)}
+                    onClick={() => {
+                      setIsAddClassModalOpen(false);
+                      setClassFormData({
+                        classId: "",
+                        startRollNumber: "1",
+                        section: "",
+                      });
+                    }}
                     className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
-                    disabled={isLoading}
                   >
                     Cancel
                   </button>

@@ -74,6 +74,7 @@ model Class {
   boys            Int?
   girls           Int?
   startRollNumber Int       @default(1)
+  section         String?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 

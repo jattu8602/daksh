@@ -23,11 +23,15 @@ export async function GET() {
           },
           select: {
             totalStudents: true,
+            schoolId: true,
           }
         });
 
         const totalStudents = schoolClasses.reduce((sum, schoolClass) => sum + (schoolClass.totalStudents || 0), 0);
-        const schoolCount = schoolClasses.length;
+
+        // Count unique schoolIds
+        const uniqueSchoolIds = new Set(schoolClasses.map(sc => sc.schoolId));
+        const schoolCount = uniqueSchoolIds.size;
 
         return {
           id: cls.id,
