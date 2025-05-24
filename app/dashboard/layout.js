@@ -2,26 +2,33 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import Image from "next/image";
+import {
+  Home,
+  Search,
+  BookOpen,
+  Clapperboard,
+} from "lucide-react"; // Lucide icons
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
 
   const navItems = [
-    { href: "/dashboard/home", label: "Home", icon: "🏠" },
-    { href: "/dashboard/explore", label: "Explore", icon: "🔍" },
-    { href: "/dashboard/learn", label: "Learn", icon: "📚" },
-    { href: "/dashboard/reels", label: "Reels", icon: "📱" },
-    { href: "/dashboard/profile", label: "Profile", icon: "👤" },
+    { href: "/dashboard/home", label: "Home", icon: <Home className="w-6 h-6" /> },
+    { href: "/dashboard/explore", label: "Explore", icon: <Search className="w-6 h-6" /> },
+    { href: "/dashboard/learn", label: "Learn", icon: <BookOpen className="w-6 h-6" /> },
+    { href: "/dashboard/reels", label: "Reels", icon: <Clapperboard className="w-6 h-6" /> },
   ];
 
-  // Check if we're in community or notifications pages
-  const shouldHideNav = pathname.includes('/dashboard/community') || pathname.includes('/dashboard/notifications');
+  const shouldHideNav =
+    pathname.includes("/dashboard/community") ||
+    pathname.includes("/dashboard/notifications");
 
   return (
     <div className="flex flex-col min-h-screen">
       <main className="flex-1 pb-16">{children}</main>
       {!shouldHideNav && (
-        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200">
+        <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
           <div className="flex justify-around items-center h-16">
             {navItems.map((item) => {
               const isActive = pathname.includes(item.href);
@@ -29,17 +36,30 @@ export default function DashboardLayout({ children }) {
                 <Link
                   key={item.href}
                   href={item.href}
-                  className={`flex flex-col items-center justify-center space-y-1 p-2 w-full ${
+                  className={`flex flex-col items-center justify-center space-y-1 p-2 ${
                     isActive
                       ? "text-black font-semibold"
                       : "text-gray-500 hover:text-gray-900"
                   }`}
                 >
-                  <span className="text-xl">{item.icon}</span>
-                  <span className="text-xs">{item.label}</span>
+                  {item.icon}
                 </Link>
               );
             })}
+
+            {/* Profile Image */}
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center justify-center p-2"
+            >
+              <Image
+                src="/icons/apple-icon.png" // replace with your dynamic path or user's profile image
+                alt="Profile"
+                width={32}
+                height={32}
+                className="rounded-full border-2 border-pink-300"
+              />
+            </Link>
           </div>
         </nav>
       )}
