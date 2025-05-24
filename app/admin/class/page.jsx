@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -16,36 +16,92 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-
-const classes = [
-  { id: '1st', name: '1st Class', students: 245, schools: 12, hasImage: true },
-  { id: '2nd', name: '2nd Class', students: 198, schools: 10, hasImage: true },
-  { id: '3rd', name: '3rd Class', students: 312, schools: 15, hasImage: true },
-  { id: '4th', name: '4th Class', students: 287, schools: 13, hasImage: true },
-  { id: '5th', name: '5th Class', students: 156, schools: 8, hasImage: false },
-  { id: '6th', name: '6th Class', students: 203, schools: 11, hasImage: false },
-  { id: '7th', name: '7th Class', students: 178, schools: 9, hasImage: false },
-  { id: '8th', name: '8th Class', students: 234, schools: 12, hasImage: false },
-  { id: '9th', name: '9th Class', students: 189, schools: 10, hasImage: false },
-  {
-    id: '10th',
-    name: '10th Class',
-    students: 267,
-    schools: 14,
-    hasImage: false,
-  },
-]
+import toast from 'react-hot-toast'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 export default function ClassesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [className, setClassName] = useState('')
   const [classLogo, setClassLogo] = useState(null)
+  const [classes, setClasses] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [schools, setSchools] = useState([])
+  const [selectedSchoolId, setSelectedSchoolId] = useState('')
 
-  const handleAddClass = () => {
-    console.log('Adding class:', className, classLogo)
-    setIsDialogOpen(false)
-    setClassName('')
-    setClassLogo(null)
+  // Fetch classes and schools on component mount
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch classes
+        const classesResponse = await fetch('/api/classes')
+        const classesData = await classesResponse.json()
+        if (classesData.success) {
+          setClasses(classesData.classes)
+        }
+
+        // Fetch schools
+        const schoolsResponse = await fetch('/api/schools')
+        const schoolsData = await schoolsResponse.json()
+        if (schoolsData.success) {
+          setSchools(schoolsData.schools)
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error)
+        toast.error('Failed to load data')
+      }
+    }
+
+    fetchData()
+  }, [])
+
+  const handleAddClass = async () => {
+    if (!className.trim()) {
+      toast.error('Please enter a class name')
+      return
+    }
+
+    if (!selectedSchoolId) {
+      toast.error('Please select a school')
+      return
+    }
+
+    setIsLoading(true)
+    try {
+      const response = await fetch('/api/classes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: className.trim(),
+          schoolId: selectedSchoolId,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to create class')
+      }
+
+      setClasses(prev => [...prev, data.class])
+      toast.success('Class created successfully')
+      setIsDialogOpen(false)
+      setClassName('')
+      setClassLogo(null)
+      setSelectedSchoolId('')
+    } catch (error) {
+      toast.error(error.message || 'Failed to create class')
+      console.error('Error creating class:', error)
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -78,12 +134,32 @@ export default function ClassesPage() {
             </DialogHeader>
             <div className="space-y-6 py-4">
               <div className="space-y-2">
+                <Label htmlFor="school">School</Label>
+                <Select
+                  value={selectedSchoolId}
+                  onValueChange={setSelectedSchoolId}
+                  disabled={isLoading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a school" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {schools.map((school) => (
+                      <SelectItem key={school.id} value={school.id}>
+                        {school.name} ({school.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
                 <Label htmlFor="className">Class Name</Label>
                 <Input
                   id="className"
                   placeholder="e.g., 11th Class, Pre-K, etc."
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
+                  disabled={isLoading}
                 />
               </div>
               <div className="space-y-2">
@@ -93,19 +169,25 @@ export default function ClassesPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => setClassLogo(e.target.files?.[0] || null)}
+                  disabled={isLoading}
                 />
                 <p className="text-sm text-muted-foreground">
                   Upload an image for the class logo
                 </p>
               </div>
               <div className="flex gap-3">
-                <Button onClick={handleAddClass} className="flex-1">
-                  Create Class
+                <Button
+                  onClick={handleAddClass}
+                  className="flex-1"
+                  disabled={isLoading}
+                >
+                  {isLoading ? 'Creating...' : 'Create Class'}
                 </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
                   className="flex-1"
+                  disabled={isLoading}
                 >
                   Cancel
                 </Button>
