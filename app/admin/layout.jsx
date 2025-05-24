@@ -14,7 +14,10 @@ export default function AdminLayout({ children }) {
     { href: "/admin/mentors", label: "Mentors", icon: "👨‍💼" },
     { href: "/admin/admins", label: "Admins", icon: "👑" },
     { href: "/admin/content", label: "Content", icon: "🎬" },
+    { href: "/admin/class", label: "Class", icon: "👥" },
     { href: "/admin/settings", label: "Settings", icon: "⚙️" },
+
+
   ];
 
   const isLoginPage = pathname === "/admin/login";
