@@ -286,7 +286,7 @@ export default function InstagramReels() {
     return count.toString()
   }
 
-  const truncateText = (text, maxLength = 100) =>
+  const truncateText = (text, maxLength = 30) =>
     text.length <= maxLength ? text : text.substring(0, maxLength) + '...'
 
   const handleAddComment = () => {
@@ -461,7 +461,7 @@ export default function InstagramReels() {
 
               {/* Mute indicator */}
               <div className="absolute top-4 right-4">
-                <div className="bg-slate-00 rounded-full p-2">
+                <div className="bg-slate-200 rounded-full p-2">
                   {isMuted ? (
                     <VolumeX className="w-4 h-4" />
                   ) : (
@@ -538,9 +538,9 @@ export default function InstagramReels() {
               </div>
 
               {/* Bottom Content */}
-              <div className="absolute bottom-4 left-4 right-20">
+              <div className="absolute bottom-16 left-4 right-20">
                 {/* Mentor Info */}
-                <div className="flex items-center gap-3 mb-3">
+                <div className="flex items-center gap-3 mb-3 relative">
                   <Avatar className="w-12 h-12 border-2 border-white">
                     <AvatarImage
                       src={reel.mentor.avatar || '/placeholder.svg'}
@@ -549,13 +549,13 @@ export default function InstagramReels() {
                       {reel.mentor.username[0].toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-base">
+                  <div className="flex items-center gap-3 bottom-0 left-14 absolute">
+                    <div className="flex items-center gap-2 ">
+                      <span className="font-semibold text-sm text-slate-200">
                         {reel.mentor.username}
                       </span>
                       {reel.mentor.isDaksh && (
-                        <Badge className="bg-orange-500 hover:bg-orange-500 text-white text-xs px-2 py-1 cursor-default">
+                        <Badge className="bg-[#F66B7A] hover:bg-orange-500 text-white text-xs py-1 cursor-default">
                           daksh
                         </Badge>
                       )}
@@ -563,7 +563,7 @@ export default function InstagramReels() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="text-sm px-4 py-2 h-8 border-2 border-white text-white hover:bg-white hover:text-black font-semibold"
+                      className="text-sm px-2 py-1 h-8 border-2 border-white text-black hover:bg-black hover:text-black font-semibold"
                     >
                       Follow
                     </Button>
@@ -571,14 +571,15 @@ export default function InstagramReels() {
                 </div>
 
                 {/* Description */}
-                <div className="text-sm leading-relaxed">
+                <div className="text-xs text-slate-200 leading-tight">
                   <p>
                     {showFullDescription
                       ? reel.description
-                      : truncateText(reel.description)}
-                    {reel.description.length > 100 && (
+                      : truncateText(reel.description, 30)}{' '}
+                    {/* Reduced from 50 to 30 characters */}
+                    {reel.description.length > 30 && (
                       <button
-                        className="text-gray-300 ml-2 font-medium"
+                        className="text-blue-200 ml-1 font-medium text-xs"
                         onClick={() =>
                           setShowFullDescription(!showFullDescription)
                         }
