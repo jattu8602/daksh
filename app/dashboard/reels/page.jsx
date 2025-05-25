@@ -252,7 +252,7 @@ export default function InstagramReels() {
   const [showComments, setShowComments] = useState(false)
   const [showShare, setShowShare] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
-  const [isMuted, setIsMuted] = useState(true)
+  const [isMuted, setIsMuted] = useState(false)
   const [reels, setReels] = useState(reelsData)
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState(null)
@@ -260,6 +260,8 @@ export default function InstagramReels() {
   const [touchStartY, setTouchStartY] = useState(0)
   const [touchEndY, setTouchEndY] = useState(0)
   const [isScrolling, setIsScrolling] = useState(false)
+  const [lastTapTime, setLastTapTime] = useState(0)
+  const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false)
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
@@ -297,9 +299,17 @@ export default function InstagramReels() {
 
   const handleVideoTap = (e) => {
     e.preventDefault()
-    if (!isHolding) {
-      setIsMuted(!isMuted)
+    const currentTime = new Date().getTime()
+    const tapLength = currentTime - lastTapTime
+
+    if (tapLength < 300 && tapLength > 0) {
+      // Double tap detected
+      toggleLike()
+      setShowDoubleTapHeart(true)
+      setTimeout(() => setShowDoubleTapHeart(false), 1000)
     }
+
+    setLastTapTime(currentTime)
   }
 
   const handleMouseDown = () => {
@@ -459,6 +469,13 @@ export default function InstagramReels() {
                 onTouchEnd={handleTouchEnd}
                 onContextMenu={(e) => e.preventDefault()}
               />
+
+              {/* Double tap heart animation */}
+              {showDoubleTapHeart && idx === currentReel && (
+                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                  <Heart className="w-32 h-32 text-red-500 fill-red-500 animate-ping" />
+                </div>
+              )}
 
               {/* Mute indicator */}
               <div className="absolute top-4 right-4">
