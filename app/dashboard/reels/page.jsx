@@ -29,7 +29,7 @@ const reelsData = [
       'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747683186452-what_happened_in_uphar_cinema_3d_animation__shorts.mp4',
     mentor: {
       username: 'science_explorer',
-      avatar: '/icons/girl.png',
+      avatar: '/placeholder.svg?height=40&width=40',
       isDaksh: false,
     },
     description:
@@ -265,12 +265,6 @@ export default function InstagramReels() {
     if (isScrolling) {
       const diff = touchStartY - touchEndY
       if (Math.abs(diff) > 50) {
-        // Check if we're at the top video and trying to scroll up
-        if (currentReel === 0 && diff < 0) {
-          // Allow default behavior (page reload) only for top video
-          return
-        }
-
         if (diff > 0 && currentReel < reels.length - 1) {
           setCurrentReel((prev) => prev + 1)
         } else if (diff < 0 && currentReel > 0) {
@@ -286,13 +280,6 @@ export default function InstagramReels() {
 
   const handleWheel = (e) => {
     e.preventDefault()
-
-    // Check if we're at the top video and trying to scroll up
-    if (currentReel === 0 && e.deltaY < 0) {
-      // Allow default behavior (page reload) only for top video
-      return
-    }
-
     if (e.deltaY > 0 && currentReel < reels.length - 1) {
       setCurrentReel((prev) => prev + 1)
     } else if (e.deltaY < 0 && currentReel > 0) {
@@ -322,13 +309,36 @@ export default function InstagramReels() {
     })
   }, [currentReel])
 
+  // Add useEffect to prevent pull-to-reload
+  useEffect(() => {
+    const preventPullToReload = (e) => {
+      if (window.scrollY === 0 && e.touches[0].clientY > 0) {
+        e.preventDefault()
+      }
+    }
+
+    document.addEventListener('touchmove', preventPullToReload, {
+      passive: false,
+    })
+    document.body.style.overscrollBehavior = 'none'
+
+    return () => {
+      document.removeEventListener('touchmove', preventPullToReload)
+      document.body.style.overscrollBehavior = ''
+    }
+  }, [])
+
   const currentReelData = reels[currentReel]
 
   return (
-    <div className="fixed inset-0 bg-black">
+    <div
+      className="fixed inset-0 bg-black overscroll-none"
+      style={{ overscrollBehavior: 'none' }}
+    >
       <div
         ref={containerRef}
-        className="h-full w-full overflow-hidden"
+        className="h-full w-full overflow-hidden overscroll-none"
+        style={{ overscrollBehavior: 'none' }}
         onWheel={handleWheel}
       >
         <div
@@ -336,14 +346,7 @@ export default function InstagramReels() {
           style={{ transform: `translateY(-${currentReel * 100}%)` }}
         >
           {reels.map((reel, idx) => (
-            <div
-              key={reel.id}
-              className="h-full w-full relative"
-              // Add touch events at the container level for better swipe detection
-              onTouchStart={handleTouchStart}
-              onTouchMove={handleTouchMove}
-              onTouchEnd={handleTouchEnd}
-            >
+            <div key={reel.id} className="h-full w-full relative">
               <video
                 ref={(el) => (videoRefs.current[idx] = el)}
                 className="w-full h-full object-cover"
@@ -355,6 +358,9 @@ export default function InstagramReels() {
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
+                onTouchStart={handleTouchStart}
+                onTouchMove={handleTouchMove}
+                onTouchEnd={handleTouchEnd}
               />
 
               {/* Mute indicator */}
