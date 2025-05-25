@@ -457,6 +457,7 @@ export default function InstagramReels() {
                 onTouchStart={handleTouchStart}
                 onTouchMove={handleTouchMove}
                 onTouchEnd={handleTouchEnd}
+                onContextMenu={(e) => e.preventDefault()}
               />
 
               {/* Mute indicator */}
