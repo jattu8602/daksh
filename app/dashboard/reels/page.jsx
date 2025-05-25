@@ -461,7 +461,7 @@ export default function InstagramReels() {
 
               {/* Mute indicator */}
               <div className="absolute top-4 right-4">
-                <div className="bg-black/50 rounded-full p-2">
+                <div className="bg-slate-00 rounded-full p-2">
                   {isMuted ? (
                     <VolumeX className="w-4 h-4" />
                   ) : (
@@ -471,70 +471,69 @@ export default function InstagramReels() {
               </div>
 
               {/* Actions */}
-              <div className="absolute right-3 bottom-24 flex flex-col items-center gap-4">
+              <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5">
                 {/* Like */}
                 <div className="flex flex-col items-center">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-red-500 transition-colors w-12 h-12"
+                    className="!w-9 !h-9 text-white hover:text-red-500 transition-colors p-0"
                     onClick={toggleLike}
                   >
                     <Heart
-                      className={`w-8 h-8 ${
+                      className={`!w-7 !h-7 ${
                         reel.isLiked ? 'fill-red-500 text-red-500' : ''
                       }`}
                     />
                   </Button>
-                  <span className="text-xs font-medium mt-1">
+                  <span className="text-sm font-medium text-slate-200">
                     {formatCount(reel.likes)}
                   </span>
                 </div>
+
                 {/* Comment */}
                 <div className="flex flex-col items-center">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-blue-400 transition-colors w-12 h-12"
+                    className="!w-9 !h-9 text-white hover:text-blue-400 transition-colors p-0"
                     onClick={() => setShowComments(true)}
                   >
-                    <MessageCircle className="w-8 h-8" />
+                    <MessageCircle className="!w-7 !h-7" />
                   </Button>
-                  <span className="text-xs font-medium mt-1">
+                  <span className="text-sm font-medium text-slate-200">
                     {reel.comments}
                   </span>
                 </div>
+
                 {/* Share */}
                 <div className="flex flex-col items-center">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-green-400 transition-colors w-12 h-12"
+                    className="!w-9 !h-9 text-white hover:text-green-400 transition-colors p-0"
                     onClick={() => setShowShare(true)}
                   >
-                    <Send className="w-8 h-8" />
+                    <Send className="!w-7 !h-7" />
                   </Button>
-                  <span className="text-xs font-medium mt-1">
+                  <span className="text-sm font-medium text-slate-200">
                     {formatCount(reel.shares)}
                   </span>
                 </div>
+
                 {/* Bookmark */}
                 <div className="flex flex-col items-center">
                   <Button
                     variant="ghost"
-                    size="icon"
-                    className="text-white hover:text-yellow-400 transition-colors w-12 h-12"
+                    className="!w-9 !h-9 text-white hover:text-yellow-400 transition-colors p-0"
                   >
-                    <Bookmark className="w-8 h-8" />
+                    <Bookmark className="!w-7 !h-7" />
                   </Button>
                 </div>
+
                 {/* More */}
                 <Button
                   variant="ghost"
-                  size="icon"
-                  className="text-white hover:text-gray-400 transition-colors w-12 h-12"
+                  className="!w-9 !h-9 text-white hover:text-gray-400 transition-colors p-0"
                 >
-                  <MoreHorizontal className="w-8 h-8" />
+                  <MoreHorizontal className="!w-7 !h-7" />
                 </Button>
               </div>
 
