@@ -229,20 +229,7 @@ export default function InstagramReels() {
     }
   }
 
-  const handleWheel = (e) => {
-    // Always prevent default to stop page reload
-    e.preventDefault()
-
-    // Handle scroll based on direction
-    if (e.deltaY > 0 && currentReel < reels.length - 1) {
-      setCurrentReel((prev) => prev + 1)
-    } else if (e.deltaY < 0 && currentReel > 0) {
-      setCurrentReel((prev) => prev - 1)
-    }
-  }
-
   const handleTouchStart = (e) => {
-    e.preventDefault() // Prevent default touch behavior
     setTouchStartY(e.touches[0].clientY)
     holdTimeoutRef.current = setTimeout(() => {
       setIsHolding(true)
@@ -254,7 +241,6 @@ export default function InstagramReels() {
   }
 
   const handleTouchMove = (e) => {
-    e.preventDefault() // Prevent default touch behavior
     setTouchEndY(e.touches[0].clientY)
     const diff = touchStartY - touchEndY
     if (Math.abs(diff) > 10) {
@@ -264,8 +250,7 @@ export default function InstagramReels() {
     }
   }
 
-  const handleTouchEnd = (e) => {
-    e.preventDefault() // Prevent default touch behavior
+  const handleTouchEnd = () => {
     clearTimeout(holdTimeoutRef.current)
     if (isHolding) {
       setIsHolding(false)
@@ -280,6 +265,12 @@ export default function InstagramReels() {
     if (isScrolling) {
       const diff = touchStartY - touchEndY
       if (Math.abs(diff) > 50) {
+        // Check if we're at the top video and trying to scroll up
+        if (currentReel === 0 && diff < 0) {
+          // Allow default behavior (page reload) only for top video
+          return
+        }
+
         if (diff > 0 && currentReel < reels.length - 1) {
           setCurrentReel((prev) => prev + 1)
         } else if (diff < 0 && currentReel > 0) {
@@ -291,6 +282,22 @@ export default function InstagramReels() {
 
     setTouchStartY(0)
     setTouchEndY(0)
+  }
+
+  const handleWheel = (e) => {
+    e.preventDefault()
+
+    // Check if we're at the top video and trying to scroll up
+    if (currentReel === 0 && e.deltaY < 0) {
+      // Allow default behavior (page reload) only for top video
+      return
+    }
+
+    if (e.deltaY > 0 && currentReel < reels.length - 1) {
+      setCurrentReel((prev) => prev + 1)
+    } else if (e.deltaY < 0 && currentReel > 0) {
+      setCurrentReel((prev) => prev - 1)
+    }
   }
 
   useEffect(() => {
@@ -318,10 +325,7 @@ export default function InstagramReels() {
   const currentReelData = reels[currentReel]
 
   return (
-    <div
-      className="fixed inset-0 bg-black"
-      onTouchMove={(e) => e.preventDefault()} // Prevent default touch behavior at container level
-    >
+    <div className="fixed inset-0 bg-black">
       <div
         ref={containerRef}
         className="h-full w-full overflow-hidden"
@@ -335,6 +339,7 @@ export default function InstagramReels() {
             <div
               key={reel.id}
               className="h-full w-full relative"
+              // Add touch events at the container level for better swipe detection
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
