@@ -47,7 +47,7 @@ export default function GroupProfileDynamicPage({ params }) {
             id: student.id,
             name: student.name || student.username,
             rollNo: student.rollNo,
-            avatar: student.avatar || "https://ui-avatars.com/api/?name=" + encodeURIComponent(student.name || student.username)
+            avatar: student.profileImage || "https://ui-avatars.com/api/?name=" + encodeURIComponent(student.name || student.username)
           })));
         }
         setLoading(false);

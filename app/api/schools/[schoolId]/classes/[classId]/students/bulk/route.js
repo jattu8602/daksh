@@ -90,13 +90,15 @@ export async function POST(request) {
         username,
         password,
         qrCode,
+        profileImage: student.profileImage || null,
         user: {
           create: {
             name: student.name,
             username,
             password,
             role: "STUDENT",
-            qrCode
+            qrCode,
+            profileImage: student.profileImage || null
           }
         },
         class: {

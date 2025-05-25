@@ -37,6 +37,7 @@ export async function GET(request, { params }) {
         username: student.user.username,
         qrCode: !!student.user.qrCode,
         class: student.class.name,
+        profileImage: student.profileImage,
       },
     });
   } catch (error) {
@@ -61,7 +62,7 @@ export async function PUT(request, { params }) {
     }
 
     const data = await request.json();
-    const { name, rollNo } = data;
+    const { name, rollNo, profileImage } = data;
 
     // Validate required fields
     if (!name || !rollNo) {
@@ -106,6 +107,7 @@ export async function PUT(request, { params }) {
       data: {
         name,
         rollNo: parseInt(rollNo),
+        profileImage: profileImage || null,
       },
       include: {
         user: true,
@@ -122,6 +124,7 @@ export async function PUT(request, { params }) {
         username: updatedStudent.user.username,
         qrCode: !!updatedStudent.user.qrCode,
         class: updatedStudent.class.name,
+        profileImage: updatedStudent.profileImage,
       },
     });
   } catch (error) {
