@@ -2,9 +2,14 @@
 
 import { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
+import toast from "react-hot-toast";
 
 export default function SchoolsPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [schoolToDelete, setSchoolToDelete] = useState(null);
+  const [schoolToEdit, setSchoolToEdit] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [schools, setSchools] = useState([]);
@@ -135,6 +140,102 @@ export default function SchoolsPage() {
     }
   };
 
+  const handleEditClick = (school) => {
+    setSchoolToEdit(school);
+    setFormData({
+      name: school.name,
+      code: school.code,
+      email: school.email || "",
+      phone: school.phone || "",
+    });
+    setIsEditModalOpen(true);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!schoolToEdit) return;
+
+    setIsLoading(true);
+    setErrorMessage("");
+    setSuccessMessage("");
+
+    try {
+      const response = await fetch(`/api/schools/${schoolToEdit.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || data.message || "Failed to update school");
+      }
+
+      // Update the school in the list
+      setSchools(schools.map(school =>
+        school.id === schoolToEdit.id ? data.school : school
+      ));
+
+      // Clear cache
+      sessionStorage.removeItem('allSchools');
+      sessionStorage.removeItem('allSchools:timestamp');
+
+      toast.success('School updated successfully');
+      setIsEditModalOpen(false);
+      setSchoolToEdit(null);
+      setFormData({
+        name: "",
+        code: "",
+        email: "",
+        phone: "",
+      });
+    } catch (error) {
+      setErrorMessage(error.message || "Something went wrong");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDeleteClick = (school) => {
+    setSchoolToDelete(school);
+    setIsDeleteModalOpen(true);
+  };
+
+  const handleDeleteConfirm = async () => {
+    if (!schoolToDelete) return;
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`/api/schools/${schoolToDelete.id}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete school');
+      }
+
+      // Remove the school from the list
+      setSchools(schools.filter(s => s.id !== schoolToDelete.id));
+
+      // Clear cache
+      sessionStorage.removeItem('allSchools');
+      sessionStorage.removeItem('allSchools:timestamp');
+
+      toast.success('School deleted successfully');
+      setIsDeleteModalOpen(false);
+      setSchoolToDelete(null);
+    } catch (error) {
+      toast.error(error.message || 'Failed to delete school');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   // Memoize the filtered schools to prevent unnecessary re-renders
   const filteredSchools = useMemo(() => {
     console.log('Filtering schools:', schools);
@@ -207,8 +308,18 @@ export default function SchoolsPage() {
                         >
                           View Classes
                         </Link>
-                        <button className="text-blue-600 hover:underline">Edit</button>
-                        <button className="text-red-600 hover:underline">Delete</button>
+                        <button
+                          onClick={() => handleEditClick(school)}
+                          className="text-blue-600 hover:underline"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleDeleteClick(school)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Delete
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -231,6 +342,170 @@ export default function SchoolsPage() {
           </p>
         </div>
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteModalOpen && schoolToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Delete School</h2>
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSchoolToDelete(null);
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-600">
+                Are you sure you want to delete {schoolToDelete.name} ({schoolToDelete.code})?
+                This action cannot be undone.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setIsDeleteModalOpen(false);
+                  setSchoolToDelete(null);
+                }}
+                className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDeleteConfirm}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={isLoading}
+              >
+                {isLoading ? "Deleting..." : "Delete School"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {isEditModalOpen && schoolToEdit && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold">Edit School</h2>
+              <button
+                onClick={() => {
+                  setIsEditModalOpen(false);
+                  setSchoolToEdit(null);
+                  setErrorMessage("");
+                  setSuccessMessage("");
+                  setFormData({
+                    name: "",
+                    code: "",
+                    email: "",
+                    phone: "",
+                  });
+                }}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            {errorMessage && (
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {errorMessage}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
+                {successMessage}
+              </div>
+            )}
+
+            <form onSubmit={handleEditSubmit}>
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium">School Name</label>
+                <input
+                  type="text"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Enter school name"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium">School Code</label>
+                <input
+                  type="text"
+                  name="code"
+                  value={formData.code}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="e.g., SCH001"
+                  required
+                />
+              </div>
+              <div className="mb-4">
+                <label className="mb-1 block text-sm font-medium">Email (Optional)</label>
+                <input
+                  type="email"
+                  name="email"
+                  value={formData.email}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Enter school email"
+                />
+              </div>
+              <div className="mb-6">
+                <label className="mb-1 block text-sm font-medium">Phone (Optional)</label>
+                <input
+                  type="tel"
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleInputChange}
+                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  placeholder="Enter school phone number"
+                />
+              </div>
+              <div className="flex justify-end space-x-3">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsEditModalOpen(false);
+                    setSchoolToEdit(null);
+                    setErrorMessage("");
+                    setSuccessMessage("");
+                    setFormData({
+                      name: "",
+                      code: "",
+                      email: "",
+                      phone: "",
+                    });
+                  }}
+                  className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  disabled={isLoading}
+                >
+                  {isLoading ? "Updating..." : "Update School"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {isAddModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">

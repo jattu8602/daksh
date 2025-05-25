@@ -3,11 +3,11 @@ import prisma from "@/lib/prisma";
 
 export async function POST(request) {
   try {
-    const { name, schoolId, totalStudents, boys, girls, startRollNumber } = await request.json();
+    const { classId, schoolId, startRollNumber, section } = await request.json();
 
-    if (!name || !schoolId) {
+    if (!classId || !schoolId) {
       return NextResponse.json(
-        { message: "Class name and school ID are required" },
+        { message: "Class ID and School ID are required" },
         { status: 400 }
       );
     }
@@ -24,30 +24,42 @@ export async function POST(request) {
       );
     }
 
-    // Check if a class with the same name already exists in this school
-    const existingClass = await prisma.class.findFirst({
+    // Find the common class by its ID
+    const commonClass = await prisma.class.findUnique({
+      where: { id: classId },
+    });
+
+    if (!commonClass) {
+       return NextResponse.json(
+         { message: "Common class not found" },
+         { status: 404 }
+       );
+     }
+
+    // Check if a class with the same name and section already exists in this school
+    const existingClassInSchool = await prisma.class.findFirst({
       where: {
-        name,
+        name: commonClass.name,
         schoolId,
+        section: section || null,
       },
     });
 
-    if (existingClass) {
+    if (existingClassInSchool) {
       return NextResponse.json(
-        { message: "A class with this name already exists in this school" },
+        { message: `Class "${commonClass.name}" already exists in this school` },
         { status: 400 }
       );
     }
 
-    // Create class with proper data types
+    // Create a new school-specific class using the common class's name
     const newClass = await prisma.class.create({
       data: {
-        name,
+        name: commonClass.name,
         schoolId,
-        totalStudents: totalStudents ? parseInt(totalStudents) : 0,
-        boys: boys ? parseInt(boys) : 0,
-        girls: girls ? parseInt(girls) : 0,
         startRollNumber: startRollNumber ? parseInt(startRollNumber) : 1,
+        isCommon: false, // This is a school-specific class
+        section: section || null,
       },
       include: {
         school: {
@@ -75,7 +87,7 @@ export async function POST(request) {
   } catch (error) {
     console.error("Error creating class:", error);
     return NextResponse.json(
-      { error: "Something went wrong", message: error.message },
+      { message: error.message || "Failed to create class" },
       { status: 500 }
     );
   }
