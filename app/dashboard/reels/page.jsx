@@ -29,7 +29,7 @@ const reelsData = [
       'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747683186452-what_happened_in_uphar_cinema_3d_animation__shorts.mp4',
     mentor: {
       username: 'science_explorer',
-      avatar: '/placeholder.svg?height=40&width=40',
+      avatar: '/icons/girl.png',
       isDaksh: false,
     },
     description:
@@ -45,7 +45,7 @@ const reelsData = [
       'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747684534610-why_birds_don_t_die_of_high_voltage_____explained_in_1_min___shorts__shorts.mp4',
     mentor: {
       username: 'physics_mentor',
-      avatar: '/placeholder.svg?height=40&width=40',
+      avatar: '/icons/girl.png',
       isDaksh: true,
     },
     description:
@@ -61,8 +61,104 @@ const reelsData = [
       'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747684569629-pee_rokna_galat_hai___explained_in_1_min__hindi__shorts__shorts.mp4',
     mentor: {
       username: 'health_guru',
-      avatar: '/placeholder.svg?height=40&width=40',
+      avatar: '/icons/girl.png',
+      isDaksh: true,
+    },
+    description:
+      'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
+    likes: 8900,
+    comments: 156,
+    shares: 2100,
+    isLiked: false,
+  },
+  {
+    id: 4,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747720979811-_why_did_japan_attack_pearl_harbor__uncover_the_strategy_behind_the_attack____history__map.mp4',
+    mentor: {
+      username: 'science_explorer',
+      avatar: '/icons/girl.png',
       isDaksh: false,
+    },
+    description:
+      'What happened in Uphar Cinema? A detailed 3D animation explaining the tragic incident that changed fire safety regulations forever. This educational content helps us understand the importance of safety measures in public spaces.',
+    likes: 19700,
+    comments: 51,
+    shares: 6556,
+    isLiked: false,
+  },
+  {
+    id: 5,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721029100-_desertification_in_the_sahel__a_call_to_action__.mp4',
+    mentor: {
+      username: 'physics_mentor',
+      avatar: '/icons/girl.png',
+      isDaksh: true,
+    },
+    description:
+      "Why birds don't die of high voltage? Explained in 1 minute! The fascinating physics behind how birds can safely perch on power lines.",
+    likes: 12700,
+    comments: 89,
+    shares: 4200,
+    isLiked: true,
+  },
+  {
+    id: 6,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721143218-top_5_countries_with_the_most_forest_cover___fascinating_geography_facts.mp4',
+    mentor: {
+      username: 'health_guru',
+      avatar: '/icons/girl.png',
+      isDaksh: false,
+    },
+    description:
+      'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
+    likes: 8900,
+    comments: 156,
+    shares: 2100,
+    isLiked: false,
+  },
+  {
+    id: 7,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721210053-_the_rise_and_fall_of_the_korean_empire__a_journey_through_history_.mp4',
+    mentor: {
+      username: 'science_explorer',
+      avatar: '/icons/girl.png',
+      isDaksh: false,
+    },
+    description:
+      'What happened in Uphar Cinema? A detailed 3D animation explaining the tragic incident that changed fire safety regulations forever. This educational content helps us understand the importance of safety measures in public spaces.',
+    likes: 19700,
+    comments: 51,
+    shares: 6556,
+    isLiked: false,
+  },
+  {
+    id: 8,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721246995-_why_is_it_called_the_indian_subcontinent____geography_explained_.mp4',
+    mentor: {
+      username: 'physics_mentor',
+      avatar: '/icons/girl.png',
+      isDaksh: true,
+    },
+    description:
+      "Why birds don't die of high voltage? Explained in 1 minute! The fascinating physics behind how birds can safely perch on power lines.",
+    likes: 12700,
+    comments: 89,
+    shares: 4200,
+    isLiked: true,
+  },
+  {
+    id: 9,
+    videoUrl:
+      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721295909-the_dead_sea__earth_s_lowest___saltiest_wonder______.mp4',
+    mentor: {
+      username: 'health_guru',
+      avatar: '/icons/girl.png',
+      isDaksh: true,
     },
     description:
       'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
