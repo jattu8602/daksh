@@ -265,6 +265,12 @@ export default function InstagramReels() {
     if (isScrolling) {
       const diff = touchStartY - touchEndY
       if (Math.abs(diff) > 50) {
+        // Check if we're at the top video and trying to scroll up
+        if (currentReel === 0 && diff < 0) {
+          // Allow default behavior (page reload) only for top video
+          return
+        }
+
         if (diff > 0 && currentReel < reels.length - 1) {
           setCurrentReel((prev) => prev + 1)
         } else if (diff < 0 && currentReel > 0) {
@@ -280,6 +286,13 @@ export default function InstagramReels() {
 
   const handleWheel = (e) => {
     e.preventDefault()
+
+    // Check if we're at the top video and trying to scroll up
+    if (currentReel === 0 && e.deltaY < 0) {
+      // Allow default behavior (page reload) only for top video
+      return
+    }
+
     if (e.deltaY > 0 && currentReel < reels.length - 1) {
       setCurrentReel((prev) => prev + 1)
     } else if (e.deltaY < 0 && currentReel > 0) {
@@ -323,7 +336,14 @@ export default function InstagramReels() {
           style={{ transform: `translateY(-${currentReel * 100}%)` }}
         >
           {reels.map((reel, idx) => (
-            <div key={reel.id} className="h-full w-full relative">
+            <div
+              key={reel.id}
+              className="h-full w-full relative"
+              // Add touch events at the container level for better swipe detection
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
               <video
                 ref={(el) => (videoRefs.current[idx] = el)}
                 className="w-full h-full object-cover"
@@ -335,9 +355,6 @@ export default function InstagramReels() {
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
               />
 
               {/* Mute indicator */}
