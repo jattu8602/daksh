@@ -75,7 +75,6 @@ export async function GET(request, { params }) {
       class: formattedClassData
     }, { headers });
   } catch (error) {
-    console.error("Error fetching class details:", error);
     return NextResponse.json(
       { error: "Failed to fetch class details" },
       { status: 500 }

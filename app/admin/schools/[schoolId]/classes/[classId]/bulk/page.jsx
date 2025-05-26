@@ -3,8 +3,9 @@
 import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
+import toast from "react-hot-toast"; // Assuming you are using react-hot-toast for notifications
 
-export default function BulkImportPage() {
+export default function BulkImportStudentsPage() {
   const params = useParams();
   const schoolId = params.schoolId;
   const classId = params.classId;
@@ -13,163 +14,102 @@ export default function BulkImportPage() {
   const [classData, setClassData] = useState(null);
   const [errorMessage, setErrorMessage] = useState("");
   const [successMessage, setSuccessMessage] = useState("");
-  const [bulkImportData, setBulkImportData] = useState({
-    students: [],
-    availableBoys: 0,
-    availableGirls: 0,
-    startRollNumber: 1
-  });
 
-  // Fetch class details on mount - optimized version
+  // Bulk import state: start with 5 empty student fields
+  const [bulkStudents, setBulkStudents] = useState(
+    Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "" }))
+  );
+
+  // Fetch class data on component mount
   useEffect(() => {
-    const fetchClassDetails = async () => {
+    const fetchClassData = async () => {
       try {
-        // Check for cached class data first
-        const cacheKey = `class:${schoolId}:${classId}`;
-        const cachedData = localStorage.getItem(cacheKey);
-        const cachedTimestamp = localStorage.getItem(`${cacheKey}:timestamp`);
-        const isCacheValid = cachedTimestamp && (Date.now() - parseInt(cachedTimestamp) < 60000);
-
-        if (isCacheValid && cachedData) {
-          const data = JSON.parse(cachedData);
-          const totalStudents = data.class.boys + data.class.girls;
-
-          setClassData(data.class);
-          setBulkImportData(prev => ({
-            ...prev,
-            students: Array(Math.min(20, totalStudents)).fill().map(() => ({
-              name: "",
-              rollNo: "",
-              gender: ""
-            })),
-            availableBoys: data.class.boys || 0,
-            availableGirls: data.class.girls || 0,
-            startRollNumber: data.class.startRollNumber || 1
-          }));
-          return;
-        }
-
-        setIsLoading(true);
         const response = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
         const data = await response.json();
-
         if (data.success) {
-          const totalStudents = data.class.boys + data.class.girls;
-
           setClassData(data.class);
-          setBulkImportData(prev => ({
-            ...prev,
-            // Limit initial array size for better performance
-            students: Array(Math.min(20, totalStudents)).fill().map(() => ({
-              name: "",
-              rollNo: "",
-              gender: ""
-            })),
-            availableBoys: data.class.boys || 0,
-            availableGirls: data.class.girls || 0,
-            startRollNumber: data.class.startRollNumber || 1
-          }));
         } else {
           setErrorMessage(data.error || "Failed to fetch class details");
         }
       } catch (error) {
+        console.error("Error fetching class details:", error);
         setErrorMessage("Error fetching class details: " + error.message);
-      } finally {
-        setIsLoading(false);
       }
     };
-
-    fetchClassDetails();
+    fetchClassData();
   }, [schoolId, classId]);
 
-  const handleBulkImport = async () => {
+  const handleInputChange = (index, field, value) => {
+    const newStudents = [...bulkStudents];
+    newStudents[index][field] = value;
+    setBulkStudents(newStudents);
+  };
+
+  const handleAddMoreFields = () => {
+    const currentStudentsCount = bulkStudents.length;
+    const maxStudents = 1000;
+    const fieldsToAdd = Math.min(5, maxStudents - currentStudentsCount);
+
+    if (fieldsToAdd > 0) {
+      const newFields = Array(fieldsToAdd).fill(null).map(() => ({ name: "", gender: "", rollNo: "" }));
+      setBulkStudents([...bulkStudents, ...newFields]);
+    }
+  };
+
+  const handleRemoveField = (index) => {
+    const newStudents = bulkStudents.filter((_, i) => i !== index);
+    setBulkStudents(newStudents);
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
     setIsLoading(true);
     setErrorMessage("");
     setSuccessMessage("");
 
+    // Filter out rows with empty name, gender, or invalid rollNo
+    const studentsToImport = bulkStudents.filter(student =>
+      student.name.trim() !== "" &&
+      student.gender !== "" &&
+      student.rollNo !== "" &&
+      !isNaN(parseInt(student.rollNo))
+    );
+
+    if (studentsToImport.length === 0) {
+      setErrorMessage("Please fill in at least one student row with all required fields (Name, Gender, Roll Number), and ensure Roll Number is a valid number.");
+      setIsLoading(false);
+      return;
+    }
+
     try {
-      // Validate input
-      const errors = [];
-      bulkImportData.students.forEach((student, index) => {
-        if (!student.name.trim()) {
-          errors.push(`Student at row ${index + 1} has no name`);
-        }
-        if (!student.gender) {
-          errors.push(`Student at row ${index + 1} has no gender`);
-        }
-        if (!student.rollNo) {
-          errors.push(`Student at row ${index + 1} has no roll number`);
-        }
-      });
-
-      if (errors.length > 0) {
-        throw new Error(errors.join("\n"));
-      }
-
-      // Calculate roll numbers and generate usernames if not provided
-      const studentsWithRolls = bulkImportData.students.map((student, index) => {
-        const rollNo = student.rollNo || (bulkImportData.startRollNumber + index);
-        const username = student.name
-          ? `${student.name.toLowerCase().replace(/\s+/g, "").replace(/[^a-z0-9]/g, "")}${rollNo}`
-          : '';
-
-        return {
-          ...student,
-          rollNo,
-          username
-        };
-      });
-
       const response = await fetch(`/api/schools/${schoolId}/classes/${classId}/students/bulk`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({
-          students: studentsWithRolls,
-          classId,
-        }),
+        body: JSON.stringify({ students: studentsToImport, classId }),
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to import students");
+        throw new Error(data.error || "Failed to import students");
       }
 
-      setSuccessMessage("Students imported successfully");
+      setSuccessMessage(`Successfully imported ${data.students.length} students.`);
+      // Optionally reset form or redirect after successful import
+      setBulkStudents(Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "" })));
 
-      // Clear any cached data
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem(`class:${schoolId}:${classId}`);
-        localStorage.removeItem(`class:${schoolId}:${classId}:timestamp`);
-      }
-
-      // Redirect back to class page with a query parameter to force refresh
+      // Redirect back to the class details page after a short delay and force refresh
       setTimeout(() => {
-        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?refresh=true&no-cache=true`;
-      }, 1500);
+        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?no-cache=true`;
+      }, 1500); // Redirect after 1.5 seconds
 
     } catch (error) {
       setErrorMessage(error.message || "Something went wrong");
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Dynamically add more rows as needed
-  const addMoreRows = () => {
-    setBulkImportData(prev => ({
-      ...prev,
-      students: [
-        ...prev.students,
-        ...Array(5).fill().map(() => ({
-          name: "",
-          rollNo: "",
-          gender: ""
-        }))
-      ]
-    }));
   };
 
   if (!classData) {
@@ -184,7 +124,7 @@ export default function BulkImportPage() {
           <li><Link href="/admin/schools" className="hover:underline">Schools</Link></li>
           <li className="flex items-center">
             <span className="mx-2">/</span>
-            <Link href={`/admin/schools/${schoolId}`} className="hover:underline">{classData.school.name}</Link>
+            <Link href={`/admin/schools/${schoolId}`} className="hover:underline">{classData.school?.name}</Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2">/</span>
@@ -202,7 +142,7 @@ export default function BulkImportPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">Bulk Import Students for {classData.name}</h1>
-            <div className="mt-1 text-sm text-gray-600">School: {classData.school.name} ({classData.school.code})</div>
+            <div className="mt-1 text-sm text-gray-600">School: {classData.school?.name} ({classData.school?.code})</div>
           </div>
         </div>
 
@@ -224,71 +164,20 @@ export default function BulkImportPage() {
 
       {/* Bulk Import Form */}
       <div className="bg-white rounded-lg border p-6 shadow">
-        {errorMessage && (
-          <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
-            {errorMessage}
-          </div>
-        )}
 
-        {successMessage && (
-          <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
-            {successMessage}
-          </div>
-        )}
-
-        {/* Class Structure */}
-        <div className="bg-gray-50 p-4 rounded-lg mb-6">
-          <h3 className="text-lg font-semibold mb-4">Class Structure</h3>
-          <div className="flex flex-wrap gap-4">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Total Students:</span>
-                <span className="font-medium text-gray-900">{bulkImportData.availableBoys + bulkImportData.availableGirls}</span>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Boys:</span>
-                <span className="font-medium text-blue-600">{bulkImportData.availableBoys}</span>
-              </div>
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Girls:</span>
-                <span className="font-medium text-pink-600">{bulkImportData.availableGirls}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-600">Start Roll No:</span>
-                <span className="font-medium text-gray-900">{bulkImportData.startRollNumber}</span>
-              </div>
-            </div>
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-sm text-gray-600">Available Tags:</span>
-                <div className="flex gap-2">
-                  <button
-                    onClick={() => setBulkImportData(prev => ({
-                      ...prev,
-                      availableBoys: Math.max(0, prev.availableBoys - 1)
-                    }))}
-                    className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
-                    disabled={bulkImportData.availableBoys <= 0}
-                  >
-                    Boy
-                  </button>
-                  <button
-                    onClick={() => setBulkImportData(prev => ({
-                      ...prev,
-                      availableGirls: Math.max(0, prev.availableGirls - 1)
-                    }))}
-                    className="px-3 py-1 bg-pink-100 text-pink-700 rounded-full text-sm hover:bg-pink-200"
-                    disabled={bulkImportData.availableGirls <= 0}
-                  >
-                    Girl
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
+      {errorMessage && (
+        <div className="p-4 mb-4 border border-red-200 rounded-md bg-red-50 text-red-700">
+          {errorMessage}
         </div>
+      )}
 
-        {/* Student List */}
+      {successMessage && (
+        <div className="p-4 mb-4 border border-green-200 rounded-md bg-green-50 text-green-700">
+          {successMessage}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit}>
         <div className="overflow-x-auto">
           <table className="min-w-full">
             <thead>
@@ -296,46 +185,25 @@ export default function BulkImportPage() {
                 <th className="px-4 py-2">Student Name</th>
                 <th className="px-4 py-2">Gender</th>
                 <th className="px-4 py-2">Roll Number</th>
-                <th className="px-4 py-2">Username</th>
+                <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {bulkImportData.students.map((student, index) => (
+              {bulkStudents.map((student, index) => (
                 <tr key={index} className="border-b">
                   <td className="px-4 py-2">
                     <input
                       type="text"
                       value={student.name}
-                      onChange={(e) => {
-                        const newStudents = [...bulkImportData.students];
-                        newStudents[index] = {
-                          ...newStudents[index],
-                          name: e.target.value
-                        };
-                        setBulkImportData(prev => ({
-                          ...prev,
-                          students: newStudents
-                        }));
-                      }}
+                      onChange={(e) => handleInputChange(index, "name", e.target.value)}
                       className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       placeholder="Enter student name"
-                      required
                     />
                   </td>
                   <td className="px-4 py-2">
                     <select
                       value={student.gender}
-                      onChange={(e) => {
-                        const newStudents = [...bulkImportData.students];
-                        newStudents[index] = {
-                          ...newStudents[index],
-                          gender: e.target.value
-                        };
-                        setBulkImportData(prev => ({
-                          ...prev,
-                          students: newStudents
-                        }));
-                      }}
+                      onChange={(e) => handleInputChange(index, "gender", e.target.value)}
                       className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                     >
                       <option value="">Select Gender</option>
@@ -347,69 +215,60 @@ export default function BulkImportPage() {
                     <input
                       type="number"
                       value={student.rollNo}
-                      onChange={(e) => {
-                        const newStudents = [...bulkImportData.students];
-                        newStudents[index] = {
-                          ...newStudents[index],
-                          rollNo: e.target.value
-                        };
-                        setBulkImportData(prev => ({
-                          ...prev,
-                          students: newStudents
-                        }));
-                      }}
+                      onChange={(e) => handleInputChange(index, "rollNo", e.target.value)}
                       className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                       placeholder="Roll Number"
-                      required
                     />
                   </td>
                   <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      value={student.username || ''}
-                      readOnly
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Username will be auto-generated"
-                    />
-                  </td>
+                     {bulkStudents.length > 1 && (
+                       <button
+                         type="button"
+                         onClick={() => handleRemoveField(index)}
+                         className="text-red-600 hover:underline"
+                       >
+                         Remove
+                       </button>
+                     )}
+                   </td>
                 </tr>
               ))}
-
-              {/* Display remaining slots */}
-              {bulkImportData.students.length < (bulkImportData.availableBoys + bulkImportData.availableGirls) && (
-                <tr className="border-b">
-                  <td colSpan={4} className="px-4 py-2 text-center text-gray-500">
-                    <button
-                      onClick={addMoreRows}
-                      className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm hover:bg-blue-200"
-                    >
-                      + Add 5 More Rows
-                    </button>
-                    <p className="mt-2">{bulkImportData.availableBoys + bulkImportData.availableGirls - bulkImportData.students.length} slots remaining</p>
-                  </td>
-                </tr>
-              )}
             </tbody>
           </table>
         </div>
 
-        {/* Actions */}
-        <div className="flex justify-end space-x-3 mt-4">
-          <Link
-            href={`/admin/schools/${schoolId}/classes/${classId}`}
-            className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+        {bulkStudents.length < 1000 && ( // Show button only if max students not reached
+          <div className="mt-4 text-center">
+            <button
+              type="button"
+              onClick={handleAddMoreFields}
+              className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+              disabled={isLoading || bulkStudents.length >= 1000}
+            >
+              Add Next 5 Students ({bulkStudents.length} / 1000)
+            </button>
+          </div>
+        )}
+
+        <div className="mt-6 flex justify-end space-x-4">
+          <button
+            type="button"
+            onClick={() => window.history.back()}
+            className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
+            disabled={isLoading}
           >
             Cancel
-          </Link>
+          </button>
           <button
-            onClick={handleBulkImport}
-            className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
+            type="submit"
+            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
             disabled={isLoading}
           >
             {isLoading ? "Importing..." : "Import Students"}
           </button>
         </div>
-      </div>
+      </form>
+      </div> {/* Closing Bulk Import Form div */}
     </div>
   );
 }
