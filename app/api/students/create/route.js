@@ -19,6 +19,7 @@ export async function POST(request) {
       where: { id: classId },
       include: {
         students: true,
+        school: true, // Include school data to get school code
       },
     });
 
@@ -44,8 +45,9 @@ export async function POST(request) {
       );
     }
 
-    // Generate username based on name, class name, and roll number (simplified)
-    const username = `${name.split(' ')[0].toLowerCase()}_${classData.name.toLowerCase().replace(/\s+/g, '')}_${rollNo}`;
+    // Generate username based on full name, school code, class name, and roll number
+    const cleanName = name.toLowerCase().replace(/\s+/g, '');
+    const username = `${cleanName}_${classData.school.code.toLowerCase()}_${classData.name.toLowerCase().replace(/\s+/g, '')}_${rollNo}`;
 
     // Generate a random password
     const password = Math.random().toString(36).slice(-8);

@@ -748,6 +748,7 @@ export default function ClassDetailPage() {
                 <th className="px-4 py-3">Username</th>
                 <th className="px-4 py-3">Password</th>
                 <th className="px-4 py-3">QR Code</th>
+                <th className="px-4 py-3">Unique Code</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -780,6 +781,7 @@ export default function ClassDetailPage() {
                         <span className="text-gray-400">Not Generated</span>
                       )}
                     </td>
+                    <td className="px-4 py-3">{`${school.code}${classData.name}${student.rollNo}`}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
                         <button
