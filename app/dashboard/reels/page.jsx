@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef, useEffect } from 'react'
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import {
   Heart,
   MessageCircle,
@@ -257,16 +258,16 @@ export default function InstagramReels() {
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState(null)
   const [isHolding, setIsHolding] = useState(false)
-  const [touchStartY, setTouchStartY] = useState(0)
-  const [touchEndY, setTouchEndY] = useState(0)
-  const [isScrolling, setIsScrolling] = useState(false)
   const [lastTapTime, setLastTapTime] = useState(0)
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false)
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
   const holdTimeoutRef = useRef(null)
-  const touchTimeoutRef = useRef(null)
+
+  // Motion values for smooth scrolling
+  const y = useMotionValue(0)
+  const isDragging = useRef(false)
 
   const toggleLike = () => {
     setReels((prev) =>
@@ -299,6 +300,8 @@ export default function InstagramReels() {
 
   const handleVideoTap = (e) => {
     e.preventDefault()
+    if (isDragging.current) return
+
     const currentTime = new Date().getTime()
     const tapLength = currentTime - lastTapTime
 
@@ -335,61 +338,46 @@ export default function InstagramReels() {
     }
   }
 
-  const handleTouchStart = (e) => {
-    setTouchStartY(e.touches[0].clientY)
-    holdTimeoutRef.current = setTimeout(() => {
-      setIsHolding(true)
-      const currentVideo = videoRefs.current[currentReel]
-      if (currentVideo) {
-        currentVideo.pause()
-      }
-    }, 200)
+  const snapToReel = (targetReel) => {
+    const targetY = -targetReel * window.innerHeight
+    animate(y, targetY, {
+      type: 'spring',
+      stiffness: 300,
+      damping: 30,
+      onComplete: () => {
+        setCurrentReel(targetReel)
+      },
+    })
   }
 
-  const handleTouchMove = (e) => {
-    setTouchEndY(e.touches[0].clientY)
-    const diff = touchStartY - touchEndY
-    if (Math.abs(diff) > 10) {
-      setIsScrolling(true)
-      clearTimeout(holdTimeoutRef.current)
-      setIsHolding(false)
-    }
-  }
+  const handleDragEnd = (event, info) => {
+    isDragging.current = false
+    const threshold = 100
+    const velocity = info.velocity.y
+    const offset = info.offset.y
 
-  const handleTouchEnd = () => {
-    clearTimeout(holdTimeoutRef.current)
-    if (isHolding) {
-      setIsHolding(false)
-      const currentVideo = videoRefs.current[currentReel]
-      if (currentVideo) {
-        currentVideo
-          .play()
-          .catch((err) => err.name !== 'AbortError' && console.warn(err))
+    let targetReel = currentReel
+
+    // Determine target reel based on drag distance and velocity
+    if (Math.abs(offset) > threshold || Math.abs(velocity) > 500) {
+      if (offset > 0 && currentReel > 0) {
+        targetReel = currentReel - 1
+      } else if (offset < 0 && currentReel < reels.length - 1) {
+        targetReel = currentReel + 1
       }
     }
 
-    if (isScrolling) {
-      const diff = touchStartY - touchEndY
-      if (Math.abs(diff) > 50) {
-        if (diff > 0 && currentReel < reels.length - 1) {
-          setCurrentReel((prev) => prev + 1)
-        } else if (diff < 0 && currentReel > 0) {
-          setCurrentReel((prev) => prev - 1)
-        }
-      }
-      setIsScrolling(false)
-    }
-
-    setTouchStartY(0)
-    setTouchEndY(0)
+    snapToReel(targetReel)
   }
 
   const handleWheel = (e) => {
     e.preventDefault()
+    if (isDragging.current) return
+
     if (e.deltaY > 0 && currentReel < reels.length - 1) {
-      setCurrentReel((prev) => prev + 1)
+      snapToReel(currentReel + 1)
     } else if (e.deltaY < 0 && currentReel > 0) {
-      setCurrentReel((prev) => prev - 1)
+      snapToReel(currentReel - 1)
     }
   }
 
@@ -414,6 +402,11 @@ export default function InstagramReels() {
       }
     })
   }, [currentReel])
+
+  // Initialize y position
+  useEffect(() => {
+    y.set(-currentReel * window.innerHeight)
+  }, [])
 
   // Add useEffect to prevent pull-to-reload
   useEffect(() => {
@@ -447,12 +440,27 @@ export default function InstagramReels() {
         style={{ overscrollBehavior: 'none' }}
         onWheel={handleWheel}
       >
-        <div
-          className="h-full transition-transform duration-300 ease-out"
-          style={{ transform: `translateY(-${currentReel * 100}%)` }}
+        <motion.div
+          className="h-full"
+          style={{ y }}
+          drag="y"
+          dragConstraints={{
+            top: -(reels.length - 1) * window.innerHeight,
+            bottom: 0,
+          }}
+          dragElastic={0.1}
+          onDragStart={() => {
+            isDragging.current = true
+          }}
+          onDragEnd={handleDragEnd}
+          dragMomentum={false}
         >
           {reels.map((reel, idx) => (
-            <div key={reel.id} className="h-full w-full relative">
+            <motion.div
+              key={reel.id}
+              className="h-screen w-full relative"
+              style={{ height: '100vh' }}
+            >
               <video
                 ref={(el) => (videoRefs.current[idx] = el)}
                 className="w-full h-full object-cover"
@@ -464,17 +472,19 @@ export default function InstagramReels() {
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
-                onTouchStart={handleTouchStart}
-                onTouchMove={handleTouchMove}
-                onTouchEnd={handleTouchEnd}
                 onContextMenu={(e) => e.preventDefault()}
               />
 
               {/* Double tap heart animation */}
               {showDoubleTapHeart && idx === currentReel && (
-                <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                  <Heart className="w-32 h-32 text-red-500 fill-red-500 animate-ping" />
-                </div>
+                <motion.div
+                  className="absolute inset-0 flex items-center justify-center pointer-events-none"
+                  initial={{ scale: 0, opacity: 0 }}
+                  animate={{ scale: [0, 1.2, 1], opacity: [0, 1, 0] }}
+                  transition={{ duration: 1, ease: 'easeOut' }}
+                >
+                  <Heart className="w-32 h-32 text-red-500 fill-red-500" />
+                </motion.div>
               )}
 
               {/* Mute indicator */}
@@ -608,9 +618,9 @@ export default function InstagramReels() {
                   </p>
                 </div>
               </div>
-            </div>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
 
       {/* Comments Modal */}
