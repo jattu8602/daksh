@@ -260,6 +260,7 @@ export default function InstagramReels() {
   const [isHolding, setIsHolding] = useState(false)
   const [lastTapTime, setLastTapTime] = useState(0)
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false)
+  const [windowHeight, setWindowHeight] = useState(0)
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
@@ -268,6 +269,18 @@ export default function InstagramReels() {
   // Motion values for smooth scrolling
   const y = useMotionValue(0)
   const isDragging = useRef(false)
+
+  // Initialize window height on client side
+  useEffect(() => {
+    setWindowHeight(window.innerHeight)
+
+    const handleResize = () => {
+      setWindowHeight(window.innerHeight)
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   const toggleLike = () => {
     setReels((prev) =>
@@ -339,7 +352,9 @@ export default function InstagramReels() {
   }
 
   const snapToReel = (targetReel) => {
-    const targetY = -targetReel * window.innerHeight
+    if (typeof window === 'undefined') return
+
+    const targetY = -targetReel * windowHeight
     animate(y, targetY, {
       type: 'spring',
       stiffness: 300,
@@ -405,11 +420,14 @@ export default function InstagramReels() {
 
   // Initialize y position
   useEffect(() => {
-    y.set(-currentReel * window.innerHeight)
-  }, [])
+    if (typeof window === 'undefined') return
+    y.set(-currentReel * windowHeight)
+  }, [currentReel, windowHeight])
 
   // Add useEffect to prevent pull-to-reload
   useEffect(() => {
+    if (typeof window === 'undefined') return
+
     const preventPullToReload = (e) => {
       if (window.scrollY === 0 && e.touches[0].clientY > 0) {
         e.preventDefault()
@@ -445,7 +463,7 @@ export default function InstagramReels() {
           style={{ y }}
           drag="y"
           dragConstraints={{
-            top: -(reels.length - 1) * window.innerHeight,
+            top: -(reels.length - 1) * windowHeight,
             bottom: 0,
           }}
           dragElastic={0.1}
