@@ -173,14 +173,28 @@ export default function BulkImportStudentsPage() {
       {/* Navigation Breadcrumbs */}
       <div className="text-sm breadcrumbs">
         <ul className="flex items-center space-x-2 text-gray-600">
-          <li><Link href="/admin/schools" className="hover:underline">Schools</Link></li>
-          <li className="flex items-center">
-            <span className="mx-2">/</span>
-            <Link href={`/admin/schools/${schoolId}`} className="hover:underline">{classData.school?.name}</Link>
+          <li>
+            <Link href="/admin/schools" className="hover:underline">
+              Schools
+            </Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2">/</span>
-            <Link href={`/admin/schools/${schoolId}/classes/${classId}`} className="hover:underline">{classData.name}</Link>
+            <Link
+              href={`/admin/schools/${schoolId}`}
+              className="hover:underline"
+            >
+              {classData.school?.name}
+            </Link>
+          </li>
+          <li className="flex items-center">
+            <span className="mx-2">/</span>
+            <Link
+              href={`/admin/schools/${schoolId}/classes/${classId}`}
+              className="hover:underline"
+            >
+              {classData.name}
+            </Link>
           </li>
           <li className="flex items-center">
             <span className="mx-2">/</span>
@@ -188,13 +202,16 @@ export default function BulkImportStudentsPage() {
           </li>
         </ul>
       </div>
-
       {/* Class Header */}
       <div className="bg-white rounded-lg border p-6 shadow">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">Bulk Import Students for {classData.name}</h1>
-            <div className="mt-1 text-sm text-gray-600">School: {classData.school?.name} ({classData.school?.code})</div>
+            <h1 className="text-2xl font-bold">
+              Bulk Import Students for {classData.name}
+            </h1>
+            <div className="mt-1 text-sm text-gray-600">
+              School: {classData.school?.name} ({classData.school?.code})
+            </div>
           </div>
         </div>
 
@@ -213,154 +230,161 @@ export default function BulkImportStudentsPage() {
           </div>
         </div>
       </div>
-
       {/* Bulk Import Form */}
       <div className="bg-white rounded-lg border p-6 shadow">
-
-      {errorMessage && (
-        <div className="p-4 mb-4 border border-red-200 rounded-md bg-red-50 text-red-700">
-          {errorMessage}
-        </div>
-      )}
-
-      {successMessage && (
-        <div className="p-4 mb-4 border border-green-200 rounded-md bg-green-50 text-green-700">
-          {successMessage}
-        </div>
-      )}
-
-      <form onSubmit={handleSubmit}>
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="px-4 py-2">Student Name</th>
-                <th className="px-4 py-2">Gender</th>
-                <th className="px-4 py-2">Roll Number</th>
-                <th className="px-4 py-2">Profile Image</th>
-                <th className="px-4 py-2">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {bulkStudents.map((student, index) => (
-                <tr key={index} className="border-b">
-                  <td className="px-4 py-2">
-                    <input
-                      type="text"
-                      value={student.name}
-                      onChange={(e) => handleInputChange(index, "name", e.target.value)}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Enter student name"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <select
-                      value={student.gender}
-                      onChange={(e) => handleInputChange(index, "gender", e.target.value)}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="">Select Gender</option>
-                      <option value="M">Boy</option>
-                      <option value="F">Girl</option>
-                    </select>
-                  </td>
-                  <td className="px-4 py-2">
-                    <input
-                      type="number"
-                      value={student.rollNo}
-                      onChange={(e) => handleInputChange(index, "rollNo", e.target.value)}
-                      className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                      placeholder="Roll Number"
-                    />
-                  </td>
-                  <td className="px-4 py-2">
-                    <div className="flex items-center space-x-2">
-                      <div className="relative">
-                        {student.profileImage ? (
-                          <div className="relative w-10 h-10">
-                            <img
-                              src={student.profileImage}
-                              alt="Profile"
-                              className="w-10 h-10 rounded-full object-cover"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveImage(index)}
-                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
-                            <img
-                              src="/public/icons/girl.png"
-                              alt="Default"
-                              className="w-8 h-8"
-                            />
-                          </div>
-                        )}
-                      </div>
-                      <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm">
-                        <span>Upload</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          onChange={(e) => handleImageUpload(index, e.target.files[0])}
-                        />
-                      </label>
-                    </div>
-                  </td>
-                  <td className="px-4 py-2">
-                    {bulkStudents.length > 1 && (
-                      <button
-                        type="button"
-                        onClick={() => handleRemoveField(index)}
-                        className="text-red-600 hover:underline"
-                      >
-                        Remove
-                      </button>
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {bulkStudents.length < 1000 && ( // Show button only if max students not reached
-          <div className="mt-4 text-center">
-            <button
-              type="button"
-              onClick={handleAddMoreFields}
-              className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
-              disabled={isLoading || bulkStudents.length >= 1000}
-            >
-              Add Next 5 Students ({bulkStudents.length} / 1000)
-            </button>
+        {errorMessage && (
+          <div className="p-4 mb-4 border border-red-200 rounded-md bg-red-50 text-red-700">
+            {errorMessage}
           </div>
         )}
 
-        <div className="mt-6 flex justify-end space-x-4">
-          <button
-            type="button"
-            onClick={() => window.history.back()}
-            className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
-            disabled={isLoading}
-          >
-            Cancel
-          </button>
-          <button
-            type="submit"
-            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
-            disabled={isLoading}
-          >
-            {isLoading ? "Importing..." : "Import Students"}
-          </button>
-        </div>
-      </form>
-      </div> {/* Closing Bulk Import Form div */}
+        {successMessage && (
+          <div className="p-4 mb-4 border border-green-200 rounded-md bg-green-50 text-green-700">
+            {successMessage}
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit}>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead>
+                <tr>
+                  <th className="px-4 py-2">Student Name</th>
+                  <th className="px-4 py-2">Gender</th>
+                  <th className="px-4 py-2">Roll Number</th>
+                  <th className="px-4 py-2">Profile Image</th>
+                  <th className="px-4 py-2">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {bulkStudents.map((student, index) => (
+                  <tr key={index} className="border-b">
+                    <td className="px-4 py-2">
+                      <input
+                        type="text"
+                        value={student.name}
+                        onChange={(e) =>
+                          handleInputChange(index, 'name', e.target.value)
+                        }
+                        className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Enter student name"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <select
+                        value={student.gender}
+                        onChange={(e) =>
+                          handleInputChange(index, 'gender', e.target.value)
+                        }
+                        className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select Gender</option>
+                        <option value="M">Boy</option>
+                        <option value="F">Girl</option>
+                      </select>
+                    </td>
+                    <td className="px-4 py-2">
+                      <input
+                        type="number"
+                        value={student.rollNo}
+                        onChange={(e) =>
+                          handleInputChange(index, 'rollNo', e.target.value)
+                        }
+                        className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        placeholder="Roll Number"
+                      />
+                    </td>
+                    <td className="px-4 py-2">
+                      <div className="flex items-center space-x-2">
+                        <div className="relative">
+                          {student.profileImage ? (
+                            <div className="relative w-10 h-10">
+                              <img
+                                src={student.profileImage}
+                                alt="Profile"
+                                className="w-10 h-10 rounded-full object-cover"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveImage(index)}
+                                className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
+                              <img
+                                src="/icons/girl.png"
+                                alt="Default"
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm">
+                          <span>Upload</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) =>
+                              handleImageUpload(index, e.target.files[0])
+                            }
+                          />
+                        </label>
+                      </div>
+                    </td>
+                    <td className="px-4 py-2">
+                      {bulkStudents.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveField(index)}
+                          className="text-red-600 hover:underline"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {bulkStudents.length < 1000 && ( // Show button only if max students not reached
+            <div className="mt-4 text-center">
+              <button
+                type="button"
+                onClick={handleAddMoreFields}
+                className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+                disabled={isLoading || bulkStudents.length >= 1000}
+              >
+                Add Next 5 Students ({bulkStudents.length} / 1000)
+              </button>
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-end space-x-4">
+            <button
+              type="button"
+              onClick={() => window.history.back()}
+              className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
+              disabled={isLoading}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Importing...' : 'Import Students'}
+            </button>
+          </div>
+        </form>
+      </div>{' '}
+      {/* Closing Bulk Import Form div */}
     </div>
-  );
+  )
 }
