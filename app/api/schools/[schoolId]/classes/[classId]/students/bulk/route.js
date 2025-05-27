@@ -19,10 +19,11 @@ export async function POST(request) {
       );
     }
 
-    // Get the class information including current students
+    // Get the class information
     const classData = await prisma.class.findUnique({
       where: { id: classId },
       include: {
+        school: true,
         students: true
       }
     });
@@ -63,11 +64,9 @@ export async function POST(request) {
 
     // Prepare student data with QR codes and user creation
     const studentData = await Promise.all(students.map(async (student) => {
-      // Generate username based on name and roll number (simplified)
-      const firstName = student.name.split(' ')[0].toLowerCase();
-      // Note: Class name and school code might not be available for common classes,
-      // so we'll simplify the username generation here.
-      const username = `${firstName}_${classId.substring(0, 4)}_${student.rollNo}`;
+      // Generate username based on full name, school code, class name, and roll number
+      const cleanName = student.name.toLowerCase().replace(/\s+/g, '');
+      const username = `${cleanName}_${classData.school.code.toLowerCase()}_${classData.name.toLowerCase().replace(/\s+/g, '')}_${student.rollNo}`;
 
       // Generate password
       const password = Math.random().toString(36).substring(2, 15);
@@ -90,13 +89,15 @@ export async function POST(request) {
         username,
         password,
         qrCode,
+        profileImage: student.profileImage || null,
         user: {
           create: {
             name: student.name,
             username,
             password,
             role: "STUDENT",
-            qrCode
+            qrCode,
+            profileImage: student.profileImage || null
           }
         },
         class: {

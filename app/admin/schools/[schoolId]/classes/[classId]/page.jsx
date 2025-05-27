@@ -51,6 +51,7 @@ export default function ClassDetailPage() {
   const [editFormData, setEditFormData] = useState({
     name: "",
     rollNo: "",
+    profileImage: null,
   });
 
   // Fetch school, class and students on component mount with improved caching
@@ -436,6 +437,7 @@ export default function ClassDetailPage() {
     setEditFormData({
       name: student.name,
       rollNo: student.rollNo.toString(),
+      profileImage: student.profileImage || null,
     });
     setIsEditModalOpen(true);
   };
@@ -448,6 +450,48 @@ export default function ClassDetailPage() {
   const handleDeleteClick = (student) => {
     setSelectedStudent(student);
     setIsDeleteModalOpen(true);
+  };
+
+  const handleImageUpload = async (file) => {
+    try {
+      // Get signature from backend
+      const signatureResponse = await fetch('/api/cloudinary/signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timestamp: Math.round(new Date().getTime() / 1000),
+        }),
+      });
+
+      const { signature, timestamp, apiKey, cloudName } = await signatureResponse.json();
+
+      // Create form data for Cloudinary upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('signature', signature);
+      formData.append('timestamp', timestamp);
+      formData.append('api_key', apiKey);
+
+      // Upload to Cloudinary
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      const uploadData = await uploadResponse.json();
+      if (!uploadData.secure_url) {
+        throw new Error('Failed to get secure URL from Cloudinary');
+      }
+      return uploadData.secure_url;
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      throw new Error('Failed to upload image: ' + error.message);
+    }
   };
 
   const handleEditSubmit = async (e) => {
@@ -477,6 +521,7 @@ export default function ClassDetailPage() {
           ...student,
           name: data.student.name,
           rollNo: data.student.rollNo,
+          profileImage: data.student.profileImage,
         } : student
       ));
 
@@ -703,6 +748,7 @@ export default function ClassDetailPage() {
                 <th className="px-4 py-3">Username</th>
                 <th className="px-4 py-3">Password</th>
                 <th className="px-4 py-3">QR Code</th>
+                <th className="px-4 py-3">Unique Code</th>
                 <th className="px-4 py-3">Actions</th>
               </tr>
             </thead>
@@ -735,6 +781,7 @@ export default function ClassDetailPage() {
                         <span className="text-gray-400">Not Generated</span>
                       )}
                     </td>
+                    <td className="px-4 py-3">{`${school.code}${classData.name}${student.rollNo}`}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
                         <button
@@ -1175,7 +1222,7 @@ export default function ClassDetailPage() {
                 onClick={() => {
                   setIsEditModalOpen(false);
                   setSelectedStudent(null);
-                  setEditFormData({ name: "", rollNo: "" });
+                  setEditFormData({ name: "", rollNo: "", profileImage: null });
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -1220,13 +1267,76 @@ export default function ClassDetailPage() {
                 />
               </div>
 
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700">
+                  Profile Image
+                </label>
+                <div className="mt-1 flex items-center space-x-4">
+                  <div className="relative">
+                    {editFormData.profileImage ? (
+                      <div className="relative w-20 h-20">
+                        <img
+                          src={editFormData.profileImage}
+                          alt="Profile"
+                          className="w-20 h-20 rounded-full object-cover"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setEditFormData({ ...editFormData, profileImage: null })}
+                          className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
+                        <img
+                          src="/public/icons/girl.png"
+                          alt="Default"
+                          className="w-16 h-16"
+                        />
+                      </div>
+                    )}
+                  </div>
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={async (e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          try {
+                            setIsLoading(true);
+                            setErrorMessage("");
+                            const imageUrl = await handleImageUpload(file);
+                            setEditFormData({ ...editFormData, profileImage: imageUrl });
+                          } catch (error) {
+                            setErrorMessage(error.message || "Failed to upload image");
+                          } finally {
+                            setIsLoading(false);
+                          }
+                        }
+                      }}
+                      className="hidden"
+                      id="profile-image-upload"
+                    />
+                    <label
+                      htmlFor="profile-image-upload"
+                      className="cursor-pointer rounded-md bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    >
+                      Change Photo
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex justify-end space-x-3">
                 <button
                   type="button"
                   onClick={() => {
                     setIsEditModalOpen(false);
                     setSelectedStudent(null);
-                    setEditFormData({ name: "", rollNo: "" });
+                    setEditFormData({ name: "", rollNo: "", profileImage: null });
                   }}
                   className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
                   disabled={isLoading}

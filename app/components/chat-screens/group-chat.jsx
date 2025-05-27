@@ -84,6 +84,15 @@ export default function GroupChat({ avatar, name, info, messages, inputValue, se
               animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ duration: 0.3 }}
             >
+              {!message.isMe && (
+                <div className="w-8 h-8 rounded-full overflow-hidden mr-2">
+                  <img
+                    src={message.sender?.profileImage || `https://ui-avatars.com/api/?name=${encodeURIComponent(message.sender || "Unknown")}`}
+                    alt={message.sender || "Unknown"}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
               <motion.div
                 className={`max-w-[80%] rounded-2xl p-3 ${message.isMe ? "bg-blue-100 text-black rounded-tr-none" : "bg-gray-100 text-black rounded-tl-none"}`}
                 initial={message.isNew ? { scale: 0.9 } : { scale: 1 }}

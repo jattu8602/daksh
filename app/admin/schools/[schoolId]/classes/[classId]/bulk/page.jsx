@@ -17,7 +17,7 @@ export default function BulkImportStudentsPage() {
 
   // Bulk import state: start with 5 empty student fields
   const [bulkStudents, setBulkStudents] = useState(
-    Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "" }))
+    Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null }))
   );
 
   // Fetch class data on component mount
@@ -51,13 +51,65 @@ export default function BulkImportStudentsPage() {
     const fieldsToAdd = Math.min(5, maxStudents - currentStudentsCount);
 
     if (fieldsToAdd > 0) {
-      const newFields = Array(fieldsToAdd).fill(null).map(() => ({ name: "", gender: "", rollNo: "" }));
+      const newFields = Array(fieldsToAdd).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null }));
       setBulkStudents([...bulkStudents, ...newFields]);
     }
   };
 
   const handleRemoveField = (index) => {
     const newStudents = bulkStudents.filter((_, i) => i !== index);
+    setBulkStudents(newStudents);
+  };
+
+  const handleImageUpload = async (index, file) => {
+    if (!file) return;
+
+    try {
+      // First, get a signature from our API
+      const signatureResponse = await fetch('/api/cloudinary/signature', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          timestamp: Math.round(new Date().getTime() / 1000),
+        }),
+      });
+
+      const { signature, timestamp, apiKey } = await signatureResponse.json();
+
+      // Create form data for Cloudinary upload
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey);
+      formData.append('timestamp', timestamp);
+      formData.append('signature', signature);
+
+      // Upload to Cloudinary
+      const response = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        {
+          method: 'POST',
+          body: formData,
+        }
+      );
+
+      const data = await response.json();
+
+      if (data.secure_url) {
+        const newStudents = [...bulkStudents];
+        newStudents[index].profileImage = data.secure_url;
+        setBulkStudents(newStudents);
+      }
+    } catch (error) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload image');
+    }
+  };
+
+  const handleRemoveImage = (index) => {
+    const newStudents = [...bulkStudents];
+    newStudents[index].profileImage = null;
     setBulkStudents(newStudents);
   };
 
@@ -98,7 +150,7 @@ export default function BulkImportStudentsPage() {
 
       setSuccessMessage(`Successfully imported ${data.students.length} students.`);
       // Optionally reset form or redirect after successful import
-      setBulkStudents(Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "" })));
+      setBulkStudents(Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null })));
 
       // Redirect back to the class details page after a short delay and force refresh
       setTimeout(() => {
@@ -185,6 +237,7 @@ export default function BulkImportStudentsPage() {
                 <th className="px-4 py-2">Student Name</th>
                 <th className="px-4 py-2">Gender</th>
                 <th className="px-4 py-2">Roll Number</th>
+                <th className="px-4 py-2">Profile Image</th>
                 <th className="px-4 py-2">Actions</th>
               </tr>
             </thead>
@@ -221,16 +274,55 @@ export default function BulkImportStudentsPage() {
                     />
                   </td>
                   <td className="px-4 py-2">
-                     {bulkStudents.length > 1 && (
-                       <button
-                         type="button"
-                         onClick={() => handleRemoveField(index)}
-                         className="text-red-600 hover:underline"
-                       >
-                         Remove
-                       </button>
-                     )}
-                   </td>
+                    <div className="flex items-center space-x-2">
+                      <div className="relative">
+                        {student.profileImage ? (
+                          <div className="relative w-10 h-10">
+                            <img
+                              src={student.profileImage}
+                              alt="Profile"
+                              className="w-10 h-10 rounded-full object-cover"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveImage(index)}
+                              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                            >
+                              ×
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                            <img
+                              src="/public/icons/girl.png"
+                              alt="Default"
+                              className="w-8 h-8"
+                            />
+                          </div>
+                        )}
+                      </div>
+                      <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm">
+                        <span>Upload</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          onChange={(e) => handleImageUpload(index, e.target.files[0])}
+                        />
+                      </label>
+                    </div>
+                  </td>
+                  <td className="px-4 py-2">
+                    {bulkStudents.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => handleRemoveField(index)}
+                        className="text-red-600 hover:underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </td>
                 </tr>
               ))}
             </tbody>

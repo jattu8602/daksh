@@ -109,7 +109,19 @@ export default function StudentDashboard() {
         <div className="grid gap-6 md:grid-cols-2">
           {/* Student Information Card */}
           <div className="rounded-lg bg-white p-6 shadow">
-            <h2 className="mb-4 text-xl font-semibold">Student Information</h2>
+            <div className="flex items-center space-x-4 mb-6">
+              <div className="relative w-24 h-24">
+                <img
+                  src={user.student?.profileImage || "/public/icons/girl.png"}
+                  alt={user.name}
+                  className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
+                />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold">{user.name}</h2>
+                <p className="text-gray-600">@{user.username}</p>
+              </div>
+            </div>
             <div className="space-y-3">
               <div>
                 <span className="font-medium text-gray-500">Name:</span>{" "}

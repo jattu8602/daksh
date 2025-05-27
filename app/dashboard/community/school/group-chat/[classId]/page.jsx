@@ -44,7 +44,14 @@ export default function GroupChatDynamicPage({ params }) {
           // Format timestamps to 12-hour format if they aren't already
           const formattedMessages = data.messages.map(msg => ({
             ...msg,
-            time: formatTime(msg.createdAt || new Date())
+            time: formatTime(msg.createdAt || new Date()),
+            // Ensure sender object is passed with profileImage
+            sender: {
+              id: msg.sender?.id,
+              name: msg.sender?.name || msg.sender?.username || "Unknown",
+              username: msg.sender?.username,
+              profileImage: msg.sender?.profileImage
+            }
           }));
           setMessages(formattedMessages);
         }
@@ -94,7 +101,8 @@ export default function GroupChatDynamicPage({ params }) {
   const displayMessages = messages.map(msg => ({
     ...msg,
     isMe: msg.sender?.id === user.student.id,
-    sender: msg.sender?.name || msg.sender?.username || "Unknown",
+    // Use the full sender object including profileImage
+    sender: msg.sender,
     time: msg.time || formatTime(msg.createdAt || new Date())
   }));
 

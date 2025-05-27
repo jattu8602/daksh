@@ -98,6 +98,11 @@ export async function GET(request) {
     // Remove sensitive data before sending
     const { password, ...userWithoutPassword } = user;
 
+    // Add profile image to student data if it exists
+    if (userWithoutPassword.student) {
+      userWithoutPassword.student.profileImage = userWithoutPassword.student.profileImage || null;
+    }
+
     return NextResponse.json({
       success: true,
       user: userWithoutPassword,
