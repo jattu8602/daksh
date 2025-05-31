@@ -15,6 +15,7 @@ export default function CommunityScreen({ activeTab, chats }) {
       chat.message.toLowerCase().includes(searchValue.toLowerCase())
   );
 
+  
   return (
     <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
 
