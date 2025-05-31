@@ -1,74 +1,76 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
-import Image from "next/image";
-import { debounce } from "lodash";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { debounce } from 'lodash'
 
 export default function MentorsPage() {
-  const [isAddingMentor, setIsAddingMentor] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [mentors, setMentors] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
-  const [isOrganic, setIsOrganic] = useState(true);
-  const [uploadedImage, setUploadedImage] = useState(null);
+  const [isAddingMentor, setIsAddingMentor] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [mentors, setMentors] = useState([])
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
+  const [isOrganic, setIsOrganic] = useState(true)
+  const [uploadedImage, setUploadedImage] = useState(null)
+  const [imageUploading, setImageUploading] = useState(false)
+  const [imageUploadError, setImageUploadError] = useState('')
   const [pagination, setPagination] = useState({
     page: 1,
     limit: 10,
     total: 0,
     totalPages: 0,
-  });
+  })
 
   const [usernameStatus, setUsernameStatus] = useState({
     checking: false,
     available: null,
-    message: "",
-  });
+    message: '',
+  })
 
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
-    profilePhoto: "",
+    name: '',
+    email: '',
+    username: '',
+    password: '',
+    confirmPassword: '',
+    profilePhoto: '',
     isOrganic: true,
-    bio: "",
+    bio: '',
     skills: [],
     socialLinks: {},
-    subject: "",
-    language: "",
-  });
+    subject: '',
+    language: '',
+  })
 
   // New mentor created info (to show credentials)
-  const [newMentor, setNewMentor] = useState(null);
+  const [newMentor, setNewMentor] = useState(null)
 
   // Fetch mentors
   const fetchMentors = async (page = 1) => {
     try {
       const response = await fetch(
         `/api/mentor/list?page=${page}&limit=${pagination.limit}&search=${searchTerm}`
-      );
-      const data = await response.json();
+      )
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to fetch mentors");
+        throw new Error(data.message || 'Failed to fetch mentors')
       }
 
-      setMentors(data.mentors);
-      setPagination(data.pagination);
+      setMentors(data.mentors)
+      setPagination(data.pagination)
     } catch (error) {
-      setErrorMessage(error.message || "Failed to fetch mentors");
+      setErrorMessage(error.message || 'Failed to fetch mentors')
     }
-  };
+  }
 
   // Fetch mentors on component mount and when search term changes
   useEffect(() => {
-    fetchMentors(1);
-  }, [searchTerm]);
+    fetchMentors(1)
+  }, [searchTerm])
 
   // Add debounced username check
   const checkUsername = debounce(async (username) => {
@@ -76,152 +78,288 @@ export default function MentorsPage() {
       setUsernameStatus({
         checking: false,
         available: null,
-        message: "",
-      });
-      return;
+        message: '',
+      })
+      return
     }
 
     setUsernameStatus({
       checking: true,
       available: null,
-      message: "Checking username...",
-    });
+      message: 'Checking username...',
+    })
 
     try {
-      const response = await fetch(`/api/mentor/check-username?username=${encodeURIComponent(username)}`);
-      const data = await response.json();
+      const response = await fetch(
+        `/api/mentor/check-username?username=${encodeURIComponent(username)}`
+      )
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to check username");
+        throw new Error(data.message || 'Failed to check username')
       }
 
       setUsernameStatus({
         checking: false,
         available: data.available,
         message: data.message,
-      });
+      })
     } catch (error) {
       setUsernameStatus({
         checking: false,
         available: false,
-        message: error.message || "Error checking username",
-      });
+        message: error.message || 'Error checking username',
+      })
     }
-  }, 500);
+  }, 500)
 
   // Update handleInputChange to include username check
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData({
       ...formData,
       [name]: value,
-    });
+    })
 
     // Check username availability when username field changes
-    if (name === "username") {
-      checkUsername(value);
+    if (name === 'username') {
+      checkUsername(value)
     }
-  };
+  }
 
   const handleImageUpload = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    const file = e.target.files[0]
+    if (!file) return
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET);
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      setImageUploadError('Please select a valid image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setImageUploadError('Image size should be less than 5MB')
+      return
+    }
+
+    setImageUploading(true)
+    setImageUploadError('')
+    setErrorMessage('')
 
     try {
+      // Check if Cloudinary environment variables are set
+      if (
+        !process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME ||
+        !process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      ) {
+        throw new Error(
+          'Cloudinary configuration is missing. Please check your environment variables.'
+        )
+      }
+
+      const formDataUpload = new FormData()
+      formDataUpload.append('file', file)
+      formDataUpload.append(
+        'upload_preset',
+        process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET
+      )
+
       const response = await fetch(
         `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
         {
           method: 'POST',
-          body: formData,
+          body: formDataUpload,
         }
-      );
+      )
 
-      const data = await response.json();
-      setUploadedImage(data.secure_url);
-      setFormData(prev => ({
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+          errorData.error?.message ||
+            `Failed to upload image: ${response.status} ${response.statusText}`
+        )
+      }
+
+      const data = await response.json()
+
+      if (data.error) {
+        throw new Error(data.error.message || 'Image upload failed')
+      }
+
+      setUploadedImage(data.secure_url)
+      setFormData((prev) => ({
         ...prev,
-        profilePhoto: data.secure_url
-      }));
+        profilePhoto: data.secure_url,
+      }))
+
+      setImageUploadError('')
     } catch (error) {
-      setErrorMessage('Failed to upload image');
+      console.error('Image upload error:', error)
+      setImageUploadError(
+        error.message || 'Failed to upload image. Please try again.'
+      )
+      setUploadedImage(null)
+      setFormData((prev) => ({
+        ...prev,
+        profilePhoto: '',
+      }))
+    } finally {
+      setImageUploading(false)
     }
-  };
+  }
+
+  const validateForm = () => {
+    const errors = []
+
+    if (!formData.name.trim()) {
+      errors.push('Name is required')
+    }
+
+    if (!formData.username.trim()) {
+      errors.push('Username is required')
+    }
+
+    if (!formData.profilePhoto) {
+      errors.push('Profile photo is required')
+    }
+
+    if (!formData.subject.trim()) {
+      errors.push('Subject is required')
+    }
+
+    if (!formData.language.trim()) {
+      errors.push('Language is required')
+    }
+
+    if (formData.isOrganic) {
+      if (!formData.password) {
+        errors.push('Password is required for organic mentors')
+      }
+      if (formData.password !== formData.confirmPassword) {
+        errors.push('Passwords do not match')
+      }
+      if (formData.password && formData.password.length < 6) {
+        errors.push('Password must be at least 6 characters long')
+      }
+    }
+
+    if (formData.username && !usernameStatus.available) {
+      errors.push('Username is not available or is being checked')
+    }
+
+    return errors
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
 
-    if (formData.isOrganic && formData.password !== formData.confirmPassword) {
-      setErrorMessage("Passwords do not match");
-      setIsLoading(false);
-      return;
+    // Validate form
+    const validationErrors = validateForm()
+    if (validationErrors.length > 0) {
+      setErrorMessage(validationErrors.join('. '))
+      setIsLoading(false)
+      return
+    }
+
+    // Check if image is still uploading
+    if (imageUploading) {
+      setErrorMessage('Please wait for the image upload to complete')
+      setIsLoading(false)
+      return
     }
 
     try {
-      let response, data;
+      let response, data
       if (formData.id) {
         // Editing existing mentor
         response = await fetch(`/api/mentor/${formData.id}`, {
-          method: "PATCH",
+          method: 'PATCH',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(formData),
-        });
-        data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to update mentor");
-        setSuccessMessage("Mentor updated successfully");
-        setIsAddingMentor(false);
-        fetchMentors(1);
+        })
+        data = await response.json()
+        if (!response.ok) {
+          throw new Error(
+            data.message || data.error || 'Failed to update mentor'
+          )
+        }
+        setSuccessMessage('Mentor updated successfully')
+        setIsAddingMentor(false)
+        fetchMentors(1)
       } else {
         // Creating new mentor
-        response = await fetch("/api/mentor/create", {
-          method: "POST",
+        response = await fetch('/api/mentor/create', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify(formData),
-        });
-        data = await response.json();
-        if (!response.ok) throw new Error(data.message || "Failed to create mentor");
+        })
+        data = await response.json()
+        if (!response.ok) {
+          throw new Error(
+            data.message || data.error || 'Failed to create mentor'
+          )
+        }
         // Show the new mentor credentials
         setNewMentor({
           name: data.mentor.name,
           username: data.mentor.username,
           password: data.password,
           isOrganic: data.mentor.isOrganic,
-        });
-        fetchMentors(1);
-        setSuccessMessage("Mentor created successfully");
+        })
+        fetchMentors(1)
+        setSuccessMessage('Mentor created successfully')
       }
       // Reset form
-      setFormData({
-        name: "",
-        email: "",
-        username: "",
-        password: "",
-        confirmPassword: "",
-        profilePhoto: "",
-        isOrganic: true,
-        bio: "",
-        skills: [],
-        socialLinks: {},
-        subject: "",
-        language: "",
-      });
-      setUploadedImage(null);
+      resetForm()
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong");
+      console.error('Submit error:', error)
+      setErrorMessage(
+        error.message || 'Something went wrong. Please try again.'
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  const resetForm = () => {
+    setFormData({
+      name: '',
+      email: '',
+      username: '',
+      password: '',
+      confirmPassword: '',
+      profilePhoto: '',
+      isOrganic: true,
+      bio: '',
+      skills: [],
+      socialLinks: {},
+      subject: '',
+      language: '',
+    })
+    setUploadedImage(null)
+    setImageUploadError('')
+    setUsernameStatus({
+      checking: false,
+      available: null,
+      message: '',
+    })
+  }
+
+  const handleCancel = () => {
+    setIsAddingMentor(false)
+    setNewMentor(null)
+    setErrorMessage('')
+    setSuccessMessage('')
+    resetForm()
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -251,6 +389,18 @@ export default function MentorsPage() {
             </div>
           </div>
 
+          {errorMessage && (
+            <div className="mb-6 rounded bg-red-50 p-4 text-sm text-red-600">
+              {errorMessage}
+            </div>
+          )}
+
+          {successMessage && (
+            <div className="mb-6 rounded bg-green-50 p-4 text-sm text-green-600">
+              {successMessage}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mentors.map((mentor) => (
               <Link
@@ -269,9 +419,13 @@ export default function MentorsPage() {
                 <div className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="text-lg font-semibold">{mentor.name}</h3>
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      mentor.isOrganic ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
+                    <span
+                      className={`px-2 py-1 rounded-full text-xs ${
+                        mentor.isOrganic
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                    >
                       {mentor.isOrganic ? 'Organic' : 'Inorganic'}
                     </span>
                   </div>
@@ -295,40 +449,57 @@ export default function MentorsPage() {
                     <button
                       className="text-blue-600 hover:underline text-sm"
                       onClick={(e) => {
-                        e.preventDefault();
-                        setIsAddingMentor(true);
+                        e.preventDefault()
+                        setIsAddingMentor(true)
                         setFormData({
                           ...mentor,
                           id: mentor.id,
                           password: '',
                           confirmPassword: '',
-                        });
-                        setIsOrganic(mentor.isOrganic);
-                        setUploadedImage(mentor.profilePhoto);
+                        })
+                        setIsOrganic(mentor.isOrganic)
+                        setUploadedImage(mentor.profilePhoto)
                       }}
                     >
                       Edit
                     </button>
                     {mentor.isOrganic && (
-                      <button className="text-blue-600 hover:underline text-sm" onClick={e => e.preventDefault()}>Reset Password</button>
+                      <button
+                        className="text-blue-600 hover:underline text-sm"
+                        onClick={(e) => e.preventDefault()}
+                      >
+                        Reset Password
+                      </button>
                     )}
                     <button
                       className="text-red-600 hover:underline text-sm"
                       onClick={async (e) => {
-                        e.preventDefault();
-                        if (window.confirm('Are you sure you want to delete this mentor?')) {
-                          setIsLoading(true);
-                          setErrorMessage("");
+                        e.preventDefault()
+                        if (
+                          window.confirm(
+                            'Are you sure you want to delete this mentor?'
+                          )
+                        ) {
+                          setIsLoading(true)
+                          setErrorMessage('')
                           try {
-                            const res = await fetch(`/api/mentor/${mentor.id}`, { method: 'DELETE' });
-                            const data = await res.json();
-                            if (!res.ok) throw new Error(data.message || 'Failed to delete mentor');
-                            fetchMentors(1);
-                            setSuccessMessage('Mentor deleted successfully');
+                            const res = await fetch(
+                              `/api/mentor/${mentor.id}`,
+                              { method: 'DELETE' }
+                            )
+                            const data = await res.json()
+                            if (!res.ok)
+                              throw new Error(
+                                data.message || 'Failed to delete mentor'
+                              )
+                            fetchMentors(1)
+                            setSuccessMessage('Mentor deleted successfully')
                           } catch (err) {
-                            setErrorMessage(err.message || 'Failed to delete mentor');
+                            setErrorMessage(
+                              err.message || 'Failed to delete mentor'
+                            )
                           } finally {
-                            setIsLoading(false);
+                            setIsLoading(false)
                           }
                         }
                       }}
@@ -369,14 +540,11 @@ export default function MentorsPage() {
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <div className="bg-white rounded-lg shadow-lg p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">Add New Mentor</h2>
+              <h2 className="text-2xl font-bold text-gray-900">
+                {formData.id ? 'Edit Mentor' : 'Add New Mentor'}
+              </h2>
               <button
-                onClick={() => {
-                  setIsAddingMentor(false);
-                  setNewMentor(null);
-                  setErrorMessage("");
-                  setSuccessMessage("");
-                }}
+                onClick={handleCancel}
                 className="text-gray-400 hover:text-gray-600"
               >
                 ✕
@@ -397,15 +565,28 @@ export default function MentorsPage() {
 
             {newMentor ? (
               <div className="mb-6 rounded-lg bg-blue-50 p-6 text-sm">
-                <h3 className="mb-4 text-lg font-semibold">New Mentor Credentials</h3>
+                <h3 className="mb-4 text-lg font-semibold">
+                  New Mentor Credentials
+                </h3>
                 <div className="space-y-2">
-                  <p><span className="font-medium">Name:</span> {newMentor.name}</p>
-                  <p><span className="font-medium">Username:</span> {newMentor.username}</p>
+                  <p>
+                    <span className="font-medium">Name:</span> {newMentor.name}
+                  </p>
+                  <p>
+                    <span className="font-medium">Username:</span>{' '}
+                    {newMentor.username}
+                  </p>
                   {newMentor.isOrganic && (
-                    <p><span className="font-medium">Password:</span> {newMentor.password}</p>
+                    <p>
+                      <span className="font-medium">Password:</span>{' '}
+                      {newMentor.password}
+                    </p>
                   )}
                 </div>
-                <p className="mt-4 text-xs text-gray-600">Please save these credentials securely. The password cannot be recovered later.</p>
+                <p className="mt-4 text-xs text-gray-600">
+                  Please save these credentials securely. The password cannot be
+                  recovered later.
+                </p>
                 <button
                   onClick={() => setIsAddingMentor(false)}
                   className="mt-4 rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
@@ -417,15 +598,20 @@ export default function MentorsPage() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Mentor Type</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Mentor Type
+                    </label>
                     <div className="flex items-center space-x-4 mt-2">
                       <label className="inline-flex items-center">
                         <input
                           type="radio"
                           checked={isOrganic}
                           onChange={() => {
-                            setIsOrganic(true);
-                            setFormData(prev => ({ ...prev, isOrganic: true }));
+                            setIsOrganic(true)
+                            setFormData((prev) => ({
+                              ...prev,
+                              isOrganic: true,
+                            }))
                           }}
                           className="form-radio h-4 w-4 text-black"
                         />
@@ -436,8 +622,11 @@ export default function MentorsPage() {
                           type="radio"
                           checked={!isOrganic}
                           onChange={() => {
-                            setIsOrganic(false);
-                            setFormData(prev => ({ ...prev, isOrganic: false }));
+                            setIsOrganic(false)
+                            setFormData((prev) => ({
+                              ...prev,
+                              isOrganic: false,
+                            }))
                           }}
                           className="form-radio h-4 w-4 text-black"
                         />
@@ -447,15 +636,50 @@ export default function MentorsPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Profile Photo</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Profile Photo <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
                       className="mt-2 w-full"
-                      required
+                      disabled={imageUploading}
                     />
-                    {uploadedImage && (
+
+                    {imageUploading && (
+                      <div className="mt-2 flex items-center text-blue-600 text-sm">
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        Uploading image...
+                      </div>
+                    )}
+
+                    {imageUploadError && (
+                      <div className="mt-2 text-red-600 text-sm">
+                        {imageUploadError}
+                      </div>
+                    )}
+
+                    {uploadedImage && !imageUploading && (
                       <div className="mt-2 relative h-32 w-32">
                         <Image
                           src={uploadedImage}
@@ -463,14 +687,24 @@ export default function MentorsPage() {
                           fill
                           className="object-cover rounded"
                         />
+                        <div className="absolute top-1 right-1">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            ✓ Uploaded
+                          </span>
+                        </div>
                       </div>
                     )}
+                    <p className="mt-1 text-xs text-gray-500">
+                      Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
+                    </p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Full Name</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Full Name <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="name"
@@ -483,7 +717,9 @@ export default function MentorsPage() {
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Username</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Username <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="username"
@@ -491,10 +727,10 @@ export default function MentorsPage() {
                       onChange={handleInputChange}
                       className={`mt-2 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
                         usernameStatus.available === null
-                          ? "border-gray-300 focus:border-blue-500 focus:ring-blue-500"
+                          ? 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
                           : usernameStatus.available
-                          ? "border-green-500 focus:border-green-500 focus:ring-green-500"
-                          : "border-red-500 focus:border-red-500 focus:ring-red-500"
+                          ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
+                          : 'border-red-500 focus:border-red-500 focus:ring-red-500'
                       }`}
                       placeholder="Enter username"
                       required
@@ -503,10 +739,10 @@ export default function MentorsPage() {
                       <p
                         className={`mt-1 text-sm ${
                           usernameStatus.checking
-                            ? "text-gray-500"
+                            ? 'text-gray-500'
                             : usernameStatus.available
-                            ? "text-green-600"
-                            : "text-red-600"
+                            ? 'text-green-600'
+                            : 'text-red-600'
                         }`}
                       >
                         {usernameStatus.message}
@@ -517,7 +753,9 @@ export default function MentorsPage() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Subject</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Subject <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="subject"
@@ -529,7 +767,9 @@ export default function MentorsPage() {
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">Language</label>
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Language <span className="text-red-500">*</span>
+                    </label>
                     <input
                       type="text"
                       name="language"
@@ -543,7 +783,9 @@ export default function MentorsPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Email (Optional)</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Email (Optional)
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -555,7 +797,9 @@ export default function MentorsPage() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">Bio (Optional)</label>
+                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                    Bio (Optional)
+                  </label>
                   <textarea
                     name="bio"
                     value={formData.bio}
@@ -569,19 +813,24 @@ export default function MentorsPage() {
                 {isOrganic && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Password</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Password <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="password"
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
                         className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                        placeholder="Enter password"
+                        placeholder="Enter password (min 6 characters)"
                         required
+                        minLength="6"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">Confirm Password</label>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Confirm Password <span className="text-red-500">*</span>
+                      </label>
                       <input
                         type="password"
                         name="confirmPassword"
@@ -590,6 +839,7 @@ export default function MentorsPage() {
                         className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
                         placeholder="Confirm password"
                         required
+                        minLength="6"
                       />
                     </div>
                   </div>
@@ -598,18 +848,51 @@ export default function MentorsPage() {
                 <div className="flex justify-end space-x-3 pt-6 border-t">
                   <button
                     type="button"
-                    onClick={() => setIsAddingMentor(false)}
+                    onClick={handleCancel}
                     className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
-                    disabled={isLoading}
+                    disabled={isLoading || imageUploading}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
                     className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
-                    disabled={isLoading || (formData.username && !usernameStatus.available)}
+                    disabled={
+                      isLoading ||
+                      imageUploading ||
+                      (formData.username && !usernameStatus.available) ||
+                      !formData.profilePhoto
+                    }
                   >
-                    {isLoading ? (formData.id ? "Updating..." : "Creating...") : (formData.id ? "Update Mentor" : "Add Mentor")}
+                    {isLoading ? (
+                      <span className="flex items-center">
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        {formData.id ? 'Updating...' : 'Creating...'}
+                      </span>
+                    ) : formData.id ? (
+                      'Update Mentor'
+                    ) : (
+                      'Add Mentor'
+                    )}
                   </button>
                 </div>
               </form>
@@ -618,5 +901,5 @@ export default function MentorsPage() {
         </div>
       )}
     </div>
-  );
+  )
 }

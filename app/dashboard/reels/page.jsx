@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useRef, useEffect } from 'react'
+import React, { useState, useRef, useEffect, useCallback } from 'react'
 import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
 import {
   Heart,
@@ -10,6 +10,8 @@ import {
   MoreHorizontal,
   Volume2,
   VolumeX,
+  Loader2,
+  RefreshCw,
 } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -22,153 +24,6 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
-
-const reelsData = [
-  {
-    id: 1,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747683186452-what_happened_in_uphar_cinema_3d_animation__shorts.mp4',
-    mentor: {
-      username: 'science_explorer',
-      avatar: '/icons/girl.png',
-      isDaksh: false,
-    },
-    description:
-      'What happened in Uphar Cinema? A detailed 3D animation explaining the tragic incident that changed fire safety regulations forever. This educational content helps us understand the importance of safety measures in public spaces.',
-    likes: 19700,
-    comments: 51,
-    shares: 6556,
-    isLiked: false,
-  },
-  {
-    id: 2,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747684534610-why_birds_don_t_die_of_high_voltage_____explained_in_1_min___shorts__shorts.mp4',
-    mentor: {
-      username: 'physics_mentor',
-      avatar: '/icons/girl.png',
-      isDaksh: true,
-    },
-    description:
-      "Why birds don't die of high voltage? Explained in 1 minute! The fascinating physics behind how birds can safely perch on power lines.",
-    likes: 12700,
-    comments: 89,
-    shares: 4200,
-    isLiked: true,
-  },
-  {
-    id: 3,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747684569629-pee_rokna_galat_hai___explained_in_1_min__hindi__shorts__shorts.mp4',
-    mentor: {
-      username: 'health_guru',
-      avatar: '/icons/girl.png',
-      isDaksh: true,
-    },
-    description:
-      'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
-    likes: 8900,
-    comments: 156,
-    shares: 2100,
-    isLiked: false,
-  },
-  {
-    id: 4,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747720979811-_why_did_japan_attack_pearl_harbor__uncover_the_strategy_behind_the_attack____history__map.mp4',
-    mentor: {
-      username: 'science_explorer',
-      avatar: '/icons/girl.png',
-      isDaksh: false,
-    },
-    description:
-      'What happened in Uphar Cinema? A detailed 3D animation explaining the tragic incident that changed fire safety regulations forever. This educational content helps us understand the importance of safety measures in public spaces.',
-    likes: 19700,
-    comments: 51,
-    shares: 6556,
-    isLiked: false,
-  },
-  {
-    id: 5,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721029100-_desertification_in_the_sahel__a_call_to_action__.mp4',
-    mentor: {
-      username: 'physics_mentor',
-      avatar: '/icons/girl.png',
-      isDaksh: true,
-    },
-    description:
-      "Why birds don't die of high voltage? Explained in 1 minute! The fascinating physics behind how birds can safely perch on power lines.",
-    likes: 12700,
-    comments: 89,
-    shares: 4200,
-    isLiked: true,
-  },
-  {
-    id: 6,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721143218-top_5_countries_with_the_most_forest_cover___fascinating_geography_facts.mp4',
-    mentor: {
-      username: 'health_guru',
-      avatar: '/icons/girl.png',
-      isDaksh: false,
-    },
-    description:
-      'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
-    likes: 8900,
-    comments: 156,
-    shares: 2100,
-    isLiked: false,
-  },
-  {
-    id: 7,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721210053-_the_rise_and_fall_of_the_korean_empire__a_journey_through_history_.mp4',
-    mentor: {
-      username: 'science_explorer',
-      avatar: '/icons/girl.png',
-      isDaksh: false,
-    },
-    description:
-      'What happened in Uphar Cinema? A detailed 3D animation explaining the tragic incident that changed fire safety regulations forever. This educational content helps us understand the importance of safety measures in public spaces.',
-    likes: 19700,
-    comments: 51,
-    shares: 6556,
-    isLiked: false,
-  },
-  {
-    id: 8,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721246995-_why_is_it_called_the_indian_subcontinent____geography_explained_.mp4',
-    mentor: {
-      username: 'physics_mentor',
-      avatar: '/icons/girl.png',
-      isDaksh: true,
-    },
-    description:
-      "Why birds don't die of high voltage? Explained in 1 minute! The fascinating physics behind how birds can safely perch on power lines.",
-    likes: 12700,
-    comments: 89,
-    shares: 4200,
-    isLiked: true,
-  },
-  {
-    id: 9,
-    videoUrl:
-      'https://pub-7021c24c5a8941118427c1fdc660efff.r2.dev/videos/1747721295909-the_dead_sea__earth_s_lowest___saltiest_wonder______.mp4',
-    mentor: {
-      username: 'health_guru',
-      avatar: '/icons/girl.png',
-      isDaksh: true,
-    },
-    description:
-      'Pee rokna galat hai! Important health tips explained in Hindi. Learn why holding urine can be harmful to your health and what you should do instead.',
-    likes: 8900,
-    comments: 156,
-    shares: 2100,
-    isLiked: false,
-  },
-]
 
 const commentsData = [
   {
@@ -254,21 +109,148 @@ export default function InstagramReels() {
   const [showShare, setShowShare] = useState(false)
   const [showFullDescription, setShowFullDescription] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
-  const [reels, setReels] = useState(reelsData)
+  const [reels, setReels] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(null)
+  const [preloadedReels, setPreloadedReels] = useState([])
+  const [isPreloading, setIsPreloading] = useState(false)
   const [newComment, setNewComment] = useState('')
   const [replyingTo, setReplyingTo] = useState(null)
   const [isHolding, setIsHolding] = useState(false)
   const [lastTapTime, setLastTapTime] = useState(0)
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false)
   const [windowHeight, setWindowHeight] = useState(0)
+  const [videoErrors, setVideoErrors] = useState({})
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
   const holdTimeoutRef = useRef(null)
+  const preloadCache = useRef(new Set())
+  const isInitialLoad = useRef(true)
 
   // Motion values for smooth scrolling
   const y = useMotionValue(0)
   const isDragging = useRef(false)
+
+  // Aggressive preloading function
+  const preloadVideos = useCallback((reelsList) => {
+    reelsList.forEach((reel, index) => {
+      if (!preloadCache.current.has(reel.id) && index < 5) {
+        // Preload first 5 videos
+        const video = document.createElement('video')
+        video.preload = 'metadata'
+        video.crossOrigin = 'anonymous'
+        video.src = reel.videoUrl
+        video.muted = true
+        video.playsInline = true
+
+        video.addEventListener('loadedmetadata', () => {
+          preloadCache.current.add(reel.id)
+        })
+
+        video.addEventListener('canplaythrough', () => {
+          preloadCache.current.add(reel.id + '_ready')
+        })
+      }
+    })
+  }, [])
+
+  // Fetch mentor shots from API with better error handling
+  const fetchMentorShots = useCallback(
+    async (limit = 12, isRefresh = false) => {
+      try {
+        if (!isRefresh) setLoading(true)
+        setError(null)
+
+        console.log('Fetching mentor shots:', { limit, isRefresh })
+
+        const response = await fetch(
+          `/api/reels/shots?limit=${limit}&t=${Date.now()}`
+        )
+        const data = await response.json()
+
+        console.log('API Response:', {
+          success: data.success,
+          dataLength: data.data?.length,
+          total: data.total,
+          error: data.error,
+        })
+
+        if (data.success && data.data.length > 0) {
+          const newReels = data.data
+
+          console.log(
+            'Video URLs:',
+            newReels.map((reel) => ({
+              id: reel.id,
+              url: reel.videoUrl,
+              mentor: reel.mentor.username,
+            }))
+          )
+
+          if (isRefresh) {
+            setReels(newReels)
+            setCurrentReel(0)
+          } else {
+            setReels((prev) =>
+              isInitialLoad.current ? newReels : [...prev, ...newReels]
+            )
+          }
+
+          // Preload videos immediately
+          preloadVideos(newReels)
+
+          isInitialLoad.current = false
+          setError(null)
+        } else {
+          setError(data.message || 'No mentor shots available')
+          setReels([])
+        }
+      } catch (err) {
+        console.error('Error fetching mentor shots:', err)
+        setError('Failed to load mentor shots. Please check your connection.')
+        setReels([])
+      } finally {
+        setLoading(false)
+        setIsPreloading(false)
+      }
+    },
+    [preloadVideos]
+  )
+
+  // Load more reels when needed
+  const loadMoreReels = useCallback(async () => {
+    if (isPreloading) return
+
+    setIsPreloading(true)
+    try {
+      const response = await fetch(`/api/reels/shots?limit=6&t=${Date.now()}`)
+      const data = await response.json()
+
+      if (data.success && data.data.length > 0) {
+        const newReels = data.data.filter(
+          (newReel) =>
+            !reels.some((existingReel) => existingReel.id === newReel.id)
+        )
+
+        if (newReels.length > 0) {
+          setReels((prev) => [...prev, ...newReels])
+          preloadVideos(newReels)
+        }
+      }
+    } catch (err) {
+      console.error('Error loading more reels:', err)
+    } finally {
+      setIsPreloading(false)
+    }
+  }, [reels, isPreloading, preloadVideos])
+
+  // Refresh reels with new random content
+  const refreshReels = useCallback(() => {
+    isInitialLoad.current = true
+    preloadCache.current.clear()
+    fetchMentorShots(12, true)
+  }, [fetchMentorShots])
 
   // Initialize window height on client side
   useEffect(() => {
@@ -281,6 +263,28 @@ export default function InstagramReels() {
     window.addEventListener('resize', handleResize)
     return () => window.removeEventListener('resize', handleResize)
   }, [])
+
+  // Fetch initial reels on component mount - start immediately
+  useEffect(() => {
+    fetchMentorShots(12) // Load 12 initial reels for better experience
+  }, [fetchMentorShots])
+
+  // Aggressive preloading when user is near the end
+  useEffect(() => {
+    if (reels.length > 0 && currentReel >= reels.length - 3) {
+      loadMoreReels()
+    }
+  }, [currentReel, reels.length, loadMoreReels])
+
+  // Preload videos when currentReel changes
+  useEffect(() => {
+    if (reels.length > 0) {
+      const startIndex = Math.max(0, currentReel - 1)
+      const endIndex = Math.min(reels.length - 1, currentReel + 3)
+      const reelsToPreload = reels.slice(startIndex, endIndex + 1)
+      preloadVideos(reelsToPreload)
+    }
+  }, [currentReel, reels, preloadVideos])
 
   const toggleLike = () => {
     setReels((prev) =>
@@ -445,13 +449,67 @@ export default function InstagramReels() {
     }
   }, [])
 
-  const currentReelData = reels[currentReel]
+  // Loading state
+  if (loading && reels.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 text-white animate-spin" />
+          <p className="text-white text-sm">Loading mentor shots...</p>
+          <p className="text-gray-400 text-xs">
+            Fetching real content from database
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  // Error state with retry
+  if (error && reels.length === 0) {
+    return (
+      <div className="fixed inset-0 bg-black flex items-center justify-center">
+        <div className="flex flex-col items-center gap-4 text-center px-6">
+          <div className="text-6xl">🎥</div>
+          <h3 className="text-white text-lg font-semibold">
+            No Mentor Shots Found
+          </h3>
+          <p className="text-gray-400 text-sm max-w-sm">{error}</p>
+          <div className="flex gap-3 mt-4">
+            <Button
+              onClick={() => fetchMentorShots(12)}
+              className="flex items-center gap-2"
+              variant="outline"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Try Again
+            </Button>
+          </div>
+          <p className="text-gray-500 text-xs mt-2">
+            Make sure mentor shots are available in your database
+          </p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div
       className="fixed inset-0 bg-black overscroll-none"
       style={{ overscrollBehavior: 'none' }}
     >
+      {/* Refresh button */}
+      <div className="absolute top-4 left-4 z-50">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={refreshReels}
+          className="bg-black/20 backdrop-blur-sm text-white hover:bg-black/40"
+          disabled={loading}
+        >
+          <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`} />
+        </Button>
+      </div>
+
       <div
         ref={containerRef}
         className="h-full w-full overflow-hidden overscroll-none"
@@ -486,12 +544,81 @@ export default function InstagramReels() {
                 loop
                 muted={isMuted}
                 playsInline
+                preload="metadata"
+                controls={videoErrors[reel.id] ? true : false}
                 onClick={handleVideoTap}
                 onMouseDown={handleMouseDown}
                 onMouseUp={handleMouseUp}
                 onMouseLeave={handleMouseUp}
                 onContextMenu={(e) => e.preventDefault()}
+                onError={(e) => {
+                  console.error(
+                    'Video error for reel:',
+                    reel.id,
+                    reel.videoUrl,
+                    e.target.error
+                  )
+                  console.error('Error details:', {
+                    code: e.target.error?.code,
+                    message: e.target.error?.message,
+                    networkState: e.target.networkState,
+                    readyState: e.target.readyState,
+                  })
+                  setVideoErrors((prev) => ({ ...prev, [reel.id]: true }))
+                }}
+                onLoadStart={(e) => {
+                  console.log(
+                    'Video load start for reel:',
+                    reel.id,
+                    reel.videoUrl
+                  )
+                  setVideoErrors((prev) => ({ ...prev, [reel.id]: false }))
+                }}
+                onCanPlay={(e) => {
+                  console.log('Video can play for reel:', reel.id)
+                  setVideoErrors((prev) => ({ ...prev, [reel.id]: false }))
+                }}
+                onLoadedData={(e) => {
+                  console.log('Video loaded data for reel:', reel.id)
+                }}
+                onLoadedMetadata={(e) => {
+                  console.log('Video loaded metadata for reel:', reel.id)
+                }}
               />
+
+              {/* Video Error Fallback */}
+              {videoErrors[reel.id] && (
+                <div className="absolute inset-0 bg-black flex flex-col items-center justify-center">
+                  <div className="text-center text-white p-6">
+                    <div className="text-6xl mb-4">🎥</div>
+                    <h3 className="text-lg font-semibold mb-2">
+                      Video Loading Error
+                    </h3>
+                    <p className="text-sm text-gray-300 mb-4">
+                      Failed to load video content
+                    </p>
+                    <p className="text-xs text-gray-400 mb-4">
+                      URL: {reel.videoUrl}
+                    </p>
+                    <button
+                      onClick={() => {
+                        // Retry loading the video
+                        const video = videoRefs.current[idx]
+                        if (video) {
+                          setVideoErrors((prev) => ({
+                            ...prev,
+                            [reel.id]: false,
+                          }))
+                          video.load()
+                        }
+                      }}
+                      className="bg-white/20 text-white px-4 py-2 rounded-lg text-sm hover:bg-white/30 transition-colors"
+                    >
+                      Retry Loading
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {/* Double tap heart animation */}
               {showDoubleTapHeart && idx === currentReel && (
@@ -507,14 +634,26 @@ export default function InstagramReels() {
 
               {/* Mute indicator */}
               <div className="absolute top-4 right-4">
-                <div className="bg-slate-200 rounded-full p-2">
+                <div
+                  className="bg-black/20 backdrop-blur-sm rounded-full p-2 cursor-pointer"
+                  onClick={() => setIsMuted(!isMuted)}
+                >
                   {isMuted ? (
-                    <VolumeX className="w-4 h-4" />
+                    <VolumeX className="w-4 h-4 text-white" />
                   ) : (
-                    <Volume2 className="w-4 h-4" />
+                    <Volume2 className="w-4 h-4 text-white" />
                   )}
                 </div>
               </div>
+
+              {/* Loading indicator for preloading */}
+              {isPreloading && idx === reels.length - 1 && (
+                <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
+                  <div className="bg-black/20 backdrop-blur-sm rounded-full p-2">
+                    <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  </div>
+                </div>
+              )}
 
               {/* Actions */}
               <div className="absolute right-3 bottom-24 flex flex-col items-center gap-5">
@@ -589,7 +728,7 @@ export default function InstagramReels() {
                 <div className="flex items-center gap-3 mb-3 relative">
                   <Avatar className="w-12 h-12 border-2 border-white">
                     <AvatarImage
-                      src={reel.mentor.avatar || '/placeholder.svg'}
+                      src={reel.mentor.avatar || '/icons/girl.png'}
                     />
                     <AvatarFallback>
                       {reel.mentor.username[0].toUpperCase()}
@@ -622,7 +761,6 @@ export default function InstagramReels() {
                     {showFullDescription
                       ? reel.description
                       : truncateText(reel.description, 30)}{' '}
-                    {/* Reduced from 50 to 30 characters */}
                     {reel.description.length > 30 && (
                       <button
                         className="text-blue-200 ml-1 font-medium text-xs"
@@ -634,6 +772,16 @@ export default function InstagramReels() {
                       </button>
                     )}
                   </p>
+                  {/* Hashtags */}
+                  {reel.hashtags && reel.hashtags.length > 0 && (
+                    <div className="mt-1 flex flex-wrap gap-1">
+                      {reel.hashtags.slice(0, 3).map((hashtag, index) => (
+                        <span key={index} className="text-blue-300 text-xs">
+                          #{hashtag}
+                        </span>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </motion.div>
