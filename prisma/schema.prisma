@@ -234,7 +234,7 @@ model VideoAssignment {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   videoId     String   @db.ObjectId
   mentorId    String   @db.ObjectId
-  contentType String   // 'videos', 'shots', 'post', 'highlights'
+  contentType String   // 'videos', 'shorts', 'post', 'highlights'
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
