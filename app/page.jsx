@@ -1,171 +1,174 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import QRScanner from "./components/QRScanner";
-import SplashScreen from './components/SplashScreen';
-import { useForm } from "react-hook-form";
-import { toast } from "react-hot-toast";
-
-
-
+import { useState, useEffect } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import QRScanner from './components/QRScanner'
+import SplashScreen from './components/SplashScreen'
+import { useForm } from 'react-hook-form'
+import { toast } from 'react-hot-toast'
 
 export default function StudentLogin() {
-  const router = useRouter();
-  const [loginMethod, setLoginMethod] = useState("credentials");
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState("");
-  const { register, handleSubmit, formState: { errors } } = useForm();
+  const router = useRouter()
+  const [loginMethod, setLoginMethod] = useState('credentials')
+  const [username, setUsername] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState('')
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm()
 
   useEffect(() => {
     const checkSession = async () => {
-      const token = localStorage.getItem("token");
+      const token = localStorage.getItem('token')
       if (token) {
         try {
-          const response = await fetch("/api/auth/session", {
+          const response = await fetch('/api/auth/session', {
             headers: {
               Authorization: `Bearer ${token}`,
             },
-          });
-          const data = await response.json();
+          })
+          const data = await response.json()
           if (data.success && data.user) {
-            if (data.user.role === "STUDENT") {
-              router.push("/dashboard/home");
-              return;
+            if (data.user.role === 'STUDENT') {
+              router.push('/dashboard/home')
+              return
             }
           }
           // If session is invalid, remove the token
-          localStorage.removeItem("token");
+          localStorage.removeItem('token')
         } catch (error) {
-          console.error("Session check error:", error);
-          localStorage.removeItem("token");
+          console.error('Session check error:', error)
+          localStorage.removeItem('token')
         }
       }
-      setIsLoading(false);
-    };
+      setIsLoading(false)
+    }
 
-    checkSession();
-  }, [router]);
+    checkSession()
+  }, [router])
 
   const handleCredentialLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
     try {
-      const response = await fetch("/api/auth/login", {
-        method: "POST",
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username,
           password,
-          role: "STUDENT",
+          role: 'STUDENT',
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Login failed");
+        throw new Error(data.error || 'Login failed')
       }
 
       if (data.success && data.user) {
         // Create a new session
-        const sessionResponse = await fetch("/api/auth/session", {
-          method: "POST",
+        const sessionResponse = await fetch('/api/auth/session', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             userId: data.user.id,
           }),
-        });
+        })
 
-        const sessionData = await sessionResponse.json();
+        const sessionData = await sessionResponse.json()
 
         if (!sessionResponse.ok) {
-          throw new Error("Failed to create session");
+          throw new Error('Failed to create session')
         }
 
         // Store the session token
-        localStorage.setItem("token", sessionData.session.token);
+        localStorage.setItem('token', sessionData.session.token)
 
         // Redirect to student dashboard
-        router.replace("/dashboard/home");
+        router.replace('/dashboard/home')
       } else {
-        throw new Error("Invalid response from server");
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
-      setError(error.message || "Failed to login. Please try again.");
+      setError(error.message || 'Failed to login. Please try again.')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleQRScanSuccess = async (qrData) => {
-    setIsLoading(true);
-    setError("");
+    setIsLoading(true)
+    setError('')
 
     try {
-      const response = await fetch("/api/auth/qr-login", {
-        method: "POST",
+      const response = await fetch('/api/auth/qr-login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           username: qrData.username,
           password: qrData.password,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "QR login failed");
+        throw new Error(data.error || 'QR login failed')
       }
 
       if (data.success && data.user) {
         // Create a new session
-        const sessionResponse = await fetch("/api/auth/session", {
-          method: "POST",
+        const sessionResponse = await fetch('/api/auth/session', {
+          method: 'POST',
           headers: {
-            "Content-Type": "application/json",
+            'Content-Type': 'application/json',
           },
           body: JSON.stringify({
             userId: data.user.id,
           }),
-        });
+        })
 
-        const sessionData = await sessionResponse.json();
+        const sessionData = await sessionResponse.json()
 
         if (!sessionResponse.ok) {
-          throw new Error("Failed to create session");
+          throw new Error('Failed to create session')
         }
 
         // Store the session token
-        localStorage.setItem("token", sessionData.session.token);
+        localStorage.setItem('token', sessionData.session.token)
 
         // Redirect to student dashboard
-        router.replace("/dashboard/home");
+        router.replace('/dashboard/home')
       } else {
-        throw new Error("Invalid response from server");
+        throw new Error('Invalid response from server')
       }
     } catch (error) {
-      setError(error.message || "Failed to login with QR code. Please try again.");
+      setError(
+        error.message || 'Failed to login with QR code. Please try again.'
+      )
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleQRScanError = (error) => {
-    setError(error);
-  };
+    setError(error)
+  }
 
   if (isLoading) {
     return (
@@ -174,7 +177,7 @@ export default function StudentLogin() {
           <div className="mb-4 text-2xl font-semibold">Loading...</div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -183,7 +186,9 @@ export default function StudentLogin() {
       <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
         <div className="w-full max-w-md space-y-8">
           <div className="text-center">
-            <h1 className="text-4xl font-bold tracking-tight text-gray-900">Daksh</h1>
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+              Daksh
+            </h1>
             <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
               Student Login
             </h2>
@@ -196,21 +201,21 @@ export default function StudentLogin() {
             <div className="flex border-b mb-6">
               <button
                 className={`pb-2 px-4 ${
-                  loginMethod === "credentials"
-                    ? "border-b-2 border-black font-medium"
-                    : "text-gray-500"
+                  loginMethod === 'credentials'
+                    ? 'border-b-2 border-black font-medium'
+                    : 'text-gray-500'
                 }`}
-                onClick={() => setLoginMethod("credentials")}
+                onClick={() => setLoginMethod('credentials')}
               >
                 Username & Password
               </button>
               <button
                 className={`pb-2 px-4 ${
-                  loginMethod === "qr"
-                    ? "border-b-2 border-black font-medium"
-                    : "text-gray-500"
+                  loginMethod === 'qr'
+                    ? 'border-b-2 border-black font-medium'
+                    : 'text-gray-500'
                 }`}
-                onClick={() => setLoginMethod("qr")}
+                onClick={() => setLoginMethod('qr')}
               >
                 QR Code
               </button>
@@ -222,7 +227,7 @@ export default function StudentLogin() {
               </div>
             )}
 
-            {loginMethod === "credentials" ? (
+            {loginMethod === 'credentials' ? (
               <form className="space-y-6" onSubmit={handleCredentialLogin}>
                 <div>
                   <label
@@ -268,7 +273,7 @@ export default function StudentLogin() {
                     disabled={isLoading}
                     className="flex w-full justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
                   >
-                    {isLoading ? "Signing in..." : "Sign in"}
+                    {isLoading ? 'Signing in...' : 'Sign in'}
                   </button>
                 </div>
               </form>
@@ -289,14 +294,20 @@ export default function StudentLogin() {
 
           <div className="mt-4 text-center text-sm">
             <div className="text-gray-600">
-              Admin?{" "}
-              <Link href="/admin/login" className="font-medium text-black hover:text-gray-800">
+              Admin?{' '}
+              <Link
+                href="/admin/login"
+                className="font-medium text-black hover:text-gray-800"
+              >
                 Login here
               </Link>
             </div>
             <div className="mt-2 text-gray-600">
-              Mentor?{" "}
-              <Link href="/mentor/login" className="font-medium text-black hover:text-gray-800">
+              Mentor?{' '}
+              <Link
+                href="/mentor/login"
+                className="font-medium text-black hover:text-gray-800"
+              >
                 Login here
               </Link>
             </div>
@@ -304,5 +315,5 @@ export default function StudentLogin() {
         </div>
       </div>
     </>
-  );
+  )
 }
