@@ -494,7 +494,7 @@ export default function InstagramReels() {
 
   return (
     <div
-      className="fixed inset-0 bg-black overscroll-none"
+      className="fixed inset-0 bg-black overscroll-none mb-7"
       style={{ overscrollBehavior: 'none' }}
     >
       {/* Refresh button */}
@@ -539,7 +539,7 @@ export default function InstagramReels() {
             >
               <video
                 ref={(el) => (videoRefs.current[idx] = el)}
-                className="w-full h-full object-cover"
+                className="w-full h-full py-12 object-fit"
                 src={reel.videoUrl}
                 loop
                 muted={isMuted}
