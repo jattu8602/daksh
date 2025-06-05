@@ -5,6 +5,9 @@ import { NextResponse } from "next/server"
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 
+
+
+
 export async function POST(request) {
   try {
     const { content } = await request.json()
