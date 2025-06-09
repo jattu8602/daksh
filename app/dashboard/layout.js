@@ -4,12 +4,21 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { Home, Search, BookOpen, Clapperboard } from 'lucide-react' // Lucide icons
+import { Home, Search, BookOpen, Clapperboard, LogOut } from 'lucide-react' // Lucide icons
 import { PageLoader } from '@/components/ui/loading'
+import { useAuthGuard } from '@/hooks/useAuth'
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
+
+  // Protect this route for students only
+  const {
+    user,
+    isLoading: authLoading,
+    isAuthorized,
+    logout,
+  } = useAuthGuard(['STUDENT'])
 
   const navItems = [
     {
@@ -40,20 +49,55 @@ export default function DashboardLayout({ children }) {
 
   // Simulate initial loading
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 100) // Very short loading time for layout
+    if (!authLoading) {
+      const timer = setTimeout(() => {
+        setIsLoading(false)
+      }, 100) // Very short loading time for layout
 
-    return () => clearTimeout(timer)
-  }, [])
+      return () => clearTimeout(timer)
+    }
+  }, [authLoading])
 
-  if (isLoading) {
+  // Show loading while checking authentication
+  if (authLoading || isLoading) {
     return <PageLoader message="Loading dashboard..." />
+  }
+
+  // If not authorized, the useAuthGuard hook will handle redirect
+  if (!isAuthorized) {
+    return <PageLoader message="Redirecting..." />
+  }
+
+  const handleLogout = async () => {
+    if (confirm('Are you sure you want to logout?')) {
+      await logout()
+    }
   }
 
   return (
     <div className="flex flex-col min-h-screen">
+      {/* Header with user info and logout */}
+      {/* <header className="bg-white border-b border-gray-200 px-4 py-3 flex justify-between items-center">
+        <div className="flex items-center space-x-3">
+          <h1 className="text-xl font-bold text-gray-900">Daksh</h1>
+          {user && (
+            <span className="text-sm text-gray-600">
+              Welcome, {user.student?.name || user.name}
+            </span>
+          )}
+        </div>
+        <button
+          onClick={handleLogout}
+          className="flex items-center space-x-2 text-gray-600 hover:text-red-600 transition-colors"
+          title="Logout"
+        >
+          <LogOut className="w-5 h-5" />
+          <span className="text-sm">Logout</span>
+        </button>
+      </header> */}
+
       <main className="flex-1 pb-16">{children}</main>
+
       {!shouldHideNav && (
         <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50">
           <div className="flex justify-around items-center h-13">
@@ -81,7 +125,7 @@ export default function DashboardLayout({ children }) {
             >
               <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-pink-300">
                 <Image
-                  src="/icons/girl.png"
+                  src={user?.student?.profileImage || '/icons/girl.png'}
                   alt="Profile"
                   width={32}
                   height={32}

@@ -192,12 +192,14 @@ model VideoHashtag {
 }
 
 model Session {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @db.ObjectId
-  token     String   @unique
-  expiresAt DateTime
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                     String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId                 String   @db.ObjectId
+  token                  String   @unique
+  refreshToken           String   @unique
+  expiresAt              DateTime
+  refreshTokenExpiresAt  DateTime
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
 
   @@index([userId])
   @@index([expiresAt])

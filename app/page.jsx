@@ -8,6 +8,7 @@ import QRScanner from './components/QRScanner'
 import SplashScreen from './components/SplashScreen'
 import { useForm } from 'react-hook-form'
 import { toast } from 'react-hot-toast'
+import authManager from '@/lib/auth'
 
 export default function StudentLogin() {
   const router = useRouter()
@@ -23,29 +24,31 @@ export default function StudentLogin() {
   } = useForm()
 
   useEffect(() => {
+    // Initialize auth manager
+    authManager.initialize()
+
     const checkSession = async () => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        try {
-          const response = await fetch('/api/auth/session', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-          const data = await response.json()
-          if (data.success && data.user) {
-            if (data.user.role === 'STUDENT') {
-              router.push('/dashboard/home')
-              return
-            }
+      try {
+        // Check if we have valid tokens
+        const { accessToken, refreshToken } = authManager.getTokens()
+
+        if (accessToken || refreshToken) {
+          // Try to validate session or refresh if needed
+          const user = await authManager.checkSession()
+
+          if (user && user.role === 'STUDENT') {
+            router.push('/dashboard/home')
+            return
           }
-          // If session is invalid, remove the token
-          localStorage.removeItem('token')
-        } catch (error) {
-          console.error('Session check error:', error)
-          localStorage.removeItem('token')
         }
+
+        // Clear invalid tokens
+        authManager.clearTokens()
+      } catch (error) {
+        console.error('Session check error:', error)
+        authManager.clearTokens()
       }
+
       setIsLoading(false)
     }
 
@@ -77,7 +80,7 @@ export default function StudentLogin() {
       }
 
       if (data.success && data.user) {
-        // Create a new session
+        // Create a new session with refresh tokens
         const sessionResponse = await fetch('/api/auth/session', {
           method: 'POST',
           headers: {
@@ -94,8 +97,13 @@ export default function StudentLogin() {
           throw new Error('Failed to create session')
         }
 
-        // Store the session token
-        localStorage.setItem('token', sessionData.session.token)
+        // Store tokens using auth manager
+        authManager.setTokens({
+          accessToken: sessionData.session.accessToken,
+          refreshToken: sessionData.session.refreshToken,
+          accessTokenExpiresAt: sessionData.session.accessTokenExpiresAt,
+          refreshTokenExpiresAt: sessionData.session.refreshTokenExpiresAt,
+        })
 
         // Redirect to student dashboard
         router.replace('/dashboard/home')
@@ -132,7 +140,7 @@ export default function StudentLogin() {
       }
 
       if (data.success && data.user) {
-        // Create a new session
+        // Create a new session with refresh tokens
         const sessionResponse = await fetch('/api/auth/session', {
           method: 'POST',
           headers: {
@@ -149,8 +157,13 @@ export default function StudentLogin() {
           throw new Error('Failed to create session')
         }
 
-        // Store the session token
-        localStorage.setItem('token', sessionData.session.token)
+        // Store tokens using auth manager
+        authManager.setTokens({
+          accessToken: sessionData.session.accessToken,
+          refreshToken: sessionData.session.refreshToken,
+          accessTokenExpiresAt: sessionData.session.accessTokenExpiresAt,
+          refreshTokenExpiresAt: sessionData.session.refreshTokenExpiresAt,
+        })
 
         // Redirect to student dashboard
         router.replace('/dashboard/home')
