@@ -41,12 +41,17 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         codeReader = new BrowserMultiFormatReader()
         scannerRef.current = codeReader
 
-        // Prefer back camera
-        const videoConstraints = { facingMode: { exact: 'environment' } }
+        // Get all available cameras
         const devices = await BrowserMultiFormatReader.listVideoInputDevices()
         if (!devices.length) throw new Error('No camera devices')
-        setScanStatus('scanning')
-        const deviceId = devices[0].deviceId
+
+        // Find rear camera or default to first available
+        const rearCamera = devices.find(
+          (device) =>
+            device.label.toLowerCase().includes('back') ||
+            device.label.toLowerCase().includes('rear')
+        )
+        const deviceId = rearCamera ? rearCamera.deviceId : devices[0].deviceId
 
         // Create video element for scanning
         let video = document.createElement('video')
@@ -57,7 +62,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         videoRef.current = video
         element.appendChild(video)
 
-        // Start scanning
+        // Start scanning (remove the videoConstraints parameter)
         currentControls = await codeReader.decodeFromVideoDevice(
           deviceId,
           video,
@@ -71,8 +76,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
               // Only log unexpected errors
               console.warn('QR scan error:', error)
             }
-          },
-          videoConstraints
+          }
         )
         setControls(currentControls)
         if (!isUnmounted) {
