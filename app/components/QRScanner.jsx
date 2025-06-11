@@ -4,71 +4,124 @@ import { useEffect, useRef, useState } from 'react'
 import { BrowserMultiFormatReader } from '@zxing/browser'
 
 export default function QRScanner({ onScanSuccess, onScanError }) {
-  const videoRef = useRef(null)
-  const codeReaderRef = useRef(null)
+  const scannerRef = useRef(null)
+  const [isInitialized, setIsInitialized] = useState(false)
   const [scanStatus, setScanStatus] = useState('initializing')
   const [cameraError, setCameraError] = useState(null)
   const [retryKey, setRetryKey] = useState(0)
   const fileInputRef = useRef(null)
   const [uploadError, setUploadError] = useState(null)
+  const videoRef = useRef(null)
+  const [controls, setControls] = useState(null)
 
   useEffect(() => {
-    const startScanner = async () => {
-      setScanStatus('initializing')
-      setCameraError(null)
+    let isUnmounted = false
+    let codeReader = null
+    let currentControls = null
 
-      const codeReader = new BrowserMultiFormatReader()
-      codeReaderRef.current = codeReader
-
+    const initializeScanner = async () => {
       try {
+        setScanStatus('initializing')
+        setCameraError(null)
+        setUploadError(null)
+        setIsInitialized(false)
+
+        // Wait for DOM element
+        await new Promise((resolve) => setTimeout(resolve, 200))
+
+        const element = document.getElementById('qr-reader')
+        if (!element) {
+          if (!isUnmounted) {
+            setTimeout(initializeScanner, 500)
+          }
+          return
+        }
+        element.innerHTML = ''
+
+        codeReader = new BrowserMultiFormatReader()
+        scannerRef.current = codeReader
+
+        // Prefer back camera
+        const videoConstraints = { facingMode: { exact: 'environment' } }
         const devices = await BrowserMultiFormatReader.listVideoInputDevices()
         if (!devices.length) throw new Error('No camera devices')
-
         setScanStatus('scanning')
         const deviceId = devices[0].deviceId
 
-        await codeReader.decodeFromVideoDevice(
+        // Create video element for scanning
+        let video = document.createElement('video')
+        video.setAttribute('playsinline', true)
+        video.setAttribute('muted', true)
+        video.setAttribute('autoplay', true)
+        video.className = 'w-full min-h-[300px] object-cover'
+        videoRef.current = video
+        element.appendChild(video)
+
+        // Start scanning
+        currentControls = await codeReader.decodeFromVideoDevice(
           deviceId,
-          videoRef.current,
-          (result, error) => {
+          video,
+          (result, error, ctrl) => {
             if (result) {
               setScanStatus('success')
-              onScanSuccess(result.getText())
-              codeReader.reset()
+              processQrData(result.getText())
+              ctrl.stop()
             }
-            // ignore "no QR found" errors
             if (error && error.name !== 'NotFoundException') {
-              console.warn('QR scan error', error)
+              // Only log unexpected errors
+              console.warn('QR scan error:', error)
             }
-          }
+          },
+          videoConstraints
         )
-      } catch (err) {
-        // Map a few common names to friendly messages
-        const name = err.name || ''
-        let msg = 'Camera initialization failed.'
-
-        if (name === 'NotAllowedError' || name === 'PermissionDeniedError') {
-          msg = 'Camera access denied. Please allow camera and retry.'
-        } else if (
-          name === 'NotFoundError' ||
-          err.message.includes('No camera')
-        ) {
-          msg = 'No camera found on this device.'
-        } else if (name === 'NotSupportedError' || name === 'SecurityError') {
-          msg = 'Camera not supported by this browser (must be HTTPS).'
+        setControls(currentControls)
+        if (!isUnmounted) {
+          setIsInitialized(true)
+          setScanStatus('scanning')
         }
-
-        setCameraError(msg)
-        setScanStatus('error')
-        onScanError(msg)
+      } catch (error) {
+        if (!isUnmounted) {
+          setScanStatus('error')
+          const errorMessage =
+            error?.message || error?.toString() || 'Unknown error'
+          if (
+            errorMessage.includes('Permission denied') ||
+            errorMessage.includes('NotAllowedError')
+          ) {
+            setCameraError(
+              'Camera access denied. Please allow camera access and try again.'
+            )
+          } else if (
+            errorMessage.includes('NotFoundError') ||
+            errorMessage.includes('No camera')
+          ) {
+            setCameraError('No camera found on this device.')
+          } else if (
+            errorMessage.includes('NotSupportedError') ||
+            errorMessage.includes('HTTPS')
+          ) {
+            setCameraError(
+              'Camera not supported by this browser or requires HTTPS.'
+            )
+          } else {
+            setCameraError(
+              'Camera initialization failed. Please try refreshing the page.'
+            )
+          }
+          onScanError('QR scanner initialization failed: ' + errorMessage)
+        }
       }
     }
 
-    startScanner()
+    const timeoutId = setTimeout(initializeScanner, 100)
 
     return () => {
-      // Properly stop all video streams
-      if (codeReaderRef.current) {
+      isUnmounted = true
+      clearTimeout(timeoutId)
+      if (controls) {
+        controls.stop && controls.stop()
+      }
+      if (scannerRef.current) {
         BrowserMultiFormatReader.releaseAllStreams()
       }
       if (videoRef.current && videoRef.current.srcObject) {
@@ -79,49 +132,161 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
     }
   }, [retryKey])
 
-  // File upload handler placeholder (implement if needed)
+  const handleRetry = () => {
+    setCameraError(null)
+    setIsInitialized(false)
+    setScanStatus('initializing')
+    setUploadError(null)
+    const element = document.getElementById('qr-reader')
+    if (element) {
+      element.innerHTML = ''
+    }
+    setRetryKey((prev) => prev + 1)
+  }
+
+  const processQrData = (decodedText) => {
+    try {
+      let qrData
+      try {
+        qrData = JSON.parse(decodedText)
+      } catch (parseError) {
+        onScanError(
+          'QR code format not recognized. Please scan a valid student QR code.'
+        )
+        return
+      }
+      if (!qrData.username) {
+        throw new Error('Invalid QR code: missing username')
+      }
+      if (qrData.role && !qrData.password) {
+        setScanStatus('processing')
+        fetch('/api/auth/get-password', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username: qrData.username }),
+        })
+          .then((response) => response.json())
+          .then((data) => {
+            if (data.success) {
+              onScanSuccess({ ...qrData, password: data.password })
+            } else {
+              throw new Error(data.error || 'Failed to retrieve password')
+            }
+          })
+          .catch((error) => {
+            setScanStatus('error')
+            onScanError(error.message || 'Failed to retrieve password')
+          })
+      } else if (qrData.password) {
+        onScanSuccess(qrData)
+      } else {
+        throw new Error('Invalid QR code: missing required authentication data')
+      }
+    } catch (error) {
+      setScanStatus('error')
+      onScanError(error.message || 'Invalid QR code format')
+    }
+  }
+
   const handleFileChange = async (e) => {
     setUploadError(null)
     const file = e.target.files[0]
     if (!file) return
-    // You can implement QR code reading from image file here using zxing if needed
-    setUploadError('QR code image upload is not implemented yet.')
+    try {
+      setScanStatus('processing')
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select a valid image file')
+      }
+      // Read file as image and decode
+      const img = document.createElement('img')
+      img.src = URL.createObjectURL(file)
+      await new Promise((resolve, reject) => {
+        img.onload = resolve
+        img.onerror = reject
+      })
+      const codeReader = new BrowserMultiFormatReader()
+      const result = await codeReader.decodeFromImageElement(img)
+      processQrData(result.getText())
+      URL.revokeObjectURL(img.src)
+    } catch (error) {
+      setScanStatus(isInitialized ? 'scanning' : 'error')
+      setUploadError(
+        'Could not read QR code from image. Please try a clearer image or use camera scanning.'
+      )
+    }
     e.target.value = ''
+  }
+
+  const getStatusMessage = () => {
+    if (cameraError) {
+      return (
+        <div className="text-center space-y-3">
+          <div className="text-red-600 text-sm leading-relaxed">
+            {cameraError}
+          </div>
+          <button
+            onClick={handleRetry}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+          >
+            Retry Camera
+          </button>
+        </div>
+      )
+    }
+    if (uploadError) {
+      return <div className="text-red-500 text-sm">{uploadError}</div>
+    }
+    switch (scanStatus) {
+      case 'initializing':
+        return (
+          <div className="flex items-center justify-center space-x-2 text-blue-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent"></div>
+            <span className="text-sm">Starting camera...</span>
+          </div>
+        )
+      case 'scanning':
+        return (
+          <div className="text-gray-600 text-sm">
+            Position QR code within the frame
+          </div>
+        )
+      case 'processing':
+        return (
+          <div className="flex items-center justify-center space-x-2 text-green-600">
+            <div className="animate-spin rounded-full h-4 w-4 border-2 border-green-600 border-t-transparent"></div>
+            <span className="text-sm">Processing QR code...</span>
+          </div>
+        )
+      case 'success':
+        return (
+          <div className="text-green-600 text-sm font-medium">
+            QR code scanned successfully!
+          </div>
+        )
+      case 'error':
+        return (
+          <div className="text-red-500 text-sm">
+            Scanning failed. Please try again.
+          </div>
+        )
+      default:
+        return (
+          <div className="text-gray-600 text-sm">
+            Position QR code within the frame
+          </div>
+        )
+    }
   }
 
   return (
     <div className="w-full flex flex-col items-center space-y-4">
+      {/* QR Scanner Container */}
       <div className="relative w-full bg-gray-50 rounded-lg overflow-hidden border-2 border-dashed border-gray-300">
-        <video
-          ref={videoRef}
-          className="w-full min-h-[300px] object-cover"
-          muted
-          playsInline
-        />
-        {!cameraError && scanStatus !== 'scanning' && (
+        <div id="qr-reader" className="w-full min-h-[300px]"></div>
+        {/* Status overlay when not initialized */}
+        {!isInitialized && (
           <div className="absolute inset-0 flex items-center justify-center bg-gray-50">
-            {scanStatus === 'initializing' && (
-              <div className="flex items-center space-x-2 text-blue-600">
-                <div className="animate-spin rounded-full h-4 w-4 border-2 border-blue-600 border-t-transparent" />
-                <span className="text-sm">Starting camera...</span>
-              </div>
-            )}
-            {scanStatus === 'success' && (
-              <div className="text-green-600 text-sm font-medium">
-                QR code scanned!
-              </div>
-            )}
-          </div>
-        )}
-        {cameraError && (
-          <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50 p-4 space-y-3">
-            <div className="text-red-600 text-sm">{cameraError}</div>
-            <button
-              onClick={() => setRetryKey((k) => k + 1)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-            >
-              Retry Camera
-            </button>
+            <div className="text-center p-6">{getStatusMessage()}</div>
           </div>
         )}
       </div>
@@ -141,10 +306,11 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         >
           {scanStatus === 'processing' ? 'Processing...' : 'Upload QR Image'}
         </button>
-        {uploadError && (
-          <div className="text-red-500 text-sm mt-2">{uploadError}</div>
-        )}
       </div>
+      {/* Status Message (when initialized) */}
+      {isInitialized && <div className="text-center">{getStatusMessage()}</div>}
+      {/* Hidden element for file scanning */}
+      <div id="qr-upload-temp" className="hidden"></div>
     </div>
   )
 }
