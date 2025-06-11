@@ -91,7 +91,7 @@ export default function StudentLogin() {
         const sessionData = await sessionResponse.json()
 
         if (!sessionResponse.ok) {
-          throw new Error('Failed to create session')
+          throw new Error('Username already in use')
         }
 
         // Store the session token
@@ -146,7 +146,7 @@ export default function StudentLogin() {
         const sessionData = await sessionResponse.json()
 
         if (!sessionResponse.ok) {
-          throw new Error('Failed to create session')
+          throw new Error('Username already in use')
         }
 
         // Store the session token
@@ -188,7 +188,7 @@ export default function StudentLogin() {
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-           
+
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Daksh
             </h1>
