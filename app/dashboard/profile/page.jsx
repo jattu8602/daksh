@@ -205,35 +205,10 @@ export default function StudentDashboard() {
             </div>
           </ComponentLoader>
 
-          {/* Quick Actions Card */}
-          <ComponentLoader isLoading={false} skeleton={<ActionsSkeleton />}>
-            <div className="rounded-lg bg-white p-6 shadow">
-              <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
-              <div className="grid gap-4">
-                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
-                  View Attendance
-                </button>
-                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
-                  View Grades
-                </button>
-                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
-                  View Schedule
-                </button>
-              </div>
-            </div>
-          </ComponentLoader>
+        
         </div>
 
-        {/* Welcome Message */}
-        <div className="mt-6 rounded-lg bg-blue-50 p-6">
-          <h2 className="mb-2 text-xl font-semibold text-blue-900">
-            Welcome, {user.name}!
-          </h2>
-          <p className="text-blue-700">
-            You have successfully logged in to your student dashboard. Here you
-            can access your academic information, attendance records, and more.
-          </p>
-        </div>
+
       </main>
     </div>
   )
