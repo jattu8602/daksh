@@ -192,16 +192,11 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
     return (
       <div
         ref={containerRef}
-        className="w-full flex flex-col items-center justify-center bg-gray-100 rounded-lg py-6 px-2 sm:px-6"
+        className="w-full h-64 flex flex-col items-center justify-center bg-gray-100 rounded-lg"
       >
-        <div
-          id="qr-reader"
-          className="w-full max-w-xs mx-auto aspect-square"
-        ></div>
-        <div className="relative w-full flex flex-col items-center mt-2">
-          <div className="text-center text-gray-500 w-full text-xs sm:text-sm">
-            {getStatusMessage()}
-          </div>
+        <div id="qr-reader" className="w-full h-full"></div>
+        <div className="absolute text-center text-gray-500 w-full">
+          {getStatusMessage()}
         </div>
         <input
           type="file"
@@ -211,7 +206,7 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
           style={{ display: 'none' }}
         />
         <button
-          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs sm:text-sm"
+          className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           onClick={() => fileInputRef.current && fileInputRef.current.click()}
         >
           Upload QR Image
@@ -222,14 +217,8 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
   }
 
   return (
-    <div
-      ref={containerRef}
-      className="w-full flex flex-col items-center px-2 sm:px-6"
-    >
-      <div
-        id="qr-reader"
-        className="w-full max-w-xs mx-auto aspect-square"
-      ></div>
+    <div ref={containerRef} className="w-full flex flex-col items-center">
+      <div id="qr-reader" className="w-full"></div>
       <input
         type="file"
         accept="image/*"
@@ -238,13 +227,13 @@ export default function QRScanner({ onScanSuccess, onScanError }) {
         style={{ display: 'none' }}
       />
       <button
-        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-xs sm:text-sm"
+        className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
         onClick={() => fileInputRef.current && fileInputRef.current.click()}
       >
         Upload QR Image
       </button>
       <div
-        className={`mt-4 text-center text-xs sm:text-sm ${
+        className={`mt-4 text-center text-sm ${
           scanStatus === 'error' || cameraError || uploadError
             ? 'text-red-500'
             : scanStatus === 'success'
