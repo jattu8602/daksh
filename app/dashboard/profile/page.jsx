@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuth } from '@/hooks/useAuth'
 import {
   PageLoader,
   ComponentLoader,
@@ -12,62 +11,73 @@ import {
 
 export default function StudentDashboard() {
   const router = useRouter()
-  const {
-    user,
-    isLoading: authLoading,
-    isAuthenticated,
-    logout,
-    refreshUser,
-  } = useAuth()
+  const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  useEffect(() => {
-    if (!authLoading) {
-      if (!isAuthenticated) {
-        router.push('/')
-        return
-      }
+  const fetchUser = useCallback(async () => {
+    const token = localStorage.getItem('token')
+    if (!token) {
+      router.push('/')
+      return
+    }
 
-      if (user?.role !== 'STUDENT') {
-        router.push('/')
-        return
-      }
+    try {
+      setIsLoading(true)
+      const response = await fetch('/api/auth/session', {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      const data = await response.json()
 
+      if (data.success && data.user) {
+        console.log('User data:', data.user) // Debug log
+        setUser(data.user)
+        setError(null)
+      } else {
+        setError(data.error || 'Failed to fetch user data')
+        localStorage.removeItem('token')
+        router.push('/')
+      }
+    } catch (error) {
+      console.error('Error fetching user data:', error)
+      setError('Failed to fetch user data')
+      localStorage.removeItem('token')
+      router.push('/')
+    } finally {
       setIsLoading(false)
     }
-  }, [authLoading, isAuthenticated, user, router])
+  }, [router])
+
+  useEffect(() => {
+    fetchUser()
+  }, [fetchUser])
 
   const handleLogout = useCallback(async () => {
+    const token = localStorage.getItem('token')
     setIsLoggingOut(true)
-    try {
-      await logout()
-    } catch (error) {
-      console.error('Error during logout:', error)
-    } finally {
-      setIsLoggingOut(false)
-    }
-  }, [logout])
 
-  const handleRefresh = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      await refreshUser()
-    } catch (error) {
-      setError('Failed to refresh user data')
-    } finally {
-      setIsLoading(false)
+    if (token) {
+      try {
+        await fetch('/api/auth/session', {
+          method: 'DELETE',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+      } catch (error) {
+        console.error('Error during logout:', error)
+      }
     }
-  }, [refreshUser])
 
-  if (authLoading || isLoading) {
+    localStorage.removeItem('token')
+    router.push('/')
+  }, [router])
+
+  if (isLoading) {
     return <PageLoader message="Loading your profile..." />
-  }
-
-  if (!isAuthenticated) {
-    return <PageLoader message="Redirecting..." />
   }
 
   if (error) {
@@ -78,7 +88,7 @@ export default function StudentDashboard() {
             {error}
           </div>
           <button
-            onClick={handleRefresh}
+            onClick={fetchUser}
             className="bg-black text-white px-4 py-2 rounded-md hover:bg-gray-800"
           >
             Try Again
@@ -89,7 +99,7 @@ export default function StudentDashboard() {
   }
 
   if (!user) {
-    return <PageLoader message="Loading user data..." />
+    return null // Will redirect in useEffect
   }
 
   const ProfileSkeleton = () => (
@@ -122,7 +132,7 @@ export default function StudentDashboard() {
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <h1 className="text-3xl font-bold tracking-tight text-gray-900">
-              Student Profile
+              Student Dashboard
             </h1>
             <button
               onClick={handleLogout}
@@ -144,28 +154,24 @@ export default function StudentDashboard() {
               <div className="flex items-center space-x-4 mb-6">
                 <div className="relative w-24 h-24">
                   <img
-                    src={user.student?.profileImage || '/icons/girl.png'}
+                    src={user.student?.profileImage || '/public/icons/girl.png'}
                     alt={user.name}
                     className="w-24 h-24 rounded-full object-cover border-2 border-gray-200"
                     loading="lazy"
                     onError={(e) => {
-                      e.target.src = '/icons/girl.png'
+                      e.target.src = '/public/icons/girl.png'
                     }}
                   />
                 </div>
                 <div>
-                  <h2 className="text-xl font-semibold">
-                    {user.student?.name || user.name}
-                  </h2>
+                  <h2 className="text-xl font-semibold">{user.name}</h2>
                   <p className="text-gray-600">@{user.username}</p>
                 </div>
               </div>
               <div className="space-y-3">
                 <div>
                   <span className="font-medium text-gray-500">Name:</span>{' '}
-                  <span className="text-gray-900">
-                    {user.student?.name || user.name}
-                  </span>
+                  <span className="text-gray-900">{user.name}</span>
                 </div>
                 <div>
                   <span className="font-medium text-gray-500">Username:</span>{' '}
@@ -193,20 +199,8 @@ export default function StudentDashboard() {
                         {user.student.class?.school?.name || 'N/A'}
                       </span>
                     </div>
-                    <div>
-                      <span className="font-medium text-gray-500">Gender:</span>{' '}
-                      <span className="text-gray-900">
-                        {user.student.gender || 'N/A'}
-                      </span>
-                    </div>
                   </>
                 )}
-                <div>
-                  <span className="font-medium text-gray-500">Role:</span>{' '}
-                  <span className="text-gray-900 capitalize">
-                    {user.role.toLowerCase()}
-                  </span>
-                </div>
               </div>
             </div>
           </ComponentLoader>
@@ -214,84 +208,32 @@ export default function StudentDashboard() {
           {/* Quick Actions Card */}
           <ComponentLoader isLoading={false} skeleton={<ActionsSkeleton />}>
             <div className="rounded-lg bg-white p-6 shadow">
-              <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
-              <div className="space-y-4">
-                <button
-                  onClick={() => router.push('/dashboard/home')}
-                  className="w-full text-left p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium">Go to Dashboard</div>
-                  <div className="text-sm text-gray-500">
-                    View your main dashboard
-                  </div>
+              <h2 className="mb-4 text-xl font-semibold">Quick Actions</h2>
+              <div className="grid gap-4">
+                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
+                  View Attendance
                 </button>
-
-                <button
-                  onClick={() => router.push('/dashboard/learn')}
-                  className="w-full text-left p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium">Learning Center</div>
-                  <div className="text-sm text-gray-500">
-                    Access your courses and materials
-                  </div>
+                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
+                  View Grades
                 </button>
-
-                <button
-                  onClick={() => router.push('/dashboard/reels')}
-                  className="w-full text-left p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium">Video Reels</div>
-                  <div className="text-sm text-gray-500">
-                    Watch educational content
-                  </div>
-                </button>
-
-                <button
-                  onClick={handleRefresh}
-                  className="w-full text-left p-3 rounded-md border border-gray-200 hover:bg-gray-50 transition-colors"
-                >
-                  <div className="font-medium">Refresh Profile</div>
-                  <div className="text-sm text-gray-500">
-                    Update your profile information
-                  </div>
+                <button className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 transition-colors">
+                  View Schedule
                 </button>
               </div>
             </div>
           </ComponentLoader>
         </div>
 
-        {/* Session Info Card (for debugging) */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mt-6">
-            <div className="rounded-lg bg-blue-50 p-6 shadow">
-              <h3 className="text-lg font-semibold mb-4 text-blue-900">
-                Session Info (Dev)
-              </h3>
-              <div className="space-y-2 text-sm">
-                <div>
-                  <span className="font-medium text-blue-700">User ID:</span>{' '}
-                  <span className="text-blue-900">{user.id}</span>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-700">
-                    Has Access Token:
-                  </span>{' '}
-                  <span className="text-blue-900">
-                    {localStorage.getItem('accessToken') ? 'Yes' : 'No'}
-                  </span>
-                </div>
-                <div>
-                  <span className="font-medium text-blue-700">
-                    Has Refresh Token:
-                  </span>{' '}
-                  <span className="text-blue-900">
-                    {localStorage.getItem('refreshToken') ? 'Yes' : 'No'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* Welcome Message */}
+        <div className="mt-6 rounded-lg bg-blue-50 p-6">
+          <h2 className="mb-2 text-xl font-semibold text-blue-900">
+            Welcome, {user.name}!
+          </h2>
+          <p className="text-blue-700">
+            You have successfully logged in to your student dashboard. Here you
+            can access your academic information, attendance records, and more.
+          </p>
+        </div>
       </main>
     </div>
   )

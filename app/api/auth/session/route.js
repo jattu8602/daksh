@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 import { randomBytes } from 'crypto'
 
-// Create a new session with both access and refresh tokens
+// Create a new session
 export async function POST(request) {
   try {
     const { userId } = await request.json()
@@ -14,39 +14,26 @@ export async function POST(request) {
       )
     }
 
-    // Generate tokens
-    const accessToken = randomBytes(32).toString('hex')
-    const refreshToken = randomBytes(32).toString('hex')
+    // Generate a random token
+    const token = randomBytes(32).toString('hex')
 
-    // Set token expiry times
-    const accessTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-    const refreshTokenExpiresAt = new Date(
-      Date.now() + 30 * 24 * 60 * 60 * 1000
-    ) // 30 days
+    // Set session expiry to 24 hours from now
+    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
 
-    // Delete any existing sessions for this user to prevent multiple active sessions
-    await prisma.session.deleteMany({
-      where: { userId },
-    })
-
-    // Create new session with both tokens
+    // Create new session
     const session = await prisma.session.create({
       data: {
         userId,
-        token: accessToken,
-        refreshToken,
-        expiresAt: accessTokenExpiresAt,
-        refreshTokenExpiresAt,
+        token,
+        expiresAt,
       },
     })
 
     return NextResponse.json({
       success: true,
       session: {
-        accessToken: session.token,
-        refreshToken: session.refreshToken,
-        accessTokenExpiresAt: session.expiresAt,
-        refreshTokenExpiresAt: session.refreshTokenExpiresAt,
+        token: session.token,
+        expiresAt: session.expiresAt,
       },
     })
   } catch (error) {
@@ -58,7 +45,7 @@ export async function POST(request) {
   }
 }
 
-// Validate a session or refresh token
+// Validate a session
 export async function GET(request) {
   try {
     const token = request.headers.get('authorization')?.split(' ')[1]
@@ -75,12 +62,12 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Invalid session' }, { status: 401 })
     }
 
-    // Check if access token is expired
     if (session.expiresAt < new Date()) {
-      return NextResponse.json(
-        { error: 'Access token expired', code: 'TOKEN_EXPIRED' },
-        { status: 401 }
-      )
+      // Delete expired session
+      await prisma.session.delete({
+        where: { id: session.id },
+      })
+      return NextResponse.json({ error: 'Session expired' }, { status: 401 })
     }
 
     // Fetch the user with student data
@@ -99,10 +86,6 @@ export async function GET(request) {
       },
     })
 
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 401 })
-    }
-
     // Remove sensitive data before sending
     const { password, ...userWithoutPassword } = user
 
@@ -120,73 +103,6 @@ export async function GET(request) {
     console.error('Session validation error:', error)
     return NextResponse.json(
       { error: 'Failed to validate session' },
-      { status: 500 }
-    )
-  }
-}
-
-// Refresh access token using refresh token
-export async function PUT(request) {
-  try {
-    const { refreshToken } = await request.json()
-
-    if (!refreshToken) {
-      return NextResponse.json(
-        { error: 'Refresh token is required' },
-        { status: 400 }
-      )
-    }
-
-    // Find session by refresh token
-    const session = await prisma.session.findUnique({
-      where: { refreshToken },
-    })
-
-    if (!session) {
-      return NextResponse.json(
-        { error: 'Invalid refresh token' },
-        { status: 401 }
-      )
-    }
-
-    // Check if refresh token is expired
-    if (session.refreshTokenExpiresAt < new Date()) {
-      // Delete expired session
-      await prisma.session.delete({
-        where: { id: session.id },
-      })
-      return NextResponse.json(
-        { error: 'Refresh token expired' },
-        { status: 401 }
-      )
-    }
-
-    // Generate new access token
-    const newAccessToken = randomBytes(32).toString('hex')
-    const newAccessTokenExpiresAt = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    // Update session with new access token
-    const updatedSession = await prisma.session.update({
-      where: { id: session.id },
-      data: {
-        token: newAccessToken,
-        expiresAt: newAccessTokenExpiresAt,
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      session: {
-        accessToken: updatedSession.token,
-        refreshToken: updatedSession.refreshToken,
-        accessTokenExpiresAt: updatedSession.expiresAt,
-        refreshTokenExpiresAt: updatedSession.refreshTokenExpiresAt,
-      },
-    })
-  } catch (error) {
-    console.error('Token refresh error:', error)
-    return NextResponse.json(
-      { error: 'Failed to refresh token' },
       { status: 500 }
     )
   }
