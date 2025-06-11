@@ -17,8 +17,7 @@ export async function POST(request) {
     // Generate a random token
     const token = randomBytes(32).toString('hex')
 
-    // Set session expiry to 24 hours from now
-    const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000)
+    const expiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days (approx. 3 months)
 
     // Create new session
     const session = await prisma.session.create({
