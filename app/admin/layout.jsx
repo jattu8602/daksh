@@ -1,77 +1,305 @@
-"use client";
+'use client'
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { useState } from "react";
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useState, useEffect, useRef } from 'react'
+
+// Search Bar Component with Animated Text
+function AdminSearchBar() {
+  const [searchQuery, setSearchQuery] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+
+  // Placeholders for admin-specific searches
+  const placeholders = [
+    'Search schools...',
+    'Search mentors...',
+    'Search admins...',
+    'Search content...',
+    'Search classes...',
+    'Search settings...',
+  ]
+
+  // Animation states
+  const [placeholderIndex, setPlaceholderIndex] = useState(0)
+  const [displayText, setDisplayText] = useState('')
+  const [count, setCount] = useState(0)
+  const phaseRef = useRef('countUp')
+  const intervalRef = useRef(null)
+  const [showCursor, setShowCursor] = useState(true)
+
+  // Cursor blink effect
+  useEffect(() => {
+    const blink = setInterval(() => setShowCursor((v) => !v), 500)
+    return () => clearInterval(blink)
+  }, [])
+
+  // Animated placeholder text effect
+  useEffect(() => {
+    if (searchQuery) {
+      setDisplayText('')
+      return
+    }
+
+    if (intervalRef.current) clearInterval(intervalRef.current)
+
+    const current = placeholders[placeholderIndex]
+    phaseRef.current = 'countUp'
+    setCount(0)
+
+    intervalRef.current = setInterval(() => {
+      setCount((c) => {
+        if (phaseRef.current === 'countUp') {
+          if (c < 100) {
+            const pct = c + 3 // Slightly faster animation
+            const len = Math.floor((pct / 100) * current.length)
+            setDisplayText(current.slice(0, len))
+            return pct
+          } else {
+            phaseRef.current = 'hold'
+            setTimeout(() => {
+              phaseRef.current = 'countDown'
+            }, 1500) // Hold for 1.5 seconds
+            return c
+          }
+        } else if (phaseRef.current === 'hold') {
+          return c
+        } else {
+          if (c > 0) {
+            const pct = c - 3
+            const len = Math.floor((pct / 100) * current.length)
+            setDisplayText(current.slice(0, len))
+            return pct
+          } else {
+            setPlaceholderIndex((idx) => (idx + 1) % placeholders.length)
+            phaseRef.current = 'countUp'
+            return 0
+          }
+        }
+      })
+    }, 50)
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current)
+    }
+  }, [searchQuery, placeholderIndex])
+
+  // Input change handler
+  const onChange = (e) => {
+    setSearchQuery(e.target.value)
+    setIsLoading(true)
+    clearTimeout(window._adminSearchTimeout)
+    window._adminSearchTimeout = setTimeout(() => setIsLoading(false), 500)
+  }
+
+  // Form submit handler
+  const onSubmit = (e) => {
+    e.preventDefault()
+    console.log('Admin searching for:', searchQuery)
+    // Add your search logic here
+  }
+
+  // Combine display text and cursor
+  const placeholderToShow =
+    displayText + (showCursor && !searchQuery ? ' |' : '')
+
+  return (
+    <form onSubmit={onSubmit} className="relative flex-1 max-w-md">
+      <div className="relative">
+        {/* Search icon */}
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <svg
+            className="h-4 w-4 text-gray-400"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+            />
+          </svg>
+        </div>
+
+        {/* Input field */}
+        <input
+          type="text"
+          placeholder={placeholderToShow}
+          value={searchQuery}
+          onChange={onChange}
+          className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 text-sm"
+        />
+
+        {/* Clear button */}
+        {searchQuery && (
+          <button
+            type="button"
+            onClick={() => setSearchQuery('')}
+            className="absolute inset-y-0 right-8 flex items-center pr-2 text-gray-400 hover:text-gray-600"
+          >
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
+          </button>
+        )}
+
+        {/* Loading indicator or search button */}
+        <div className="absolute inset-y-0 right-0 flex items-center pr-3">
+          {isLoading ? (
+            <div className="h-4 w-4 border-2 border-t-transparent border-blue-500 rounded-full animate-spin" />
+          ) : (
+            <button
+              type="submit"
+              className="text-gray-400 hover:text-gray-600 focus:outline-none"
+            >
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fillRule="evenodd"
+                  d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          )}
+        </div>
+      </div>
+    </form>
+  )
+}
 
 export default function AdminLayout({ children }) {
-  const pathname = usePathname();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const pathname = usePathname()
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Changed to false for mobile-first
+  const [isMobile, setIsMobile] = useState(false)
 
   const navItems = [
-    { href: "/admin/dashboard", label: "Dashboard", icon: "📊" },
-    { href: "/admin/schools", label: "Schools", icon: "🏫" },
-    { href: "/admin/mentors", label: "Mentors", icon: "👨‍💼" },
-    { href: "/admin/admins", label: "Admins", icon: "👑" },
-    { href: "/admin/content", label: "Content", icon: "🎬" },
-    { href: "/admin/class", label: "Class", icon: "👥" },
-    { href: "/admin/settings", label: "Settings", icon: "⚙️" },
+    { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
+    { href: '/admin/schools', label: 'Schools', icon: '🏫' },
+    { href: '/admin/mentors', label: 'Mentors', icon: '👨‍💼' },
+    { href: '/admin/admins', label: 'Admins', icon: '👑' },
+    { href: '/admin/content', label: 'Content', icon: '🎬' },
+    { href: '/admin/class', label: 'Class', icon: '👥' },
+    { href: '/admin/settings', label: 'Settings', icon: '⚙️' },
+  ]
 
+  // Check if mobile and handle sidebar state
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = window.innerWidth < 1024
+      setIsMobile(mobile)
+      if (!mobile) {
+        setIsSidebarOpen(true) // Open sidebar on desktop
+      } else {
+        setIsSidebarOpen(false) // Close sidebar on mobile
+      }
+    }
 
-  ];
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
-  const isLoginPage = pathname === "/admin/login";
+  // Close sidebar when clicking nav items on mobile
+  const handleNavClick = () => {
+    if (isMobile) {
+      setIsSidebarOpen(false)
+    }
+  }
+
+  // Handle clicking outside sidebar to close it
+  const handleOutsideClick = (e) => {
+    if (
+      isMobile &&
+      isSidebarOpen &&
+      !e.target.closest('aside') &&
+      !e.target.closest('button')
+    ) {
+      setIsSidebarOpen(false)
+    }
+  }
+
+  // Add click listener to close sidebar when clicking outside
+  useEffect(() => {
+    if (isMobile && isSidebarOpen) {
+      document.addEventListener('click', handleOutsideClick)
+      return () => document.removeEventListener('click', handleOutsideClick)
+    }
+  }, [isMobile, isSidebarOpen])
+
+  const isLoginPage = pathname === '/admin/login'
 
   if (isLoginPage) {
-    return <>{children}</>;
+    return <>{children}</>
   }
 
   return (
     <div className="flex h-screen bg-gray-100">
+      {/* Mobile Overlay - Removed to keep background visible */}
+
       {/* Sidebar */}
       <aside
-        className={`bg-white fixed inset-y-0 z-50 flex flex-col border-r transition-all duration-300 ${
-          isSidebarOpen ? "w-64" : "w-20"
-        } lg:static`}
+        className={`bg-white fixed inset-y-0 z-50 flex flex-col border-r transition-transform duration-300 ease-in-out ${
+          isSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } w-64 lg:static lg:translate-x-0`}
       >
         <div className="flex h-14 items-center border-b px-4">
-          <h1 className={`font-bold text-lg ${isSidebarOpen ? "block" : "hidden"}`}>
-            Daksh Admin
-          </h1>
+          <h1 className="font-bold text-lg">Daksh Admin</h1>
           <button
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
             className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-md border lg:hidden"
           >
             <span className="sr-only">Toggle sidebar</span>
-            {isSidebarOpen ? "✕" : "≡"}
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
+            </svg>
           </button>
         </div>
         <nav className="flex-1 overflow-auto py-4">
           <ul className="grid gap-1 px-2">
             {navItems.map((item) => {
-              const isActive = pathname.startsWith(item.href);
+              const isActive = pathname.startsWith(item.href)
               return (
                 <li key={item.href}>
                   <Link
                     href={item.href}
-                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium ${
+                    onClick={handleNavClick}
+                    className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors ${
                       isActive
-                        ? "bg-gray-100 text-black"
-                        : "text-gray-500 hover:text-gray-900 hover:bg-gray-50"
+                        ? 'bg-gray-100 text-black'
+                        : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
-                    <span className={isSidebarOpen ? "block" : "hidden"}>
-                      {item.label}
-                    </span>
+                    <span>{item.label}</span>
                   </Link>
                 </li>
-              );
+              )
             })}
           </ul>
         </nav>
         <div className="border-t p-4">
-          <div className={`flex items-center gap-3 ${isSidebarOpen ? "block" : "hidden"}`}>
+          <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
               A
             </div>
@@ -80,11 +308,7 @@ export default function AdminLayout({ children }) {
               <div className="text-xs text-gray-500">admin@example.com</div>
             </div>
           </div>
-          <button
-            className={`mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 ${
-              isSidebarOpen ? "block" : "hidden"
-            }`}
-          >
+          <button className="mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
             Sign Out
           </button>
         </div>
@@ -98,24 +322,49 @@ export default function AdminLayout({ children }) {
             className="inline-flex h-8 w-8 items-center justify-center rounded-md border lg:hidden"
           >
             <span className="sr-only">Toggle sidebar</span>
-            {isSidebarOpen ? "✕" : "≡"}
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 6h16M4 12h16M4 18h16"
+              />
+            </svg>
           </button>
-          <div className="w-full flex items-center justify-between">
-            <h1 className="text-lg font-semibold">
-              {navItems.find((item) => pathname.startsWith(item.href))?.label || "Dashboard"}
+
+          <div className="flex flex-1 items-center justify-between gap-4">
+            {/* Left side - Page title (hidden on mobile) */}
+            <h1 className="text-lg font-semibold hidden lg:block">
+              {navItems.find((item) => pathname.startsWith(item.href))?.label ||
+                'Dashboard'}
             </h1>
-            <div className="flex items-center gap-4">
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100">
+
+            {/* Center - Search bar */}
+            <div className="flex-1 max-w-md mx-4">
+              <AdminSearchBar />
+            </div>
+
+            {/* Right side - Action buttons */}
+            <div className="flex items-center gap-2">
+              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 relative">
                 🔔
+                {/* Notification badge */}
+                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  3
+                </span>
               </button>
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100">
-                ❓
-              </button>
+
             </div>
           </div>
         </header>
+
         <div className="flex-1 overflow-auto p-4 lg:p-6">{children}</div>
       </main>
     </div>
-  );
+  )
 }
