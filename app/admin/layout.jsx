@@ -351,14 +351,15 @@ export default function AdminLayout({ children }) {
 
             {/* Right side - Action buttons */}
             <div className="flex items-center gap-2">
-              <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 relative">
-                🔔
-                {/* Notification badge */}
-                <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
-                  3
-                </span>
-              </button>
-
+              <Link href="/admin/notifications">
+                <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 relative">
+                  🔔
+                  {/* Notification badge */}
+                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                    3
+                  </span>
+                </button>
+              </Link>
             </div>
           </div>
         </header>
