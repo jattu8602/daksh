@@ -1,21 +1,30 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
 import { useRouter } from 'next/navigation'
+import { useDispatch, useSelector } from 'react-redux'
 import QRScanner from './components/QRScanner'
 import SplashScreen from './components/SplashScreen'
+import {
+  loginStart,
+  loginSuccess,
+  loginFailure,
+} from './store/features/authSlice'
 import { useForm } from 'react-hook-form'
-
 
 export default function StudentLogin() {
   const router = useRouter()
+  const dispatch = useDispatch()
+  const {
+    isAuthenticated,
+    loading,
+    error: authError,
+  } = useSelector((state) => state.auth)
   const [loginMethod, setLoginMethod] = useState('credentials')
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
+  const [localError, setLocalError] = useState('')
   const {
     register,
     handleSubmit,
@@ -23,39 +32,15 @@ export default function StudentLogin() {
   } = useForm()
 
   useEffect(() => {
-    const checkSession = async () => {
-      const token = localStorage.getItem('token')
-      if (token) {
-        try {
-          const response = await fetch('/api/auth/session', {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          })
-          const data = await response.json()
-          if (data.success && data.user) {
-            if (data.user.role === 'STUDENT') {
-              router.push('/dashboard/home')
-              return
-            }
-          }
-          // If session is invalid, remove the token
-          localStorage.removeItem('token')
-        } catch (error) {
-          console.error('Session check error:', error)
-          localStorage.removeItem('token')
-        }
-      }
-      setIsLoading(false)
+    if (isAuthenticated) {
+      router.replace('/dashboard/home')
     }
-
-    checkSession()
-  }, [router])
+  }, [isAuthenticated, router])
 
   const handleCredentialLogin = async (e) => {
     e.preventDefault()
-    setIsLoading(true)
-    setError('')
+    dispatch(loginStart())
+    setLocalError('')
 
     try {
       const response = await fetch('/api/auth/login', {
@@ -94,24 +79,24 @@ export default function StudentLogin() {
           throw new Error('Username already in use')
         }
 
-        // Store the session token
-        localStorage.setItem('token', sessionData.session.token)
-
-        // Redirect to student dashboard
-        router.replace('/dashboard/home')
+        dispatch(
+          loginSuccess({
+            user: data.user,
+            token: sessionData.session.token,
+          })
+        )
       } else {
         throw new Error('Invalid response from server')
       }
     } catch (error) {
-      setError(error.message || 'Failed to login. Please try again.')
-    } finally {
-      setIsLoading(false)
+      setLocalError(error.message || 'Failed to login. Please try again.')
+      dispatch(loginFailure(error.message))
     }
   }
 
   const handleQRScanSuccess = async (qrData) => {
-    setIsLoading(true)
-    setError('')
+    dispatch(loginStart())
+    setLocalError('')
 
     try {
       const response = await fetch('/api/auth/qr-login', {
@@ -149,28 +134,29 @@ export default function StudentLogin() {
           throw new Error('Username already in use')
         }
 
-        // Store the session token
-        localStorage.setItem('token', sessionData.session.token)
-
-        // Redirect to student dashboard
-        router.replace('/dashboard/home')
+        dispatch(
+          loginSuccess({
+            user: data.user,
+            token: sessionData.session.token,
+          })
+        )
       } else {
         throw new Error('Invalid response from server')
       }
     } catch (error) {
-      setError(
+      setLocalError(
         error.message || 'Failed to login with QR code. Please try again.'
       )
-    } finally {
-      setIsLoading(false)
+      dispatch(loginFailure(error.message))
     }
   }
 
   const handleQRScanError = (error) => {
-    setError(error)
+    setLocalError(error)
+    dispatch(loginFailure(error))
   }
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
@@ -188,11 +174,9 @@ export default function StudentLogin() {
         <div className="w-full max-w-md">
           {/* Header */}
           <div className="text-center mb-8">
-
             <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent mb-2">
               Daksh
             </h1>
-
           </div>
 
           {/* Login Card */}
@@ -254,7 +238,7 @@ export default function StudentLogin() {
             </div>
 
             {/* Error Message */}
-            {error && (
+            {(localError || authError) && (
               <div className="mx-6 mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
                 <div className="flex items-center space-x-2">
                   <svg
@@ -270,7 +254,9 @@ export default function StudentLogin() {
                       d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                     />
                   </svg>
-                  <span className="text-sm text-red-700">{error}</span>
+                  <span className="text-sm text-red-700">
+                    {localError || authError}
+                  </span>
                 </div>
               </div>
             )}
@@ -381,10 +367,10 @@ export default function StudentLogin() {
 
                   <button
                     type="submit"
-                    disabled={isLoading}
+                    disabled={loading}
                     className="w-full bg-gradient-to-r from-indigo-600 to-purple-600 text-white py-3 px-4 rounded-lg font-medium hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed transform hover:scale-[1.02] active:scale-[0.98]"
                   >
-                    {isLoading ? (
+                    {loading ? (
                       <div className="flex items-center justify-center space-x-2">
                         <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                         <span>Signing in...</span>
