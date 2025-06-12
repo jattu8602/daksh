@@ -1,8 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
+import { Bell } from 'lucide-react'
 
 // Search Bar Component with Animated Text
 function AdminSearchBar() {
@@ -180,8 +181,10 @@ function AdminSearchBar() {
 
 export default function AdminLayout({ children }) {
   const pathname = usePathname()
+  const router = useRouter()
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Changed to false for mobile-first
   const [isMobile, setIsMobile] = useState(false)
+  const [adminUser, setAdminUser] = useState(null)
 
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
@@ -238,6 +241,37 @@ export default function AdminLayout({ children }) {
   }, [isMobile, isSidebarOpen])
 
   const isLoginPage = pathname === '/admin/login'
+
+  // Load admin user data from sessionStorage
+  useEffect(() => {
+    const userData = sessionStorage.getItem('user')
+    if (userData) {
+      try {
+        const user = JSON.parse(userData)
+        setAdminUser(user)
+      } catch (error) {
+        console.error('Error parsing user data:', error)
+        // If there's an error parsing, redirect to login
+        router.push('/admin/login')
+      }
+    } else if (!isLoginPage) {
+      // If no user data and not on login page, redirect to login
+      router.push('/admin/login')
+    }
+  }, [router, isLoginPage])
+
+  // Sign out function
+  const handleSignOut = () => {
+    // Clear session storage
+    sessionStorage.removeItem('user')
+
+    // Clear the auth cookie
+    document.cookie =
+      'admin_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
+    // Redirect to login page
+    router.push('/admin/login')
+  }
 
   if (isLoginPage) {
     return <>{children}</>
@@ -301,14 +335,21 @@ export default function AdminLayout({ children }) {
         <div className="border-t p-4">
           <div className="flex items-center gap-3">
             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
-              A
+              {adminUser?.name ? adminUser.name.charAt(0).toUpperCase() : 'A'}
             </div>
             <div>
-              <div className="font-medium">Admin User</div>
-              <div className="text-xs text-gray-500">admin@example.com</div>
+              <div className="font-medium">
+                {adminUser?.name || 'Admin User'}
+              </div>
+              <div className="text-xs text-gray-500">
+                {adminUser?.email || 'admin@example.com'}
+              </div>
             </div>
           </div>
-          <button className="mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors">
+          <button
+            onClick={handleSignOut}
+            className="mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors"
+          >
             Sign Out
           </button>
         </div>
@@ -350,12 +391,12 @@ export default function AdminLayout({ children }) {
             </div>
 
             {/* Right side - Action buttons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 cursor-pointer">
               <Link href="/admin/notifications">
-                <button className="inline-flex h-8 w-8 items-center justify-center rounded-md hover:bg-gray-100 relative">
-                  🔔
+                <button className="relative inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-sm hover:bg-gray-100 transition">
+                  <Bell className="w-5 h-5 text-gray-700" />
                   {/* Notification badge */}
-                  <span className="absolute -top-1 -right-1 h-3 w-3 bg-red-500 rounded-full text-xs text-white flex items-center justify-center">
+                  <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 rounded-full text-xs text-white font-bold flex items-center justify-center shadow">
                     3
                   </span>
                 </button>

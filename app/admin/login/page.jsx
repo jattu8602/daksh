@@ -1,60 +1,62 @@
-"use client";
+'use client'
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 
 export default function AdminLogin() {
-  const router = useRouter();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
+  const router = useRouter()
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setError("");
+    e.preventDefault()
+    setIsLoading(true)
+    setError('')
 
     try {
-      console.log("Attempting login with:", { email, password });
+      console.log('Attempting login with:', { email, password })
 
       // Make a real API call to authenticate
-      const response = await fetch("/api/admin/login", {
-        method: "POST",
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({ email, password }),
-      });
+      })
 
-      const data = await response.json();
-      console.log("Login response:", data);
+      const data = await response.json()
+      console.log('Login response:', data)
 
       if (!response.ok) {
-        throw new Error(data.message || "Authentication failed");
+        throw new Error(data.message || 'Authentication failed')
       }
 
       // Store user data in localStorage or sessionStorage for persistence
-      sessionStorage.setItem("user", JSON.stringify(data.user));
+      sessionStorage.setItem('user', JSON.stringify(data.user))
 
       // Set a cookie for middleware auth check
-      document.cookie = `admin_auth_token=${data.user.id}; path=/;`;
+      document.cookie = `admin_auth_token=${data.user.id}; path=/;`
 
       // If successful, redirect to dashboard
-      router.push("/admin/dashboard");
+      router.push('/admin/dashboard')
     } catch (err) {
-      console.error("Login error:", err);
-      setError(err.message || "Invalid email or password");
-      setIsLoading(false);
+      console.error('Login error:', err)
+      setError(err.message || 'Invalid email or password')
+      setIsLoading(false)
     }
-  };
+  }
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
       <div className="w-full max-w-md space-y-8">
         <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">Daksh</h1>
+          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
+            Daksh
+          </h1>
           <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
             Admin Login
           </h2>
@@ -115,7 +117,7 @@ export default function AdminLogin() {
                 disabled={isLoading}
                 className="flex w-full justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
               >
-                {isLoading ? "Signing in..." : "Sign in as Admin"}
+                {isLoading ? 'Signing in...' : 'Sign in as Admin'}
               </button>
             </div>
           </form>
@@ -128,5 +130,5 @@ export default function AdminLogin() {
         </div>
       </div>
     </div>
-  );
+  )
 }
