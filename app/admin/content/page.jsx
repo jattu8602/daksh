@@ -119,6 +119,19 @@ const ContentPage = () => {
               <span className="sm:hidden">Instagram</span>
             </button>
           </Link>
+          <Link href="/admin/content/manual" className="flex-1 sm:flex-none">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+              </svg>
+              <span className="hidden sm:inline">Manual Upload</span>
+              <span className="sm:hidden">Upload</span>
+            </button>
+          </Link>
         </div>
       </div>
 

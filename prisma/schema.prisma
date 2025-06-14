@@ -151,6 +151,7 @@ model Mentor {
 model Video {
   id              String     @id @default(auto()) @map("_id") @db.ObjectId
   title           String
+  description     String?
   source          String
   sourcePlatform  String     // 'youtube', 'instagram', or 'unknown'
   url             String
