@@ -31,6 +31,28 @@ export default function StudentLogin() {
     formState: { errors },
   } = useForm()
 
+  // Check for existing session on page load
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          credentials: 'include', // Important for cookies
+        })
+        const data = await response.json()
+
+        if (data.success && data.user) {
+          // User is already logged in
+          dispatch(loginSuccess(data.user))
+          router.replace('/dashboard/home')
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
+      }
+    }
+
+    checkSession()
+  }, [dispatch, router])
+
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/dashboard/home')

@@ -47,7 +47,7 @@ export async function POST(request) {
 // Validate a session
 export async function GET(request) {
   try {
-    const token = request.headers.get('authorization')?.split(' ')[1]
+    const token = request.cookies.get('student_auth_token')?.value
 
     if (!token) {
       return NextResponse.json({ error: 'No token provided' }, { status: 401 })
@@ -69,6 +69,16 @@ export async function GET(request) {
       return NextResponse.json({ error: 'Session expired' }, { status: 401 })
     }
 
+    // Extend session if it's close to expiring (less than 7 days left)
+    const daysUntilExpiry = (session.expiresAt - new Date()) / (1000 * 60 * 60 * 24)
+    if (daysUntilExpiry < 7) {
+      const newExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
+      await prisma.session.update({
+        where: { id: session.id },
+        data: { expiresAt: newExpiresAt },
+      })
+    }
+
     // Fetch the user with student data
     const user = await prisma.user.findUnique({
       where: { id: session.userId },
@@ -84,6 +94,10 @@ export async function GET(request) {
         },
       },
     })
+
+    if (!user) {
+      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    }
 
     // Remove sensitive data before sending
     const { password, ...userWithoutPassword } = user
@@ -110,23 +124,21 @@ export async function GET(request) {
 // Delete a session (logout)
 export async function DELETE(request) {
   try {
-    const token = request.headers.get('authorization')?.split(' ')[1]
+    const token = request.cookies.get('student_auth_token')?.value
 
-    if (!token) {
-      return NextResponse.json({ error: 'No token provided' }, { status: 401 })
+    if (token) {
+      await prisma.session.deleteMany({
+        where: { token },
+      })
     }
 
-    await prisma.session.delete({
-      where: { token },
-    })
-
-    return NextResponse.json({
-      success: true,
-    })
+    const response = NextResponse.json({ success: true })
+    response.cookies.delete('student_auth_token')
+    return response
   } catch (error) {
-    console.error('Session deletion error:', error)
+    console.error('Logout error:', error)
     return NextResponse.json(
-      { error: 'Failed to delete session' },
+      { error: 'Failed to logout' },
       { status: 500 }
     )
   }
