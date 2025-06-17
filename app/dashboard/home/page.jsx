@@ -154,7 +154,7 @@ export default function FeedScreen() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
       <ComponentLoader
         isLoading={!componentsLoaded.header}
         skeleton={<SkeletonCard className="h-16 m-4" />}

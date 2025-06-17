@@ -10,6 +10,7 @@ import {
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useRef } from 'react'
+import clsx from 'clsx'
 
 export default function Posts({
   posts,
@@ -195,7 +196,11 @@ function PostItem({
             <Heart
               size={24}
               fill={likedPosts.includes(post.id) ? 'red' : 'none'}
-              color={likedPosts.includes(post.id) ? 'red' : 'black'}
+              className={
+                likedPosts.includes(post.id)
+                  ? 'text-red-500'
+                  : 'text-black dark:text-white'
+              }
             />
           </button>
           <MessageCircle size={24} />
@@ -204,8 +209,14 @@ function PostItem({
         <button onClick={() => toggleSave(post.id)}>
           <Bookmark
             size={24}
-            fill={savedPosts.includes(post.id) ? 'black' : 'none'}
-            color={savedPosts.includes(post.id) ? 'black' : 'black'}
+            fill="currentColor"
+            strokeWidth={1.5}
+            className={clsx(
+              'transition-colors duration-200',
+              savedPosts.includes(post.id)
+                ? 'text-gray-600 dark:text-gray-300 stroke-gray-600 dark:stroke-gray-300'
+                : 'text-transparent stroke-black dark:stroke-white'
+            )}
           />
         </button>
       </div>
