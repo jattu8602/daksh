@@ -12,16 +12,9 @@ export default function SchoolPage() {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
       try {
         const response = await fetch("/api/auth/session", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
+          credentials: 'include', // Important for cookies
         });
         const data = await response.json();
         if (data.success && data.user) {
