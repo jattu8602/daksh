@@ -31,6 +31,28 @@ export default function StudentLogin() {
     formState: { errors },
   } = useForm()
 
+  // Check for existing session on page load
+  useEffect(() => {
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/session', {
+          credentials: 'include', // Important for cookies
+        })
+        const data = await response.json()
+
+        if (data.success && data.user) {
+          // User is already logged in
+          dispatch(loginSuccess(data.user))
+          router.replace('/dashboard/home')
+        }
+      } catch (error) {
+        console.error('Session check error:', error)
+      }
+    }
+
+    checkSession()
+  }, [dispatch, router])
+
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/dashboard/home')
@@ -53,6 +75,7 @@ export default function StudentLogin() {
           password,
           role: 'STUDENT',
         }),
+        credentials: 'include',
       })
 
       const data = await response.json()
@@ -61,35 +84,14 @@ export default function StudentLogin() {
         throw new Error(data.error || 'Login failed')
       }
 
-      if (data.success && data.user) {
-        // Create a new session
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: data.user.id,
-          }),
-        })
+      // Update Redux state
+      dispatch(loginSuccess(data.user))
 
-        const sessionData = await sessionResponse.json()
-
-        if (!sessionResponse.ok) {
-          throw new Error('Username already in use')
-        }
-
-        dispatch(
-          loginSuccess({
-            user: data.user,
-            token: sessionData.session.token,
-          })
-        )
-      } else {
-        throw new Error('Invalid response from server')
-      }
+      // Redirect to dashboard
+      router.replace('/dashboard/home')
     } catch (error) {
-      setLocalError(error.message || 'Failed to login. Please try again.')
+      console.error('Login error:', error)
+      setLocalError(error.message)
       dispatch(loginFailure(error.message))
     }
   }

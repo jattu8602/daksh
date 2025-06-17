@@ -7,7 +7,7 @@ export function middleware(request) {
 
   // Check if the path is for the admin dashboard (excluding login)
   if (path.startsWith('/admin') && !path.includes('/admin/login')) {
-    // Check for authentication token (in a real app, validate token)
+    // Check for authentication token
     const adminAuthToken = request.cookies.get('admin_auth_token')?.value;
 
     if (!adminAuthToken) {
@@ -15,7 +15,6 @@ export function middleware(request) {
       return NextResponse.redirect(new URL('/admin/login', request.url));
     }
   }
-  
 
   // Check if the path is for the mentor dashboard (excluding login)
   if (path.startsWith('/mentor') && !path.includes('/mentor/login')) {
@@ -29,7 +28,8 @@ export function middleware(request) {
   }
 
   // Check if the path is for the student dashboard
-  if (path.startsWith('/home') ||
+  if (path.startsWith('/dashboard') ||
+      path.startsWith('/home') ||
       path.startsWith('/explore') ||
       path.startsWith('/learn') ||
       path.startsWith('/reels') ||
