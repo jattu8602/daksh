@@ -45,6 +45,10 @@ function PostItem({
   followedUsers,
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isFollowed, setIsFollowed] = useState(
+    followedUsers.includes(post.username)
+  )
+  const [isExpanded, setIsExpanded] = useState(false)
   const images = Array.isArray(post.images) ? post.images : [post.images]
 
   const touchStartX = useRef(null)
@@ -121,17 +125,27 @@ function PostItem({
             width: `${images.length * 100}%`,
           }}
         >
-          {images.map((img, idx) => (
-            <Image
-              key={idx}
-              src={img}
-              alt={`Slide ${idx + 1}`}
-              width={500}
-              height={500}
-              className="w-full flex-shrink-0 object-cover aspect-square select-none"
-              draggable={false}
-            />
-          ))}
+          {images.map((img, idx) =>
+            post.mediaType === 'video' ? (
+              <video
+                key={idx}
+                src={img}
+                controls
+                className="w-full flex-shrink-0 object-cover aspect-square select-none"
+                playsInline
+              />
+            ) : (
+              <Image
+                key={idx}
+                src={img}
+                alt={`Slide ${idx + 1}`}
+                width={500}
+                height={500}
+                className="w-full flex-shrink-0 object-cover aspect-square select-none"
+                draggable={false}
+              />
+            )
+          )}
         </div>
 
         {/* Dots */}
@@ -161,8 +175,11 @@ function PostItem({
             <span className="font-medium text-sm">{post.username}</span>
           </div>
           <div className="flex items-center space-x-3">
-            {!followedUsers.includes(post.username) && (
-              <button className="text-xs bg-white text-black px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
+            {!isFollowed && (
+              <button
+                className="text-xs bg-white text-black px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition"
+                onClick={() => setIsFollowed(true)}
+              >
                 Follow
               </button>
             )}
@@ -196,19 +213,34 @@ function PostItem({
       {/* Post Info */}
       <div className="px-4 pt-2">
         <p className="font-medium">{post.likes} Likes</p>
+        <p className="font-medium mt-1">{post.title}</p>
         <p className="text-sm">
-          <span className="font-medium">{post.username}</span> {post.caption}
+          <span className="font-medium">{post.username}</span>{' '}
+          {isExpanded
+            ? post.caption
+            : `${post.caption.substring(0, 70)}${
+                post.caption.length > 70 ? '...' : ''
+              }`}
         </p>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {post.hashtags.map((tag, i) => (
-            <span
-              key={i}
-              className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium"
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          {(isExpanded ? post.hashtags : post.hashtags.slice(0, 3)).map(
+            (tag, i) => (
+              <span
+                key={i}
+                className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium"
+              >
+                #{tag}
+              </span>
+            )
+          )}
+          {(post.caption.length > 70 || post.hashtags.length > 3) && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-sm text-gray-500 cursor-pointer"
             >
-              #{tag}
-            </span>
-          ))}
-          <span className="text-blue-700 text-sm cursor-pointer">more</span>
+              {isExpanded ? 'show less' : '...more'}
+            </button>
+          )}
         </div>
         <p className="text-gray-400 text-xs mt-1">{post.time}</p>
       </div>

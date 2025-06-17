@@ -1,27 +1,15 @@
 'use client'
 
-import {
-  Heart,
-  MessageCircle,
-  Share,
-  Bookmark,
-  Send,
-  Home,
-  Search,
-  PlusSquare,
-  Play,
-  User,
-} from 'lucide-react'
-import Link from 'next/link'
 import { useState, useEffect, lazy, Suspense } from 'react'
-import Image from 'next/image'
+import axios from 'axios'
+
 import {
   PageLoader,
   ComponentLoader,
   SkeletonCard,
   SkeletonText,
 } from '@/components/ui/loading'
-import { dummyPosts, followedUsersDummy } from './dummyDataFile'
+// import { dummyPosts, followedUsersDummy } from './dummyDataFile'
 
 // Lazy load components for better performance
 const Stories = lazy(() => import('@/components/component/Stories'))
@@ -62,6 +50,8 @@ export default function FeedScreen() {
     stories: false,
     posts: false,
   })
+  const [posts, setPosts] = useState([])
+  const [followedUsers, setFollowedUsers] = useState([])
 
   // Stories data - simplified without interfaces
   const [stories, setStories] = useState([
@@ -109,21 +99,6 @@ export default function FeedScreen() {
     },
   ])
 
-  // Posts data - simplified without interfaces
-  const [posts, setPosts] = useState([
-    {
-      id: '1',
-      username: 'sachin.sir_history',
-      avatar: '/placeholder.svg?height=40&width=40',
-      image: '/images/books-image.png',
-      caption: 'Books are the best friends',
-      likes: 100,
-      comments: 16,
-      time: '30 minutes ago',
-      hashtags: ['hardwork', 'studymotivation'],
-    },
-  ])
-
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
 
@@ -153,10 +128,21 @@ export default function FeedScreen() {
       await new Promise((resolve) => setTimeout(resolve, 200))
       setComponentsLoaded((prev) => ({ ...prev, stories: true }))
 
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      setComponentsLoaded((prev) => ({ ...prev, posts: true }))
+      // await new Promise((resolve) => setTimeout(resolve, 200))
+      // setComponentsLoaded((prev) => ({ ...prev, posts: true }))
 
-      setIsLoading(false)
+      // setIsLoading(false)
+      try {
+        const response = await axios.get('/api/posts')
+        if (response.data.success) {
+          setPosts(response.data.data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch posts:', error)
+      } finally {
+        setComponentsLoaded((prev) => ({ ...prev, posts: true }))
+        setIsLoading(false)
+      }
     }
 
     loadSequence()
@@ -193,12 +179,12 @@ export default function FeedScreen() {
       >
         <Suspense fallback={<PostsSkeleton />}>
           <Posts
-            posts={dummyPosts}
+            posts={posts}
             likedPosts={likedPosts}
             savedPosts={savedPosts}
             toggleLike={toggleLike}
             toggleSave={toggleSave}
-            followedUsers={followedUsersDummy}
+            followedUsers={followedUsers}
           />
         </Suspense>
       </ComponentLoader>
