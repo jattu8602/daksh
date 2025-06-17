@@ -1,0 +1,115 @@
+# Daksh
+ Overview : Daksh is a platform for Students . We tie up with Your Schools and we provide a platform for students for learning and growing in a nice and cool way . Our App Dkashedu.in is just like instagram but for students - students can lean by seeing post, reels ,and highlights , there are mentors and daksh official content creator who work regularly 24/7 to provide students better education  , student just need a device - mobile to view our content , Hurry up and tie up your school to daksh several schools are registering their students to daksh and working hard with daksh to provide students new era knowledge
+
+ - reels is a interactive way  whre students gets involved and learn quickly
+ - bookd , voicenotes, chapterwise content , the interface similar to many famous social media app so students can get involved easily
+ - daksh own student section
+ - connected school and class groups
+ - global students connect with very less student idedntlty
+ - harmful  and 18+ content instant ban by daksh team
+ - daksh smart ai
+ - games
+ - explore section for free courses and analytics maintanance
+ - follow and follow back the mentor and students
+ - class group automatically created
+
+
+ # How School Can register - contact us via mail or mobile number
+ We will be avialbe 24/7 for your calls - daksh will be at your school as soon you contact us
+ registration process - school need to provide the minimal details to involve their students to daksh
+ details -  school name , school code , email , mobile numeber ,
+ classes details : name and section and starting rollnumerb of the class
+ students details in given excel format - includes - student name , roll number    and students photo in sequence
+
+
+ # What daksh will provide Back To you
+ - id cards for students (digit as well as physical )
+ - student detils for login - fully functional excel sheet (includes - name , rollnumber , username , password , qr code, unique code for student  )
+
+
+# What if student lost his identity , or other student logged in using via his account
+- daksh will take care and provide a new password to that student (call immediateley to daksh for this kind of situations )
+- student are asked to change their username and password immediateley after - they recienve their credentials
+- student can check how many sessions are active and they can logout other sessions  by jsut entering the latest password
+- the content is same for every student in daksh - soo its okay if accedintially someone access others account - its just the platfom for students and their leairng
+
+🔹 1. Home Page
+Purpose: First impression, summary of what the site offers.
+Must have:
+Catchy headline & subheading
+Clear call-to-action (CTA)
+Brief about your services or purpose
+Visuals : make some mobile floating mobile screens where the app is open (bottom navigation - home , search , bookicon , reels, profile )
+Navigation bar
+
+🔹 2. About Page
+Purpose: Build trust by showing who you are.
+Must have:
+Your mission, vision, story
+Founder or team introduction
+Achievements, milestones
+(daksh have a large number of peoples workin continously - make section for them too for image , name , tile job , links : linkedin, twitter, instagram)
+- daksh has its own pages linkedin ,twitter , instagram , youtube
+
+🔹 3. Services / Products Page
+Purpose: Explain what you offer.
+Must have:
+List of services or products
+Features, pricing, benefits
+Images or videos for demonstration - we have a video in youtube so make a section where i can put the clips of that video and it will be in automatic play
+CTA buttons (Buy, Contact, Book, etc.)
+
+🔹 4. Contact Page
+Purpose: Allow users to reach you easily.
+Must have:
+Contact form
+Phone number
+Email address
+Physical address (if applicable)
+Embedded Google Map (optional)
+Social media links
+
+🔹 5. Blog / Updates Page (Optional but Recommended)
+Purpose: Boost SEO, share knowledge, updates.
+Must have:
+Articles or announcements
+Categories/tags
+Search bar
+
+🔹 6. FAQ Page (Optional but Helpful)
+Purpose: Reduce support queries.
+Must have:
+Common questions and clear answers
+
+🔹 7. Testimonials / Reviews Page
+Purpose: Build credibility via social proof.
+Must have:
+Customer feedback
+Star ratings or success stories
+
+🔹 8. Privacy Policy & Terms and Conditions
+
+Purpose: Legal compliance, user trust.
+Must have:
+How data is collected & used
+Rules of use for the website
+GDPR/CCPA statements if needed
+
+
+🔹 9. Portfolio / Gallery Page (If Creative/Service-Based)
+Purpose: Show your work or past projects.
+Must have:
+Project images
+Description of work
+Technologies used / Outcomes
+
+
+
+
+
+
+# BONUS TIPS:
+
+📱 Mobile responsiveness
+📈 Best SEO setup
+
