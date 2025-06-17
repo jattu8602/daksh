@@ -12,7 +12,6 @@ import {
 } from './store/features/authSlice'
 import { useForm } from 'react-hook-form'
 
-
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -42,6 +41,7 @@ export default function StudentLogin() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [localError, setLocalError] = useState('')
+  const [showMobileLogin, setShowMobileLogin] = useState(true)
   const {
     register,
     handleSubmit,
@@ -171,7 +171,7 @@ export default function StudentLogin() {
 
   return (
     <>
-      <div className="hidden md:block">
+      <div className={showMobileLogin ? 'hidden md:block' : ''}>
         <div className="min-h-screen bg-[#F5F1ED]">
           <Header />
 
@@ -551,6 +551,15 @@ export default function StudentLogin() {
 
           <Footer />
 
+          <div className="md:hidden fixed bottom-4 right-4 z-50">
+            <Button
+              onClick={() => setShowMobileLogin(true)}
+              className="bg-[#8B4513] text-white hover:bg-[#8B4513]/90 rounded-full px-6 py-3 shadow-lg"
+            >
+              Student Login
+            </Button>
+          </div>
+
           <style jsx>{`
             @keyframes fade-in-up {
               from {
@@ -584,7 +593,7 @@ export default function StudentLogin() {
           `}</style>
         </div>
       </div>
-      <div className="md:hidden">
+      <div className={showMobileLogin ? 'md:hidden' : 'hidden'}>
         <SplashScreen />
 
         <div className=" min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 flex items-center justify-center p-4">
@@ -840,6 +849,12 @@ export default function StudentLogin() {
               <p className="text-xs text-gray-500">
                 Secure student authentication system
               </p>
+              <button
+                onClick={() => setShowMobileLogin(false)}
+                className="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2"
+              >
+                Visit Website
+              </button>
             </div>
           </div>
         </div>
