@@ -14,22 +14,28 @@ export default function GroupChatDynamicPage({ params }) {
   const [messages, setMessages] = useState([]);
   const [inputValue, setInputValue] = useState("");
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
 
   // Fetch user info (with student/class/school)
   useEffect(() => {
-    async function fetchUser() {
-      const token = localStorage.getItem("token");
-      if (!token) return;
-      const res = await fetch("/api/auth/session", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const data = await res.json();
-      if (data.success && data.user && data.user.student && data.user.student.class) {
-        setUser(data.user);
-        setClassName(data.user.student.class.name);
-        setSchoolId(data.user.student.class.school.id);
+    const fetchUser = async () => {
+      try {
+        const response = await fetch("/api/auth/session", {
+          credentials: 'include', // Important for cookies
+        });
+        const data = await response.json();
+        if (data.success && data.user) {
+          setUser(data.user);
+        } else {
+          setError(data.error || "Failed to fetch user data");
+        }
+      } catch (error) {
+        setError("Failed to fetch user data");
+      } finally {
+        setIsLoading(false);
       }
-    }
+    };
     fetchUser();
   }, []);
 

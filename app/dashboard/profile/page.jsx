@@ -17,18 +17,10 @@ export default function StudentDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   const fetchUser = useCallback(async () => {
-    const token = localStorage.getItem('token')
-    if (!token) {
-      router.push('/')
-      return
-    }
-
     try {
       setIsLoading(true)
       const response = await fetch('/api/auth/session', {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+        credentials: 'include', // Important for cookies
       })
       const data = await response.json()
 
@@ -38,13 +30,11 @@ export default function StudentDashboard() {
         setError(null)
       } else {
         setError(data.error || 'Failed to fetch user data')
-        localStorage.removeItem('token')
         router.push('/')
       }
     } catch (error) {
       console.error('Error fetching user data:', error)
       setError('Failed to fetch user data')
-      localStorage.removeItem('token')
       router.push('/')
     } finally {
       setIsLoading(false)
@@ -56,23 +46,17 @@ export default function StudentDashboard() {
   }, [fetchUser])
 
   const handleLogout = useCallback(async () => {
-    const token = localStorage.getItem('token')
     setIsLoggingOut(true)
 
-    if (token) {
-      try {
-        await fetch('/api/auth/session', {
-          method: 'DELETE',
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        })
-      } catch (error) {
-        console.error('Error during logout:', error)
-      }
+    try {
+      await fetch('/api/auth/session', {
+        method: 'DELETE',
+        credentials: 'include',
+      })
+    } catch (error) {
+      console.error('Error during logout:', error)
     }
 
-    localStorage.removeItem('token')
     router.push('/')
   }, [router])
 
@@ -205,7 +189,7 @@ export default function StudentDashboard() {
             </div>
           </ComponentLoader>
 
-        
+
         </div>
 
 

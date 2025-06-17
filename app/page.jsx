@@ -84,7 +84,7 @@ export default function StudentLogin() {
         throw new Error(data.error || 'Login failed')
       }
 
-      // Update Redux state
+      // Update Redux state with user data
       dispatch(loginSuccess(data.user))
 
       // Redirect to dashboard
@@ -110,6 +110,7 @@ export default function StudentLogin() {
           username: qrData.username,
           password: qrData.password,
         }),
+        credentials: 'include',
       })
 
       const data = await response.json()
@@ -119,29 +120,11 @@ export default function StudentLogin() {
       }
 
       if (data.success && data.user) {
-        // Create a new session
-        const sessionResponse = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            userId: data.user.id,
-          }),
-        })
+        // Update Redux state with user data
+        dispatch(loginSuccess(data.user))
 
-        const sessionData = await sessionResponse.json()
-
-        if (!sessionResponse.ok) {
-          throw new Error('Username already in use')
-        }
-
-        dispatch(
-          loginSuccess({
-            user: data.user,
-            token: sessionData.session.token,
-          })
-        )
+        // Redirect to dashboard
+        router.replace('/dashboard/home')
       } else {
         throw new Error('Invalid response from server')
       }
