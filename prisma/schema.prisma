@@ -151,10 +151,11 @@ model Mentor {
 model Video {
   id              String     @id @default(auto()) @map("_id") @db.ObjectId
   title           String
-  description     String?
+  description     String
   source          String
   sourcePlatform  String     // 'youtube', 'instagram', or 'unknown'
   url             String
+  mediaType       String     @default("video") // 'video' or 'image'
   metaDescription String?
   videoHashtags   VideoHashtag[]
   assignments     VideoAssignment[]
@@ -164,6 +165,7 @@ model Video {
   @@index([title])
   @@index([source])
   @@index([sourcePlatform])
+  @@index([mediaType])
   @@index([createdAt])
 }
 

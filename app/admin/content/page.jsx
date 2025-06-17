@@ -126,7 +126,7 @@ const ContentPage = () => {
                 viewBox="0 0 24 24"
                 fill="currentColor"
               >
-                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z"/>
+                <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4 9.11 4 6.6 5.64 5.35 8.04 2.34 8.36 0 10.91 0 14c0 3.31 2.69 6 6 6h13c2.76 0 5-2.24 5-5 0-2.64-2.05-4.78-4.65-4.96zM14 13v4h-4v-4H7l5-5 5 5h-3z" />
               </svg>
               <span className="hidden sm:inline">Manual Upload</span>
               <span className="sm:hidden">Upload</span>
@@ -292,7 +292,14 @@ const ContentPage = () => {
                       />
                     </div>
                     <div className="relative aspect-video">
-                      {video.thumbnailUrl ? (
+                      {video.mediaType === 'image' ? (
+                        <Image
+                          src={video.url}
+                          alt={video.title}
+                          fill
+                          className="object-cover"
+                        />
+                      ) : video.thumbnailUrl ? (
                         <Image
                           src={video.thumbnailUrl}
                           alt={video.title}
@@ -305,7 +312,7 @@ const ContentPage = () => {
                           Your browser does not support the video tag.
                         </video>
                       )}
-                      {video.duration && (
+                      {video.duration && video.mediaType !== 'image' && (
                         <div className="absolute bottom-1.5 sm:bottom-2 right-1.5 sm:right-2 bg-black bg-opacity-75 text-white px-1.5 sm:px-2 py-0.5 sm:py-1 rounded text-xs sm:text-sm">
                           {Math.floor(video.duration / 60)}:
                           {(video.duration % 60).toString().padStart(2, '0')}

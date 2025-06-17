@@ -1,41 +1,53 @@
-"use client";
-import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
-import Image from "next/image";
+'use client'
+import { useEffect, useState } from 'react'
+import { useParams } from 'next/navigation'
+import Image from 'next/image'
 
 export default function MentorProfilePage() {
-  const { id } = useParams();
-  const [mentor, setMentor] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [activeTab, setActiveTab] = useState("videos");
+  const { id } = useParams()
+  const [mentor, setMentor] = useState(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [activeTab, setActiveTab] = useState('videos')
 
   useEffect(() => {
     async function fetchMentor() {
-      setLoading(true);
-      setError("");
+      setLoading(true)
+      setError('')
       try {
-        const res = await fetch(`/api/mentor/${id}`);
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.message || "Failed to fetch mentor");
-        setMentor(data.mentor);
+        const res = await fetch(`/api/mentor/${id}`)
+        const data = await res.json()
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch mentor')
+        setMentor(data.mentor)
       } catch (err) {
-        setError(err.message || "Failed to fetch mentor");
+        setError(err.message || 'Failed to fetch mentor')
       } finally {
-        setLoading(false);
+        setLoading(false)
       }
     }
-    if (id) fetchMentor();
-  }, [id]);
+    if (id) fetchMentor()
+  }, [id])
 
   if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading...
+      </div>
+    )
   }
   if (error) {
-    return <div className="min-h-screen flex items-center justify-center text-red-600">{error}</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center text-red-600">
+        {error}
+      </div>
+    )
   }
   if (!mentor) {
-    return <div className="min-h-screen flex items-center justify-center">Mentor not found</div>;
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Mentor not found
+      </div>
+    )
   }
 
   return (
@@ -52,12 +64,19 @@ export default function MentorProfilePage() {
               />
             </div>
             <div className="flex-1">
-              <h1 className="text-2xl font-bold text-gray-900 mb-1">{mentor.user?.name || mentor.name}</h1>
-              <p className="text-gray-600 mb-1">@{mentor.user?.username || mentor.username}</p>
-              {mentor.email && <p className="text-gray-600 mb-1">{mentor.email}</p>}
+              <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                {mentor.user?.name || mentor.name}
+              </h1>
+              <p className="text-gray-600 mb-1">
+                @{mentor.user?.username || mentor.username}
+              </p>
+              {mentor.email && (
+                <p className="text-gray-600 mb-1">{mentor.email}</p>
+              )}
               {mentor.bio && <p className="text-gray-700 mb-2">{mentor.bio}</p>}
               <span className="inline-block px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                {mentor.tag || (mentor.isOrganic ? "Organic Mentor" : "Inorganic Mentor")}
+                {mentor.tag ||
+                  (mentor.isOrganic ? 'Organic Mentor' : 'Inorganic Mentor')}
               </span>
             </div>
           </div>
@@ -65,19 +84,27 @@ export default function MentorProfilePage() {
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-8">
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{mentor.contentCounts?.videos || 0}</span>
+            <span className="text-lg font-semibold">
+              {mentor.contentCounts?.videos || 0}
+            </span>
             <span className="text-xs text-gray-500 mt-1">Videos</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{mentor.contentCounts?.shorts || 0}</span>
+            <span className="text-lg font-semibold">
+              {mentor.contentCounts?.shorts || 0}
+            </span>
             <span className="text-xs text-gray-500 mt-1">Shorts</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{mentor.contentCounts?.highlights || 0}</span>
+            <span className="text-lg font-semibold">
+              {mentor.contentCounts?.highlights || 0}
+            </span>
             <span className="text-xs text-gray-500 mt-1">Highlights</span>
           </div>
           <div className="bg-white rounded-lg shadow p-4 flex flex-col items-center">
-            <span className="text-lg font-semibold">{mentor.contentCounts?.post || 0}</span>
+            <span className="text-lg font-semibold">
+              {mentor.contentCounts?.post || 0}
+            </span>
             <span className="text-xs text-gray-500 mt-1">Posts</span>
           </div>
         </div>
@@ -85,41 +112,41 @@ export default function MentorProfilePage() {
         <div className="bg-white rounded-lg shadow p-6">
           <div className="flex space-x-6 border-b mb-4">
             <button
-              onClick={() => setActiveTab("videos")}
+              onClick={() => setActiveTab('videos')}
               className={`pb-2 ${
-                activeTab === "videos"
-                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
-                  : "text-gray-500"
+                activeTab === 'videos'
+                  ? 'border-b-2 border-blue-600 font-medium text-blue-700'
+                  : 'text-gray-500'
               }`}
             >
               Videos ({mentor.contentCounts?.videos || 0})
             </button>
             <button
-              onClick={() => setActiveTab("shorts")}
+              onClick={() => setActiveTab('shorts')}
               className={`pb-2 ${
-                activeTab === "shorts"
-                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
-                  : "text-gray-500"
+                activeTab === 'shorts'
+                  ? 'border-b-2 border-blue-600 font-medium text-blue-700'
+                  : 'text-gray-500'
               }`}
             >
               Shorts ({mentor.contentCounts?.shorts || 0})
             </button>
             <button
-              onClick={() => setActiveTab("highlights")}
+              onClick={() => setActiveTab('highlights')}
               className={`pb-2 ${
-                activeTab === "highlights"
-                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
-                  : "text-gray-500"
+                activeTab === 'highlights'
+                  ? 'border-b-2 border-blue-600 font-medium text-blue-700'
+                  : 'text-gray-500'
               }`}
             >
               Highlights ({mentor.contentCounts?.highlights || 0})
             </button>
             <button
-              onClick={() => setActiveTab("post")}
+              onClick={() => setActiveTab('post')}
               className={`pb-2 ${
-                activeTab === "post"
-                  ? "border-b-2 border-blue-600 font-medium text-blue-700"
-                  : "text-gray-500"
+                activeTab === 'post'
+                  ? 'border-b-2 border-blue-600 font-medium text-blue-700'
+                  : 'text-gray-500'
               }`}
             >
               Posts ({mentor.contentCounts?.post || 0})
@@ -129,9 +156,19 @@ export default function MentorProfilePage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {mentor.contentByType?.[activeTab]?.length > 0 ? (
               mentor.contentByType[activeTab].map((video) => (
-                <div key={video.id} className="bg-gray-50 rounded-lg overflow-hidden">
+                <div
+                  key={video.id}
+                  className="bg-gray-50 rounded-lg overflow-hidden"
+                >
                   <div className="relative aspect-video">
-                    {video.thumbnailUrl ? (
+                    {video.mediaType === 'image' ? (
+                      <Image
+                        src={video.url}
+                        alt={video.title}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : video.thumbnailUrl ? (
                       <Image
                         src={video.thumbnailUrl}
                         alt={video.title}
@@ -146,7 +183,9 @@ export default function MentorProfilePage() {
                     )}
                   </div>
                   <div className="p-4">
-                    <h3 className="font-semibold mb-2 line-clamp-2">{video.title}</h3>
+                    <h3 className="font-semibold mb-2 line-clamp-2">
+                      {video.title}
+                    </h3>
                     {video.metaDescription && (
                       <p className="text-sm text-gray-600 line-clamp-2">
                         {video.metaDescription}
@@ -176,5 +215,5 @@ export default function MentorProfilePage() {
         </div>
       </div>
     </div>
-  );
+  )
 }
