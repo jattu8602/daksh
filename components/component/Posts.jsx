@@ -215,7 +215,7 @@ function PostItem({
         <p className="font-medium">{post.likes} Likes</p>
         <p className="font-medium mt-1">{post.title}</p>
         <p className="text-sm">
-          <span className="font-medium">{post.username}</span>{' '}
+          {/* <span className="font-medium">{post.username}</span>{' '} */}
           {isExpanded
             ? post.caption
             : `${post.caption.substring(0, 70)}${
