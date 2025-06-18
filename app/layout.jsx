@@ -53,6 +53,8 @@ export default function RootLayout({ children }) {
           name="google-site-verification"
           content="1dmarru9P3gaivQMYG8pD5nVERSVBb7rr6ewslRmEiE"
         />
+        {/* add manifest */}
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body
         className={`${geist.className} min-h-screen bg-background antialiased`}
