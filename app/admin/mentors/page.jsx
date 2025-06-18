@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { debounce } from 'lodash'
+import MentorCard from '@/app/components/admin/MentorCard'
 
 export default function MentorsPage() {
   const [isAddingMentor, setIsAddingMentor] = useState(false)
@@ -361,6 +362,43 @@ export default function MentorsPage() {
     resetForm()
   }
 
+  const handleEdit = (mentor) => {
+    setIsAddingMentor(true)
+    setFormData({
+      ...mentor,
+      id: mentor.id,
+      password: '',
+      confirmPassword: '',
+    })
+    setIsOrganic(mentor.isOrganic)
+    setUploadedImage(mentor.profilePhoto)
+  }
+
+  const handleDelete = async (mentorId) => {
+    setIsLoading(true)
+    setErrorMessage('')
+    try {
+      const res = await fetch(`/api/mentor/${mentorId}`, {
+        method: 'DELETE',
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || 'Failed to delete mentor')
+      fetchMentors(1)
+      setSuccessMessage('Mentor deleted successfully')
+    } catch (err) {
+      setErrorMessage(err.message || 'Failed to delete mentor')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
+  const handleResetPassword = (mentor) => {
+    // Placeholder for reset password functionality
+    console.log('Reset password for:', mentor.username)
+    // You can implement a modal or a separate page for this
+    alert('Reset password functionality is not implemented yet.')
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       {!isAddingMentor ? (
@@ -401,114 +439,15 @@ export default function MentorsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {mentors.map((mentor) => (
-              <Link
+              <MentorCard
                 key={mentor.id}
-                href={`/admin/mentors/${mentor.id}`}
-                className="block bg-white rounded-lg shadow-md overflow-hidden hover:ring-2 hover:ring-blue-400 transition"
-              >
-                <div className="relative h-48 w-full">
-                  <Image
-                    src={mentor.profilePhoto}
-                    alt={mentor.name}
-                    fill
-                    className="object-cover"
-                  />
-                </div>
-                <div className="p-4">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold">{mentor.name}</h3>
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs ${
-                        mentor.isOrganic
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}
-                    >
-                      {mentor.isOrganic ? 'Organic' : 'Inorganic'}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 mb-2">@{mentor.username}</p>
-                  {mentor.bio && (
-                    <p className="text-sm text-gray-600 mb-2">{mentor.bio}</p>
-                  )}
-                  {mentor.skills && mentor.skills.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mb-2">
-                      {mentor.skills.map((skill, index) => (
-                        <span
-                          key={index}
-                          className="px-2 py-1 bg-gray-100 text-gray-600 rounded-full text-xs"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <div className="mt-4 flex space-x-2">
-                    <button
-                      className="text-blue-600 hover:underline text-sm"
-                      onClick={(e) => {
-                        e.preventDefault()
-                        setIsAddingMentor(true)
-                        setFormData({
-                          ...mentor,
-                          id: mentor.id,
-                          password: '',
-                          confirmPassword: '',
-                        })
-                        setIsOrganic(mentor.isOrganic)
-                        setUploadedImage(mentor.profilePhoto)
-                      }}
-                    >
-                      Edit
-                    </button>
-                    {mentor.isOrganic && (
-                      <button
-                        className="text-blue-600 hover:underline text-sm"
-                        onClick={(e) => e.preventDefault()}
-                      >
-                        Reset Password
-                      </button>
-                    )}
-                    <button
-                      className="text-red-600 hover:underline text-sm"
-                      onClick={async (e) => {
-                        e.preventDefault()
-                        if (
-                          window.confirm(
-                            'Are you sure you want to delete this mentor?'
-                          )
-                        ) {
-                          setIsLoading(true)
-                          setErrorMessage('')
-                          try {
-                            const res = await fetch(
-                              `/api/mentor/${mentor.id}`,
-                              { method: 'DELETE' }
-                            )
-                            const data = await res.json()
-                            if (!res.ok)
-                              throw new Error(
-                                data.message || 'Failed to delete mentor'
-                              )
-                            fetchMentors(1)
-                            setSuccessMessage('Mentor deleted successfully')
-                          } catch (err) {
-                            setErrorMessage(
-                              err.message || 'Failed to delete mentor'
-                            )
-                          } finally {
-                            setIsLoading(false)
-                          }
-                        }
-                      }}
-                    >
-                      Delete
-                    </button>
-                  </div>
-                </div>
-              </Link>
+                mentor={mentor}
+                onEdit={handleEdit}
+                onDelete={handleDelete}
+                onResetPassword={handleResetPassword}
+              />
             ))}
           </div>
 
