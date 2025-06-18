@@ -48,7 +48,17 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/apple-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta
+          name="theme-color"
+          content="#72717f"
+          media="(prefers-color-scheme: light)"
+        />
+        <meta
+          name="theme-color"
+          content="#1a1a1a"
+          media="(prefers-color-scheme: dark)"
+        />
+
         <meta
           name="google-site-verification"
           content="1dmarru9P3gaivQMYG8pD5nVERSVBb7rr6ewslRmEiE"
