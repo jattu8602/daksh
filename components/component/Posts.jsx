@@ -173,18 +173,30 @@ function PostItem({
               alt={post.username}
               className="w-8 h-8 rounded-full"
             />
-            <span className="font-medium text-sm">{post.username}</span>
+            <span
+              className="font-medium text-sm bg-clip-text text-transparent"
+              style={{
+                backgroundImage:
+                  'linear-gradient(90deg, indigo, violet, blue, green, yellow, orange, red, indigo)',
+                backgroundSize: '200% auto',
+                animation: 'rainbow-slide 5s linear infinite',
+                WebkitBackgroundClip: 'text',
+                backgroundClip: 'text',
+              }}
+            >
+              {post.username}
+            </span>
           </div>
           <div className="flex items-center space-x-3">
             {!isFollowed && (
               <button
-                className="text-xs bg-white text-black px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition"
+                className="text-xs px-4 py-1.5 rounded-full font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
                 onClick={() => setIsFollowed(true)}
               >
                 Follow
               </button>
             )}
-            <MoreVertical size={20} />
+            {/* <MoreVertical size={20} /> */}
           </div>
         </div>
       </div>
