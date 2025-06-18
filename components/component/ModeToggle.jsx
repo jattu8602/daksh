@@ -12,6 +12,18 @@ export function ModeToggle() {
     setMounted(true)
   }, [])
 
+  // Dynamically update <meta name="theme-color"> on theme change
+  React.useEffect(() => {
+    if (!mounted) return
+    const metaThemeColor = document.querySelector('meta[name=theme-color]')
+    if (metaThemeColor) {
+      metaThemeColor.setAttribute(
+        'content',
+        theme === 'dark' ? '#1a1a1a' : '#72717f' // customize as per your design
+      )
+    }
+  }, [theme, mounted])
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark')
   }
