@@ -18,6 +18,8 @@ import {
   SkeletonCard,
   GridSkeleton,
 } from '@/components/ui/loading'
+import { useRouter } from 'next/navigation'
+
 
 // Memoized search item component for better performance
 const SearchItem = memo(({ item, idx }) => (
@@ -81,6 +83,8 @@ export default function SearchScreen() {
   const [searchValue, setSearchValue] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [itemsLoaded, setItemsLoaded] = useState(false)
+  const router = useRouter()
+
 
   const tabs = [
     { id: 'all', name: 'All' },
@@ -226,26 +230,24 @@ export default function SearchScreen() {
     <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
       {/* Search Bar */}
       <motion.div
-        className="p-4"
+        className="px-4 py-2" // Added vertical spacing
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
       >
-        <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-          <Search size={18} className="text-gray-500 mr-2" />
+        <div
+          onClick={() => router.push('/dashboard/explore/search')}
+          className="flex items-center gap-3 bg-gradient-to-r from-purple-100 via-white to-indigo-100 border border-gray-300 hover:border-purple-400 rounded-full px-4 py-2 shadow-sm cursor-pointer transition-all duration-300"
+        >
+          <Search size={20} className="text-purple-600" />
           <input
             type="text"
-            placeholder="Search by keyword, topic or subject"
-            className="bg-transparent border-none outline-none w-full text-sm"
+            placeholder="Search for content..."
+            className="bg-transparent w-full placeholder:text-gray-500 text-sm focus:outline-none cursor-pointer"
             value={searchValue}
             onChange={(e) => setSearchValue(e.target.value)}
+            readOnly
           />
-          <button className="text-gray-500">
-            {/* Search Settings Icon SVG */}
-          </button>
-          <button className="text-gray-500 ml-2">
-            {/* Filter Icon SVG */}
-          </button>
         </div>
       </motion.div>
 
