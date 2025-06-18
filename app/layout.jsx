@@ -58,7 +58,6 @@ export default function RootLayout({ children }) {
           content="#1a1a1a"
           media="(prefers-color-scheme: dark)"
         />
-
         <meta
           name="google-site-verification"
           content="1dmarru9P3gaivQMYG8pD5nVERSVBb7rr6ewslRmEiE"
