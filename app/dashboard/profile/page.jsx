@@ -44,6 +44,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
+import { useTheme } from 'next-themes'
 
 export default function StudentDashboard() {
   const router = useRouter()
@@ -53,7 +54,8 @@ export default function StudentDashboard() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [activeView, setActiveView] = useState('home')
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false)
-  const [theme, setTheme] = useState('Light')
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [securitySettings, setSecuritySettings] = useState({
     sensitiveId: false,
     faceId: false,
@@ -116,6 +118,7 @@ export default function StudentDashboard() {
 
   useEffect(() => {
     fetchUser()
+    setMounted(true)
   }, [fetchUser])
 
   const handleLogoutClick = () => {
@@ -136,6 +139,10 @@ export default function StudentDashboard() {
 
     router.push('/')
   }, [router])
+
+  if (!mounted) {
+    return <PageLoader message="Loading your profile..." />
+  }
 
   if (isLoading) {
     return <PageLoader message="Loading your profile..." />
@@ -245,8 +252,8 @@ export default function StudentDashboard() {
         <div>
           <h2 className="text-3xl font-bold mb-6">Settings</h2>
 
-          <div className="min-h-screen bg-background">
-            <div className="max-w-md mx-auto bg-card min-h-screen">
+          <div>
+            <div className="">
               <div className=" space-y-8">
                 {/* Appearance */}
                 <div>
@@ -255,9 +262,9 @@ export default function StudentDashboard() {
                     {['Light', 'Dark', 'System'].map((option) => (
                       <button
                         key={option}
-                        onClick={() => setTheme(option)}
+                        onClick={() => setTheme(option.toLowerCase())}
                         className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                          theme === option
+                          theme === option.toLowerCase()
                             ? 'bg-background text-foreground shadow-sm'
                             : 'text-muted-foreground'
                         }`}
@@ -514,7 +521,7 @@ export default function StudentDashboard() {
                   <h2 className="text-3xl font-semibold mb-6 text-foreground">
                     Help & Support
                   </h2>
-                  <div className="space-y-4">
+                  <div className="space-y-2">
                     {[
                       {
                         href: '/dashboard/profile/founder',
@@ -534,7 +541,7 @@ export default function StudentDashboard() {
                         label: 'Privacy Policy',
                       },
                     ].map(({ href, icon, label }, index) => (
-                      <Link key={index} href={href}>
+                      <Link key={index} href={href} className="block">
                         <div className="group flex items-center justify-between p-4 bg-card border border-border rounded-xl transition-all hover:shadow-md hover:border-primary cursor-pointer">
                           <div className="flex items-center gap-4">
                             <div className="w-11 h-11 bg-primary/10 text-primary rounded-lg flex items-center justify-center transition-transform group-hover:scale-105">
@@ -556,13 +563,14 @@ export default function StudentDashboard() {
         </div>
 
         {/* Logout Button */}
-        <div className="mt-8 text-center">
+        <div className="mt-8">
           <button
             onClick={handleLogoutClick}
             disabled={isLoggingOut}
-            className="rounded-md bg-destructive px-6 py-3 text-sm font-medium text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-between p-4 bg-destructive text-white dark:text-white font-medium text-sm rounded-xl hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
-            {isLoggingOut ? 'Logging out...' : 'Logout'}
+            <span>{isLoggingOut ? 'Logging out...' : 'Logout'}</span>
+            <ChevronRight className="w-5 h-5" />
           </button>
         </div>
       </main>
