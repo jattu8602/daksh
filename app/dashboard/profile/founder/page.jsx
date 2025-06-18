@@ -29,9 +29,9 @@ export default function TalkToFounderScreen() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="bg-white p-4 border-b border-gray-100">
+      <div className="bg-card p-4 border-b border-border">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6" />
@@ -41,7 +41,7 @@ export default function TalkToFounderScreen() {
       </div>
 
       {/* Content */}
-      <div className="bg-white p-6">
+      <div className="bg-card p-6">
         {/* Founder Profile */}
         <div className="flex items-start gap-4 mb-8">
           <div className="relative">
@@ -53,8 +53,8 @@ export default function TalkToFounderScreen() {
           </div>
           <div className="flex-1">
             <h2 className="text-xl font-semibold mb-1">Kabir Jaiswal</h2>
-            <p className="text-gray-600 mb-3">Founder of Daksh</p>
-            <div className="bg-gray-500 text-white px-3 py-2 rounded-lg text-sm inline-block">
+            <p className="text-muted-foreground mb-3">Founder of Daksh</p>
+            <div className="bg-primary text-primary-foreground px-3 py-2 rounded-lg text-sm inline-block">
               Hey how can I help you today?
             </div>
           </div>
@@ -63,7 +63,7 @@ export default function TalkToFounderScreen() {
         {/* Options */}
         <div className="space-y-4 mb-8">
           <RadioGroup value={selectedOption} onValueChange={setSelectedOption}>
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+            <div className="flex items-center justify-between p-4 border border-border rounded-xl">
               <Label
                 htmlFor="report"
                 className="flex-1 cursor-pointer font-medium"
@@ -73,7 +73,7 @@ export default function TalkToFounderScreen() {
               <RadioGroupItem value="report" id="report" className="w-5 h-5" />
             </div>
 
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+            <div className="flex items-center justify-between p-4 border border-border rounded-xl">
               <Label
                 htmlFor="idea"
                 className="flex-1 cursor-pointer font-medium"
@@ -83,7 +83,7 @@ export default function TalkToFounderScreen() {
               <RadioGroupItem value="idea" id="idea" className="w-5 h-5" />
             </div>
 
-            <div className="flex items-center justify-between p-4 border border-gray-200 rounded-xl">
+            <div className="flex items-center justify-between p-4 border border-border rounded-xl">
               <Label
                 htmlFor="appreciate"
                 className="flex-1 cursor-pointer font-medium"
@@ -101,11 +101,7 @@ export default function TalkToFounderScreen() {
 
         {/* Action Button */}
         <Button
-          className={`w-full py-4 rounded-xl text-lg font-medium ${
-            getButtonDisabled()
-              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
-              : 'bg-black text-white hover:bg-gray-800'
-          }`}
+          className="w-full py-4 rounded-xl text-lg font-medium"
           disabled={getButtonDisabled()}
         >
           {getButtonText()}

@@ -34,10 +34,9 @@ export default function LanguageSelectionScreen() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="bg-white p-4 border-b border-gray-200">
+      <div className="bg-card p-4 border-b border-border">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6" />
@@ -47,7 +46,7 @@ export default function LanguageSelectionScreen() {
       </div>
 
       {/* Language List */}
-      <div className="bg-white p-4 space-y-3">
+      <div className="bg-card p-4 space-y-3">
         <RadioGroup
           value={selectedLanguage}
           onValueChange={setSelectedLanguage}
@@ -55,12 +54,14 @@ export default function LanguageSelectionScreen() {
           {languages.map((language) => (
             <div
               key={language.value}
-              className="flex items-center justify-between p-4 bg-white border border-gray-200 rounded-xl"
+              className="flex items-center justify-between p-4 bg-background border border-border rounded-xl"
             >
               <Label htmlFor={language.value} className="flex-1 cursor-pointer">
                 <span className="font-medium">{language.label}</span>
                 {language.native && (
-                  <span className="text-gray-500 ml-2">{language.native}</span>
+                  <span className="text-muted-foreground ml-2">
+                    {language.native}
+                  </span>
                 )}
               </Label>
               <RadioGroupItem
@@ -75,7 +76,7 @@ export default function LanguageSelectionScreen() {
 
       {/* Action Buttons */}
       <div className="p-4 space-y-3">
-        <Button className="w-full bg-black text-white py-4 rounded-xl text-lg font-medium">
+        <Button className="w-full py-4 rounded-xl text-lg font-medium">
           Save Changes
         </Button>
         <Button variant="ghost" className="w-full py-4 text-lg font-medium">

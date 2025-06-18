@@ -19,11 +19,9 @@ export default function BreakRemindersScreen() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50">
-
-
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="p-4 bg-white">
+      <div className="p-4 bg-card">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-6 h-6" />
@@ -41,11 +39,11 @@ export default function BreakRemindersScreen() {
           {intervals.map((interval) => (
             <div
               key={interval.value}
-              className="flex items-center justify-between p-4 bg-white rounded-xl"
+              className="flex items-center justify-between p-4 bg-card rounded-xl"
             >
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-gray-600" />
+                <div className="w-12 h-12 bg-muted rounded-full flex items-center justify-center">
+                  <Clock className="w-6 h-6 text-muted-foreground" />
                 </div>
                 <Label
                   htmlFor={interval.value}
@@ -57,7 +55,7 @@ export default function BreakRemindersScreen() {
               <RadioGroupItem
                 value={interval.value}
                 id={interval.value}
-                className="w-6 h-6 border-2 border-gray-300"
+                className="w-6 h-6 border-2 border-border"
               />
             </div>
           ))}
