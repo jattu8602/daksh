@@ -228,52 +228,54 @@ export default function SearchScreen() {
 
   return (
     <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
-      {/* Search Bar */}
-      <motion.div
-        className="px-4 py-2" // Added vertical spacing
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div
-          onClick={() => router.push('/dashboard/explore/search')}
-          className="flex items-center gap-3 bg-gradient-to-r from-purple-100 via-white to-indigo-100 border border-gray-300 hover:border-purple-400 rounded-full px-4 py-2 shadow-sm cursor-pointer transition-all duration-300"
+      <div className="sticky top-0 z-10 bg-white pt-2 pb-2">
+        {/* Search Bar */}
+        <motion.div
+          className="px-4 py-4" // Added vertical spacing
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
         >
-          <Search size={20} className="text-purple-600" />
-          <input
-            type="text"
-            placeholder="Search for content..."
-            className="bg-transparent w-full placeholder:text-gray-500 text-sm focus:outline-none cursor-pointer"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-            readOnly
-          />
-        </div>
-      </motion.div>
-
-      {/* Tabs */}
-      <motion.div
-        className="flex space-x-2 px-5 overflow-x-auto hide-scrollbar"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        {tabs.map((tab) => (
-          <motion.button
-            key={tab.id}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-purple-100 text-purple-600'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActiveTab(tab.id)}
+          <div
+            onClick={() => router.push('/dashboard/explore/search')}
+            className="flex items-center gap-3 bg-gradient-to-r from-purple-100 via-white to-indigo-100 border border-gray-300 hover:border-purple-400 rounded-full px-4 py-2 shadow-sm cursor-pointer transition-all duration-300"
           >
-            {tab.name}
-          </motion.button>
-        ))}
-      </motion.div>
+            <Search size={20} className="text-purple-600" />
+            <input
+              type="text"
+              placeholder="Search for content..."
+              className="bg-transparent w-full placeholder:text-gray-500 text-sm focus:outline-none cursor-pointer"
+              value={searchValue}
+              onChange={(e) => setSearchValue(e.target.value)}
+              readOnly
+            />
+          </div>
+        </motion.div>
+
+        {/* Tabs */}
+        <motion.div
+          className="flex space-x-2 px-5 overflow-x-auto hide-scrollbar"
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.1 }}
+        >
+          {tabs.map((tab) => (
+            <motion.button
+              key={tab.id}
+              className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
+                activeTab === tab.id
+                  ? 'bg-purple-100 text-purple-600'
+                  : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setActiveTab(tab.id)}
+            >
+              {tab.name}
+            </motion.button>
+          ))}
+        </motion.div>
+      </div>
 
       {/* Search Results */}
       <div className="flex-1 overflow-auto mt-4">
