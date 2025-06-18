@@ -1,15 +1,12 @@
 {
-  "name": "Daksh - Learn, Grow & Connect",
+  "name": "Daksh - Student Portal",
   "short_name": "Daksh",
-  "description": "Daksh is a student-first platform for learning, mentorship, school integration, and smart digital content like reels, voice notes, books, and more.",
+  "description": "A platform for students, mentors, and admins",
   "start_url": "/",
-  "scope": "/",
   "display": "standalone",
-  "orientation": "portrait",
   "background_color": "#ffffff",
-  "theme_color": "#575757",
-  "lang": "en-IN",
-  "dir": "ltr",
+  "theme_color": "#ffffff",
+  "orientation": "portrait",
   "icons": [
     {
       "src": "/icons/icon-192x192.png",
@@ -24,46 +21,5 @@
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/feed.png",
-      "sizes": "540x960",
-      "type": "image/png"
-    },
-    {
-      "src": "/screenshots/reels.png",
-      "sizes": "540x960",
-      "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Student Dashboard",
-      "short_name": "Dashboard",
-      "url": "/dashboard",
-      "icons": [
-        { "src": "/icons/dashboard.png", "sizes": "96x96", "type": "image/png" }
-      ]
-    },
-    {
-      "name": "Explore Reels",
-      "short_name": "Reels",
-      "url": "/reels",
-      "icons": [
-        { "src": "/icons/reels.png", "sizes": "96x96", "type": "image/png" }
-      ]
-    },
-    {
-      "name": "Connect with Mentors",
-      "short_name": "Mentors",
-      "url": "/mentors",
-      "icons": [
-        { "src": "/icons/mentor.png", "sizes": "96x96", "type": "image/png" }
-      ]
-    }
-  ],
-  "categories": ["education", "social", "productivity"],
-  "prefer_related_applications": false,
-  "related_applications": [],
   "splash_pages": null
 }
