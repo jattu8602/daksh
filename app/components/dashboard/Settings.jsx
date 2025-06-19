@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Switch } from '@/components/ui/switch'
 import Link from 'next/link'
@@ -28,6 +28,7 @@ export default function Settings() {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false)
   const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = useState(false)
   const [preferences, setPreferences] = useState({
     lessonExperience: false,
     soundEffects: false,
@@ -48,6 +49,10 @@ export default function Settings() {
 
   const fontSizes = ['Aa', 'Aa', 'Aa']
   const fontSizeClasses = ['text-sm', 'text-base', 'text-lg']
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   const togglePreference = (key) => {
     setPreferences((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -83,19 +88,20 @@ export default function Settings() {
             <div>
               <h2 className="text-2xl font-bold mb-4">Appearance</h2>
               <div className="bg-muted rounded-xl p-1 flex">
-                {['Light', 'Dark', 'System'].map((option) => (
-                  <button
-                    key={option}
-                    onClick={() => setTheme(option.toLowerCase())}
-                    className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
-                      theme === option.toLowerCase()
-                        ? 'bg-background text-foreground shadow-sm'
-                        : 'text-muted-foreground'
-                    }`}
-                  >
-                    {option}
-                  </button>
-                ))}
+                {mounted &&
+                  ['Light', 'Dark', 'System'].map((option) => (
+                    <button
+                      key={option}
+                      onClick={() => setTheme(option.toLowerCase())}
+                      className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-colors ${
+                        theme === option.toLowerCase()
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground'
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
               </div>
             </div>
 
