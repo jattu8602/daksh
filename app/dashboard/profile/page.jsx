@@ -140,13 +140,7 @@ export default function StudentDashboard() {
     router.push('/')
   }, [router])
 
-  if (!mounted) {
-    return <PageLoader message="Loading your profile..." />
-  }
-
-  if (isLoading) {
-    return <PageLoader message="Loading your profile..." />
-  }
+  
 
   if (error) {
     return (

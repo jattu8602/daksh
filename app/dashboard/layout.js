@@ -48,10 +48,7 @@ export default function DashboardLayout({ children }) {
     return () => clearTimeout(timer)
   }, [])
 
-  if (isLoading) {
-    return <PageLoader message="Loading dashboard..." />
-  }
-
+  
   return (
     <ThemeProvider
       attribute="class"

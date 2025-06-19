@@ -2,7 +2,7 @@ export default function Stories({ stories }) {
   return (
     <div>
       {/* Stories */}
-      <div className=" pt-4 pb-1">
+      <div className="  pb-2">
         <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
           {stories.map((story) => (
             <div key={story.id} className="flex flex-col items-center first:ml-3">

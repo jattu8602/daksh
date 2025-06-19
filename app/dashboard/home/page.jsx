@@ -149,20 +149,17 @@ export default function FeedScreen() {
   }, [])
 
   // Show full page loader initially
-  if (isLoading && !componentsLoaded.header) {
-    return <PageLoader message="Loading your feed..." />
-  }
+  // if (isLoading && !componentsLoaded.header) {
+  //   return <PageLoader message="Loading your feed..." />
+  // }
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
-      <ComponentLoader
-        isLoading={!componentsLoaded.header}
-        skeleton={<SkeletonCard className="h-16 m-4" />}
-      >
-        <Suspense fallback={<SkeletonCard className="h-16 m-4" />}>
+
+
           <Header />
-        </Suspense>
-      </ComponentLoader>
+
+
 
       <ComponentLoader
         isLoading={!componentsLoaded.stories}
