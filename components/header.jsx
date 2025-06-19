@@ -12,7 +12,8 @@ export function Header() {
   const [isScrolled, setIsScrolled] = useState(false)
   const pathname = usePathname()
 
-  useEffect(() => {
+  useEffect(() => { 
+    // Show splash screen for 1 second on initial load
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 10)
     }
