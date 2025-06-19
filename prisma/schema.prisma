@@ -19,46 +19,47 @@ enum UserRole {
 }
 
 model User {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  name      String
-  username  String     @unique
-  password  String
-  qrCode    String?
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  name         String
+  username     String    @unique
+  password     String
+  qrCode       String?
   profileImage String?
-  role      UserRole
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  role         UserRole
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  sessions     Session[]
 
   // Relations (only name + relationName here)
-  student   Student?   @relation("StudentToUser")
-  mentor    Mentor?    @relation("MentorToUser")
-  admin     Admin?     @relation("AdminToUser")
+  student      Student?  @relation("StudentToUser")
+  mentor       Mentor?   @relation("MentorToUser")
+  admin        Admin?    @relation("AdminToUser")
 
   // keep a non-unique index on role
   @@index([role])
 }
 
 model Admin {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @unique @db.ObjectId
-  email     String?    @unique
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId    String   @unique @db.ObjectId
+  email     String?  @unique
   phone     String?
   createdBy String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Child side declares fields+references
-  user      User       @relation("AdminToUser", fields: [userId], references: [id])
+  user      User     @relation("AdminToUser", fields: [userId], references: [id])
 }
 
 model School {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
-  code      String     @unique
-  email     String?    @unique
+  code      String   @unique
+  email     String?  @unique
   phone     String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @default(now())
 
   classes   Class[]
 
@@ -90,23 +91,24 @@ model Class {
 }
 
 model Student {
-  id        String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String     @unique @db.ObjectId
-  rollNo    Int
-  classId   String     @db.ObjectId
-  name      String
-  gender    String
-  username  String
-  password  String
-  qrCode    String
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId       String    @unique @db.ObjectId
+  rollNo       Int
+  classId      String    @db.ObjectId
+  name         String
+  gender       String
+  username     String
+  password     String
+  qrCode       String
   profileImage String?
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  reviews      Review[]
 
   // Child side declares fields+references
-  user      User       @relation("StudentToUser", fields: [userId], references: [id])
-  class     Class      @relation(fields: [classId], references: [id])
-  messages  Message[]  @relation("StudentMessages")
+  user         User      @relation("StudentToUser", fields: [userId], references: [id])
+  class        Class     @relation(fields: [classId], references: [id])
+  messages     Message[] @relation("StudentMessages")
 
   @@index([classId])
   @@index([rollNo])
@@ -117,30 +119,30 @@ model Student {
 }
 
 model Mentor {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId          String     @unique @db.ObjectId
-  isOrganic       Boolean    @default(true)
-  profilePhoto    String
-  tag             String     @default("organic")
-  email           String?
-  bio             String?
-  skills          String[]
-  socialLinks     Json?
-  subject         String?
-  language        String?
-  reels           Json?
-  videos          Json?
-  highlights      Json?
-  posts           Json?
-  createdByAdminId String?   @db.ObjectId
-  isActive        Boolean    @default(true)
-  loginLastAt     DateTime?
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  id               String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId           String            @unique @db.ObjectId
+  isOrganic        Boolean           @default(true)
+  profilePhoto     String
+  tag              String            @default("organic")
+  email            String?
+  bio              String?
+  skills           String[]
+  socialLinks      Json?
+  subject          String?
+  language         String?
+  reels            Json?
+  videos           Json?
+  highlights       Json?
+  posts            Json?
+  createdByAdminId String?           @db.ObjectId
+  isActive         Boolean           @default(true)
+  loginLastAt      DateTime?
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
   videoAssignments VideoAssignment[]
 
   // Child side declares fields+references
-  user            User       @relation("MentorToUser", fields: [userId], references: [id])
+  user             User              @relation("MentorToUser", fields: [userId], references: [id])
 
   @@index([isOrganic])
   @@index([tag])
@@ -149,18 +151,18 @@ model Mentor {
 }
 
 model Video {
-  id              String     @id @default(auto()) @map("_id") @db.ObjectId
+  id              String           @id @default(auto()) @map("_id") @db.ObjectId
   title           String
   description     String
   source          String
-  sourcePlatform  String     // 'youtube', 'instagram', or 'unknown'
+  sourcePlatform  String // 'youtube', 'instagram', or 'unknown'
   url             String
-  mediaType       String     @default("video") // 'video' or 'image'
+  mediaType       String           @default("video") // 'video' or 'image'
   metaDescription String?
   videoHashtags   VideoHashtag[]
   assignments     VideoAssignment[]
-  createdAt       DateTime   @default(now())
-  updatedAt       DateTime   @updatedAt
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   @@index([title])
   @@index([source])
@@ -170,11 +172,11 @@ model Video {
 }
 
 model Hashtag {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  tag       String   @unique
+  id        String         @id @default(auto()) @map("_id") @db.ObjectId
+  tag       String         @unique
   videos    VideoHashtag[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
 
   @@index([createdAt])
 }
@@ -201,6 +203,7 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
@@ -209,7 +212,7 @@ model Session {
 model VideoJob {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   url          String
-  status       String   // 'pending', 'processing', 'success', 'error'
+  status       String // 'pending', 'processing', 'success', 'error'
   result       Json?
   error        String?
   progress     Int      @default(0)
@@ -237,7 +240,7 @@ model VideoAssignment {
   id          String   @id @default(auto()) @map("_id") @db.ObjectId
   videoId     String   @db.ObjectId
   mentorId    String   @db.ObjectId
-  contentType String   // 'videos', 'shorts', 'post', 'highlights'
+  contentType String // 'videos', 'shorts', 'post', 'highlights'
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -248,4 +251,18 @@ model VideoAssignment {
   @@index([videoId])
   @@index([mentorId])
   @@index([contentType])
+}
+
+model Review {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentId   String   @db.ObjectId
+  description String
+  rating      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  student     Student  @relation(fields: [studentId], references: [id])
+
+  @@index([studentId])
+  @@index([createdAt])
 }
