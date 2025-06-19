@@ -52,28 +52,6 @@ export default function StudentLogin() {
     formState: { errors },
   } = useForm()
 
-  // Check for existing session on page load
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/auth/session', {
-          credentials: 'include', // Important for cookies
-        })
-        const data = await response.json()
-
-        if (data.success && data.user) {
-          // User is already logged in
-          dispatch(loginSuccess(data.user))
-          router.replace('/dashboard/home')
-        }
-      } catch (error) {
-        console.error('Session check error:', error)
-      }
-    }
-
-    checkSession()
-  }, [dispatch, router])
-
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/dashboard/home')
@@ -162,12 +140,16 @@ export default function StudentLogin() {
     dispatch(loginFailure(error))
   }
 
-  if (loading) {
+  if (loading || isAuthenticated) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
-          <div className="text-xl font-semibold text-gray-700">Loading...</div>
+          <div className="text-xl font-semibold text-gray-700">
+            {isAuthenticated
+              ? 'Already logged in. Redirecting...'
+              : 'Loading...'}
+          </div>
         </div>
       </div>
     )
