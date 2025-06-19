@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useDispatch } from 'react-redux'
 import { Switch } from '@/components/ui/switch'
 import Link from 'next/link'
 import { Slider } from '@/components/ui/slider'
@@ -22,9 +23,11 @@ import {
   AlertDialogFooter,
 } from '@/components/ui/alert-dialog'
 import { useTheme } from 'next-themes'
+import { logout } from '../../store/features/authSlice'
 
 export default function Settings() {
   const router = useRouter()
+  const dispatch = useDispatch()
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   const [isLogoutAlertOpen, setIsLogoutAlertOpen] = useState(false)
   const { theme, setTheme } = useTheme()
@@ -66,6 +69,7 @@ export default function Settings() {
     setIsLoggingOut(true)
 
     try {
+      // Clear server session
       await fetch('/api/auth/session', {
         method: 'DELETE',
         credentials: 'include',
@@ -74,8 +78,12 @@ export default function Settings() {
       console.error('Error during logout:', error)
     }
 
+    // Clear client-side state and localStorage
+    dispatch(logout())
+
+    // Redirect to login page
     router.push('/')
-  }, [router])
+  }, [router, dispatch])
 
   return (
     <div>
