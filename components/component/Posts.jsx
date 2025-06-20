@@ -3,13 +3,13 @@
 import {
   Heart,
   MessageCircle,
-  Share,
   Send,
   Bookmark,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useRef } from 'react'
 import clsx from 'clsx'
+import { Button } from '@/components/ui/button' // Make sure this import is correct
 
 export default function Posts({
   posts,
@@ -109,7 +109,7 @@ function PostItem({
 
   return (
     <div className="border-b border-gray-100 pb-4">
-      {/* TOP HEADER (USERNAME + FOLLOW BUTTON) */}
+      {/* Header with Avatar + Username + Follow Button */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center space-x-3">
           <img
@@ -121,20 +121,22 @@ function PostItem({
             {post.username}
           </span>
         </div>
-        <button
-          onClick={() => setIsFollowed((prev) => !prev)}
+        <Button
+          variant="outline"
+          size="sm"
           className={clsx(
-            'text-sm px-3 py-1.5 rounded-full font-semibold transition',
+            'border text-sm px-4 py-1.5 rounded-md transition-colors',
             isFollowed
-              ? 'bg-white border border-gray-300 text-black'
-              : 'bg-blue-500 text-white'
+              ? 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:bg-black dark:text-white dark:border-gray-700 dark:hover:bg-gray-900'
+              : 'bg-black text-white border-gray-700 hover:bg-gray-800 dark:bg-white dark:text-black dark:border-gray-300 dark:hover:bg-gray-200'
           )}
+          onClick={() => setIsFollowed((prev) => !prev)}
         >
           {isFollowed ? 'Following' : 'Follow'}
-        </button>
+        </Button>
       </div>
 
-      {/* IMAGE/VIDEO SLIDER */}
+      {/* Image / Video Slider */}
       <div
         className="w-full overflow-hidden relative aspect-square"
         onTouchStart={onTouchStart}
@@ -173,7 +175,7 @@ function PostItem({
           )}
         </div>
 
-        {/* SLIDER DOTS */}
+        {/* Dots */}
         {images.length > 1 && (
           <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2 z-10">
             {images.map((_, idx) => (
@@ -190,7 +192,7 @@ function PostItem({
         )}
       </div>
 
-      {/* ACTION ICONS */}
+      {/* Actions */}
       <div className="flex justify-between items-center px-4 pt-4">
         <div className="flex space-x-4">
           <button onClick={() => toggleLike(post.id)}>
@@ -222,7 +224,7 @@ function PostItem({
         </button>
       </div>
 
-      {/* POST INFO: Likes, Caption, Hashtags */}
+      {/* Post Info */}
       <div className="px-4 pt-2">
         <p className="font-medium">{post.likes} Likes</p>
         <p className="font-medium mt-1">{post.title}</p>
