@@ -6,7 +6,6 @@ import {
   Share,
   Send,
   Bookmark,
-  MoreVertical,
 } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useRef } from 'react'
@@ -50,11 +49,11 @@ function PostItem({
     followedUsers.includes(post.username)
   )
   const [isExpanded, setIsExpanded] = useState(false)
+
   const images = Array.isArray(post.images) ? post.images : [post.images]
 
   const touchStartX = useRef(null)
   const touchEndX = useRef(null)
-
   const mouseDownX = useRef(null)
   const mouseUpX = useRef(null)
 
@@ -110,7 +109,32 @@ function PostItem({
 
   return (
     <div className="border-b border-gray-100 pb-4">
-      {/* Image Slider */}
+      {/* TOP HEADER (USERNAME + FOLLOW BUTTON) */}
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center space-x-3">
+          <img
+            src={post.avatar || '/placeholder.png'}
+            alt={post.username}
+            className="w-8 h-8 rounded-full"
+          />
+          <span className="font-medium text-sm text-black dark:text-white">
+            {post.username}
+          </span>
+        </div>
+        <button
+          onClick={() => setIsFollowed((prev) => !prev)}
+          className={clsx(
+            'text-sm px-3 py-1.5 rounded-full font-semibold transition',
+            isFollowed
+              ? 'bg-white border border-gray-300 text-black'
+              : 'bg-blue-500 text-white'
+          )}
+        >
+          {isFollowed ? 'Following' : 'Follow'}
+        </button>
+      </div>
+
+      {/* IMAGE/VIDEO SLIDER */}
       <div
         className="w-full overflow-hidden relative aspect-square"
         onTouchStart={onTouchStart}
@@ -149,7 +173,7 @@ function PostItem({
           )}
         </div>
 
-        {/* Dots */}
+        {/* SLIDER DOTS */}
         {images.length > 1 && (
           <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2 z-10">
             {images.map((_, idx) => (
@@ -164,44 +188,9 @@ function PostItem({
             ))}
           </div>
         )}
-
-        {/* Top Overlay */}
-        <div className="absolute top-0 left-0 w-full flex items-center justify-between px-4 py-2 text-white z-10">
-          <div className="flex items-center space-x-2">
-            <img
-              src={post.avatar || '/placeholder.png'}
-              alt={post.username}
-              className="w-8 h-8 rounded-full"
-            />
-            <span
-              className="font-medium text-sm bg-clip-text text-transparent"
-              style={{
-                backgroundImage:
-                  'linear-gradient(90deg, indigo, violet, blue, green, yellow, orange, red, indigo)',
-                backgroundSize: '200% auto',
-                animation: 'rainbow-slide 5s linear infinite',
-                WebkitBackgroundClip: 'text',
-                backgroundClip: 'text',
-              }}
-            >
-              {post.username}
-            </span>
-          </div>
-          <div className="flex items-center space-x-3">
-            {!isFollowed && (
-              <button
-                className="text-xs px-4 py-1.5 rounded-full font-semibold bg-gradient-to-r from-indigo-500 to-purple-500 text-white shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
-                onClick={() => setIsFollowed(true)}
-              >
-                Follow
-              </button>
-            )}
-            {/* <MoreVertical size={20} /> */}
-          </div>
-        </div>
       </div>
 
-      {/* Actions */}
+      {/* ACTION ICONS */}
       <div className="flex justify-between items-center px-4 pt-4">
         <div className="flex space-x-4">
           <button onClick={() => toggleLike(post.id)}>
@@ -233,12 +222,11 @@ function PostItem({
         </button>
       </div>
 
-      {/* Post Info */}
+      {/* POST INFO: Likes, Caption, Hashtags */}
       <div className="px-4 pt-2">
         <p className="font-medium">{post.likes} Likes</p>
         <p className="font-medium mt-1">{post.title}</p>
         <p className="text-sm">
-          {/* <span className="font-medium">{post.username}</span>{' '} */}
           {isExpanded
             ? post.caption
             : `${post.caption.substring(0, 70)}${
