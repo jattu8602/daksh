@@ -108,7 +108,7 @@ function PostItem({
   }
 
   return (
-    <div className="border-b border-gray-100 pb-4">
+    <div className="border-gray-100 pb-4">
       {/* Header with Avatar + Username + Follow Button */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center space-x-3">
@@ -240,7 +240,7 @@ function PostItem({
             (tag, i) => (
               <span
                 key={i}
-                className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium"
+                className="bg-blue-100 text-blue-700 text-[10px] px-2 py-[2px] rounded-full font-medium"
               >
                 #{tag}
               </span>
