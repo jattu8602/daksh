@@ -108,7 +108,7 @@ export default function TalkToFounderScreen() {
 
   const handleAction = () => {
     const studentUniqueCode = user?.username || 'Not-Logged-In'
-    const source = 'Talk to Founder'
+    const source = 'TALK TO THE FOUNDER'
     const number = '+919691929907'
 
     switch (selectedOption) {
