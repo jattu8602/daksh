@@ -153,9 +153,12 @@ export default function ClassDetailPage() {
           setStudents(data.class.students || [])
 
           // If we have more than 10 students, fetch the full data in the background
-          if (data.class.students?.length > 10) {
+          if (data.class.totalStudents > (data.class.students?.length || 0)) {
             const fullResponse = await fetch(
-              `/api/schools/${schoolId}/classes/${classId}${noCacheParam}`
+              `/api/schools/${schoolId}/classes/${classId}${noCacheParam.replace(
+                '&',
+                '?'
+              )}`
             )
             if (fullResponse.ok) {
               const fullData = await fullResponse.json()
