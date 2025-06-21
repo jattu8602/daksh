@@ -70,9 +70,9 @@ export default function Component() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-black">
+    <div className=" bg-gray-50 dark:bg-black">
       {/* Recent Searches */}
-      <div className="px-4 py-4">
+      <div className="px-4 ">
         <h3 className="text-sm font-medium text-gray-600 dark:text-gray-400 mb-3">
           Recent
         </h3>

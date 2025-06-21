@@ -106,8 +106,8 @@ export default function ExploreLayout({ children }) {
   }, [pathname, tabs])
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
-      <div className="sticky top-0 z-10 bg-white dark:bg-black pt-2 pb-2">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto ">
+      <div className="sticky top-0 z-[9999] bg-white dark:bg-black pt-2 pb-2">
         {/* Search Bar */}
         <motion.div
           className="px-4 py-4 flex items-center justify-between"
