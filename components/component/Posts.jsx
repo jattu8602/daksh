@@ -49,6 +49,11 @@ export default function Posts({
           You've reached the end.
         </div>
       )}
+      {!hasMore && posts.length === 0 && !isLoading && (
+        <div className="text-center py-4 text-gray-500">
+          No posts to show right now.
+        </div>
+      )}
 
       {activeModal.type === 'comments' && (
         <Comments

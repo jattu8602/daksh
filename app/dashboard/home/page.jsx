@@ -1,10 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import axios from 'axios'
-// ✅ Normal import — now you can use it anywhere
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchPosts } from '@/app/store/features/feedSlice'
 import Header from '@/components/component/Header'
-
 import {
   ComponentLoader,
   SkeletonCard,
@@ -44,14 +43,14 @@ const PostsSkeleton = () => (
 )
 
 export default function FeedScreen() {
-  const [posts, setPosts] = useState([])
+  const dispatch = useDispatch()
+  const { posts, hasMore, isLoading, error } = useSelector(
+    (state) => state.feed
+  )
   const [stories, setStories] = useState([])
   const [followedUsers, setFollowedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
-  const [page, setPage] = useState(1)
-  const [hasMore, setHasMore] = useState(true)
-  const [isLoading, setIsLoading] = useState(false)
 
   const [activeModal, setActiveModal] = useState({ type: null, postId: null })
 
@@ -81,38 +80,22 @@ export default function FeedScreen() {
     window.history.back()
   }
 
-  const fetchPosts = async () => {
-    if (isLoading || !hasMore) return
-    setIsLoading(true)
-
-    try {
-      const response = await axios.get(`/api/posts?page=${page}&limit=4`)
-      if (response.data.success && response.data.data.length > 0) {
-        const newPosts = response.data.data
-        setPosts((prevPosts) => {
-          const existingIds = new Set(prevPosts.map((p) => p.id))
-          const uniqueNewPosts = newPosts.filter((p) => !existingIds.has(p.id))
-          return [...prevPosts, ...uniqueNewPosts]
-        })
-
-        const currentPage = response.data.currentPage
-        setPage(currentPage + 1)
-        setHasMore(currentPage < response.data.totalPages)
-      } else {
-        setHasMore(false)
-      }
-    } catch (error) {
-      console.error('Failed to fetch posts:', error)
-      setHasMore(false) // Stop trying if there's an error
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  // Fetch initial data
   useEffect(() => {
-    const fetchInitialData = async () => {
-      // Fetch stories (or other initial data)
+    if (error) {
+      console.error('Error fetching posts:', error)
+    }
+  }, [error])
+
+  // Fetch initial posts only if the list is empty
+  useEffect(() => {
+    if (posts.length === 0) {
+      dispatch(fetchPosts())
+    }
+  }, [dispatch, posts.length])
+
+  // Fetch stories (assuming this is local to the home page)
+  useEffect(() => {
+    const fetchStories = async () => {
       const storiesData = await Promise.resolve([
         {
           id: '1',
@@ -159,10 +142,8 @@ export default function FeedScreen() {
       ])
       setStories(storiesData)
     }
-
-    fetchInitialData()
-    fetchPosts() // Fetch initial batch of posts
-  }, []) // Empty dependency array ensures this runs only once on mount
+    fetchStories()
+  }, [])
 
   const toggleLike = (postId) => {
     setLikedPosts((prev) =>
@@ -178,6 +159,12 @@ export default function FeedScreen() {
         ? prev.filter((id) => id !== postId)
         : [...prev, postId]
     )
+  }
+
+  const handleFetchMorePosts = () => {
+    if (hasMore && !isLoading) {
+      dispatch(fetchPosts())
+    }
   }
 
   return (
@@ -196,7 +183,7 @@ export default function FeedScreen() {
       </ComponentLoader>
 
       <ComponentLoader
-        isLoading={posts.length === 0}
+        isLoading={posts.length === 0 && hasMore}
         skeleton={<PostsSkeleton />}
       >
         <Posts
@@ -209,7 +196,7 @@ export default function FeedScreen() {
           openModal={openModal}
           activeModal={activeModal}
           closeModal={closeModal}
-          fetchMorePosts={fetchPosts}
+          fetchMorePosts={handleFetchMorePosts}
           hasMore={hasMore}
           isLoading={isLoading}
         />
