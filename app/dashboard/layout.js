@@ -15,12 +15,11 @@ export default function DashboardLayout({ children }) {
   const dispatch = useDispatch()
   const router = useRouter()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
-  const [isAuthenticating, setIsAuthenticating] = useState(true)
+  const [isAuthenticating, setIsAuthenticating] = useState(!isAuthenticated)
 
   useEffect(() => {
     const checkAuth = async () => {
       if (isAuthenticated) {
-        setIsAuthenticating(false)
         return
       }
 

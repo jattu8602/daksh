@@ -1,13 +1,11 @@
 'use client'
 
-import { useState, useEffect, lazy, Suspense } from 'react'
+import { useState, useEffect } from 'react'
 import axios from 'axios'
 // ✅ Normal import — now you can use it anywhere
 import Header from '@/components/component/Header'
 
-
 import {
-  PageLoader,
   ComponentLoader,
   SkeletonCard,
   SkeletonText,
@@ -15,8 +13,8 @@ import {
 // import { dummyPosts, followedUsersDummy } from './dummyDataFile'
 
 // Lazy load components for better performance
-const Stories = lazy(() => import('@/components/component/Stories'))
-const Posts = lazy(() => import('@/components/component/Posts'))
+import Stories from '@/components/component/Stories'
+import Posts from '@/components/component/Posts'
 
 // Skeleton components for loading states
 const StoriesSkeleton = () => (
@@ -160,41 +158,37 @@ export default function FeedScreen() {
     )
   }
 
-    return (
-      <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
-        <Header />
-        <Suspense fallback={<PageLoader />}>
-          <ComponentLoader
-            isLoading={stories.length === 0}
-            skeleton={<StoriesSkeleton />}
-          >
-            <Stories
-              stories={stories}
-              onStoryClick={() => openModal('story')}
-              activeModal={activeModal}
-              closeModal={closeModal}
-            />
-          </ComponentLoader>
+  return (
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
+      <Header />
+      <ComponentLoader
+        isLoading={stories.length === 0}
+        skeleton={<StoriesSkeleton />}
+      >
+        <Stories
+          stories={stories}
+          onStoryClick={() => openModal('story')}
+          activeModal={activeModal}
+          closeModal={closeModal}
+        />
+      </ComponentLoader>
 
-          <ComponentLoader
-            isLoading={posts.length === 0}
-            skeleton={<PostsSkeleton />}
-          >
-            <Posts
-              posts={posts}
-              likedPosts={likedPosts}
-              savedPosts={savedPosts}
-              toggleLike={toggleLike}
-              toggleSave={toggleSave}
-              followedUsers={followedUsers}
-              openModal={openModal}
-              activeModal={activeModal}
-              closeModal={closeModal}
-            />
-          </ComponentLoader>
-        </Suspense>
-      </div>
-    )
-
-
+      <ComponentLoader
+        isLoading={posts.length === 0}
+        skeleton={<PostsSkeleton />}
+      >
+        <Posts
+          posts={posts}
+          likedPosts={likedPosts}
+          savedPosts={savedPosts}
+          toggleLike={toggleLike}
+          toggleSave={toggleSave}
+          followedUsers={followedUsers}
+          openModal={openModal}
+          activeModal={activeModal}
+          closeModal={closeModal}
+        />
+      </ComponentLoader>
+    </div>
+  )
 }
