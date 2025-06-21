@@ -2,7 +2,6 @@
 
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { X, Send, Smile, Heart } from 'lucide-react'
 import { emojiLibrary } from '@/constants/emojis'
 
@@ -18,131 +17,87 @@ const initialMessages = [
   },
   {
     id: 2,
-    text: 'Wow!! Loved this!! 🔥🔥🔥',
-    sender: 'user',
-    time: '10m',
-    likes: 2000,
+    text: 'That’s so true! Reading clears my mind every time. 🤯📖',
+    sender: 'me',
+    time: '1h',
+    likes: 500,
     liked: true,
-    name: 'nitesh.dev',
+    name: 'me',
   },
   {
     id: 3,
-    text: '💯',
+    text: 'Just finished "Atomic Habits"—mind-blowing stuff! 💥🔥',
     sender: 'other',
-    time: '5m',
-    likes: 999,
+    time: '55m',
+    likes: 12500,
     liked: false,
-    name: 'techqueen_01',
-  },
-  {
-    id: 4,
-    text: 'Totally agree with you!',
-    sender: 'user',
-    time: '1h',
-    likes: 10000,
-    liked: true,
-    name: 'justin_02',
-  },
-  {
-    id: 5,
-    text: "That's deep... 🧠📖",
-    sender: 'other',
-    time: '3h',
-    likes: 8000,
-    liked: false,
-    name: 'booknerd.x',
-  },
-  {
-    id: 6,
-    text: '👍',
-    sender: 'other',
-    time: '4h',
-    likes: 2,
-    liked: false,
-    name: 'silent.reader',
-  },
-  {
-    id: 7,
-    text: 'I always say this to my students too. Learning from books is unmatched.',
-    sender: 'other',
-    time: '6h',
-    likes: 650,
-    liked: true,
     name: 'ankur.kumar_12',
   },
   {
-    id: 8,
-    text: '😂😂😂 agree!',
-    sender: 'user',
-    time: '7m',
-    likes: 12000,
+    id: 4,
+    text: 'Need to start that one soon. Everyone’s recommending it!',
+    sender: 'me',
+    time: '53m',
+    likes: 200,
+    liked: false,
+    name: 'me',
+  },
+  {
+    id: 5,
+    text: 'Do you guys read fiction or non-fiction more?',
+    sender: 'other',
+    time: '50m',
+    likes: 320,
+    liked: false,
+    name: 'megha.patil_21',
+  },
+  {
+    id: 6,
+    text: 'Non-fiction mostly. But I do enjoy thrillers sometimes 😄',
+    sender: 'me',
+    time: '48m',
+    likes: 135,
     liked: true,
-    name: 'jatt_the_dev',
+    name: 'me',
+  },
+  {
+    id: 7,
+    text: 'Same here. Fiction gives a break from the routine. 🚀',
+    sender: 'other',
+    time: '45m',
+    likes: 845,
+    liked: false,
+    name: 'rahul.verma_44',
+  },
+  {
+    id: 8,
+    text: 'Guys, have you tried audiobooks? Total game changer! 🎧',
+    sender: 'other',
+    time: '43m',
+    likes: 1100,
+    liked: false,
+    name: 'neha.kaur_16',
   },
   {
     id: 9,
-    text: 'Too good!✨',
-    sender: 'other',
-    time: '15m',
-    likes: 27000,
+    text: 'Yes! Perfect for while jogging or doing chores. 🔁🏃‍♂️',
+    sender: 'me',
+    time: '41m',
+    likes: 420,
     liked: false,
-    name: 'mystery.mind',
+    name: 'me',
   },
   {
     id: 10,
-    text: '👏👏👏',
-    sender: 'user',
-    time: '30m',
-    likes: 1500,
-    liked: false,
-    name: 'coding.king',
-  },
-  {
-    id: 11,
-    text: 'Inspirational ❤️',
+    text: 'Okay brb, ordering my next read 😄📦',
     sender: 'other',
-    time: '1h',
-    likes: 105,
-    liked: true,
-    name: 'the_reader',
-  },
-  {
-    id: 12,
-    text: 'Correct sir',
-    sender: 'other',
-    time: '2h',
-    likes: 5,
+    time: '39m',
+    likes: 90,
     liked: false,
-    name: 'user_009',
-  },
-  {
-    id: 13,
-    text: "I'm saving this message for life 💌",
-    sender: 'user',
-    time: '20m',
-    likes: 7000,
-    liked: true,
-    name: 'crazy.writer',
-  },
-  {
-    id: 14,
-    text: 'Short msg ✅',
-    sender: 'other',
-    time: '3h',
-    likes: 99,
-    liked: false,
-    name: 'fast.reply',
-  },
-  {
-    id: 15,
-    text: 'Noted.',
-    sender: 'user',
-    time: '12m',
-    likes: 2000,
-    liked: false,
-    name: 'nitesh.js',
+    name: 'ranveer.singh_9',
   },
 ]
+
 
 const reactions = ['👍', '🔥', '🎯', '😎', '⭐', '🙌', '👑', '💪']
 
@@ -169,16 +124,15 @@ export default function Comments({ onClose }) {
         liked: false,
         name: 'sumit.singh_22',
       }
-      setMessages([newMsg, ...messages]) // <-- this is the key change
+      setMessages([newMsg, ...messages])
       setNewMessage('')
     }
   }
 
-
-  const handleLike = (messageId) => {
-    setMessages(
-      messages.map((msg) =>
-        msg.id === messageId
+  const handleLike = (id) => {
+    setMessages((msgs) =>
+      msgs.map((msg) =>
+        msg.id === id
           ? {
               ...msg,
               liked: !msg.liked,
@@ -222,37 +176,35 @@ export default function Comments({ onClose }) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((message) => (
-            <div key={message.id} className="flex items-start gap-3 group">
+          {messages.map((msg) => (
+            <div key={msg.id} className="flex items-start gap-3 group">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                {message.sender === 'user' ? 'S' : 'Y'}
+                {msg.sender === 'user' ? 'S' : 'Y'}
               </div>
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium text-sm">{message.name}</span>
+                  <span className="font-medium text-sm">{msg.name}</span>
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {message.time}
+                    {msg.time}
                   </span>
                 </div>
                 <div className="text-sm text-gray-900 dark:text-white break-words whitespace-pre-wrap max-w-[90%] sm:max-w-full">
-                  {message.text}
+                  {msg.text}
                 </div>
               </div>
-
-              {/* Like Button */}
               <div className="flex items-center gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                 <button
-                  onClick={() => handleLike(message.id)}
+                  onClick={() => handleLike(msg.id)}
                   className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs transition-colors ${
-                    message.liked
+                    msg.liked
                       ? 'text-red-500 bg-red-50 dark:bg-red-900/30'
                       : 'text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20'
                   }`}
                 >
                   <Heart
-                    className={`w-4 h-4 ${message.liked ? 'fill-current' : ''}`}
+                    className={`w-4 h-4 ${msg.liked ? 'fill-current' : ''}`}
                   />
-                  <span>{formatLikes(message.likes)}</span>
+                  <span>{formatLikes(msg.likes)}</span>
                 </button>
               </div>
             </div>
@@ -262,9 +214,9 @@ export default function Comments({ onClose }) {
         {/* Reactions */}
         <div className="px-4 py-2 border-t border-gray-200 dark:border-gray-800">
           <div className="flex gap-2 overflow-x-auto">
-            {reactions.map((reaction, index) => (
+            {reactions.map((reaction, i) => (
               <button
-                key={index}
+                key={i}
                 onClick={() => handleReactionClick(reaction)}
                 className="text-2xl transition-transform flex-shrink-0 p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
               >
@@ -281,9 +233,9 @@ export default function Comments({ onClose }) {
           } overflow-y-auto`}
         >
           <div className="grid grid-cols-8 gap-1 p-2">
-            {emojiLibrary.map((emoji, index) => (
+            {emojiLibrary.map((emoji, i) => (
               <button
-                key={index}
+                key={i}
                 onClick={() => handleEmojiSelect(emoji)}
                 className="text-xl hover:scale-110 transition-transform p-2 rounded flex items-center justify-center"
               >
@@ -292,17 +244,17 @@ export default function Comments({ onClose }) {
             ))}
           </div>
         </div>
+
         {/* Input */}
         <div className="p-2 border-t border-gray-200 dark:border-gray-800">
-          <div className="flex items-center gap-2">
-            {/* Textarea with emoji */}
+          <div className="flex items-end gap-2">
             <div className="flex-1 relative">
               <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Add a comment"
-                rows={1}
-                className="w-full resize-none pl-4 pr-10 py-2 text-sm rounded-full border border-gray-300 dark:border-gray-700 dark:bg-[#111] dark:text-white focus:border-blue-500 focus:ring-blue-500"
+                rows={2}
+                className="w-full h-[40px] resize-none overflow-hidden pl-6 pr-10 py-2 text-sm rounded-full border border-gray-300 dark:border-gray-700 dark:bg-[#111] dark:text-white focus:border-blue-500 focus:ring-blue-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault()
@@ -310,27 +262,29 @@ export default function Comments({ onClose }) {
                   }
                 }}
               />
-              {/* Emoji Button */}
+
               <div className="absolute right-3 top-1 bottom-3 flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-6 w-6 p-0"
-                  style={{
-                    transform: showEmojiPicker ? 'rotate(90deg)' : 'none',
-                  }}
-                  onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  className="h-6 w-6 p-0 transition-transform duration-300 ease-in-out"
+                  onClick={() => setShowEmojiPicker((prev) => !prev)}
                 >
-                  {showEmojiPicker ? (
-                    <X className="w-4 h-4" />
-                  ) : (
-                    <Smile className="w-4 h-4" />
-                  )}
+                  <div
+                    className={`transition-transform duration-300 ${
+                      showEmojiPicker ? 'rotate-180' : 'rotate-0'
+                    }`}
+                  >
+                    {showEmojiPicker ? (
+                      <X className="w-4 h-4" />
+                    ) : (
+                      <Smile className="w-4 h-4" />
+                    )}
+                  </div>
                 </Button>
               </div>
             </div>
 
-            {/* Send Button */}
             <Button
               onClick={handleSend}
               size="icon"
