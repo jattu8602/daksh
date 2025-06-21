@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
+import { useSelector } from 'react-redux'
 import { Home, Search, BookOpen, Clapperboard } from 'lucide-react' // Lucide icons
 import { PageLoader } from '@/components/ui/loading'
 import { ThemeProvider } from '@/components/theme-provider'
@@ -11,6 +12,7 @@ import { ThemeProvider } from '@/components/theme-provider'
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
   const [isLoading, setIsLoading] = useState(true)
+  const { user } = useSelector((state) => state.auth)
 
   const navItems = [
     {
@@ -48,7 +50,6 @@ export default function DashboardLayout({ children }) {
     return () => clearTimeout(timer)
   }, [])
 
-  
   return (
     <ThemeProvider
       attribute="class"
@@ -85,7 +86,7 @@ export default function DashboardLayout({ children }) {
               >
                 <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-pink-300">
                   <Image
-                    src="/icons/girl.png"
+                    src={user?.student?.profileImage || '/icons/girl.png'}
                     alt="Profile"
                     width={32}
                     height={32}
