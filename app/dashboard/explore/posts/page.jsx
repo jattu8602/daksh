@@ -1,10 +1,8 @@
-'use client'
-
 import Image from 'next/image'
 import { MoreHorizontal } from 'lucide-react'
 
-export default function AllContent() {
-  const allImages = [
+export default function PostsContent() {
+  const postImages = [
     'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=400&fit=crop',
     'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop',
     'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=400&fit=crop',
@@ -17,21 +15,18 @@ export default function AllContent() {
     'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=400&fit=crop',
     'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
     'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=400&fit=crop',
-    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=400&fit=crop',
   ]
 
   return (
     <div className="grid grid-cols-3 gap-1 px-4">
-      {allImages.map((image, index) => (
+      {postImages.map((image, index) => (
         <div
           key={index}
           className="aspect-square relative rounded-lg overflow-hidden"
         >
           <Image
             src={image || '/placeholder.svg'}
-            alt={`Science image ${index + 1}`}
+            alt={`Biology post ${index + 1}`}
             fill
             className="object-cover"
           />
