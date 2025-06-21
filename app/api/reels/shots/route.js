@@ -7,7 +7,7 @@ const prisma = new PrismaClient()
 export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit')) || 10
+    const limit = parseInt(searchParams.get('limit')) || 3
 
     // Fetch random mentor shots from database only
     const videoAssignments = await prisma.videoAssignment.findMany({

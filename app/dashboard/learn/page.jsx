@@ -84,9 +84,14 @@ export default function SubjectsPage() {
         {/* Class Selection */}
         <div className="space-y-4 animate-slide-up-delay">
           <div className="flex items-center justify-between">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-              Free revision material for Class 10
-            </h3>
+            <div className="flex flex-col flex-start">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Free revision material
+              </h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                for Class 10
+              </h3>
+            </div>
             <Select defaultValue="ncert">
               <SelectTrigger className="w-32 bg-gray-100 dark:bg-gray-800 border-gray-300 dark:border-gray-600 hover:scale-105 transition-transform duration-200">
                 <SelectValue />

@@ -103,6 +103,41 @@ const shareUsers = [
   },
 ]
 
+const ReelSkeleton = () => (
+  <div className="fixed inset-0 animate-pulse bg-black">
+    {/* Right side actions skeleton */}
+    <div className="absolute bottom-24 right-3 z-10 flex flex-col items-center gap-5">
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-9 w-9 rounded-full bg-zinc-800"></div>
+        <div className="h-2 w-6 rounded-md bg-zinc-800"></div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-9 w-9 rounded-full bg-zinc-800"></div>
+        <div className="h-2 w-6 rounded-md bg-zinc-800"></div>
+      </div>
+      <div className="flex flex-col items-center gap-2">
+        <div className="h-9 w-9 rounded-full bg-zinc-800"></div>
+        <div className="h-2 w-6 rounded-md bg-zinc-800"></div>
+      </div>
+      <div className="h-9 w-9 rounded-full bg-zinc-800"></div>
+      <div className="h-9 w-9 rounded-full bg-zinc-800"></div>
+    </div>
+    {/* Bottom content skeleton */}
+    <div className="absolute bottom-16 left-4 right-20 z-10">
+      <div className="mb-3 flex items-center gap-3">
+        <div className="h-12 w-12 rounded-full bg-zinc-800"></div>
+        <div className="flex items-center gap-2">
+          <div className="h-4 w-24 rounded-md bg-zinc-800"></div>
+        </div>
+      </div>
+      <div className="space-y-2">
+        <div className="h-3 w-48 rounded-md bg-zinc-800"></div>
+        <div className="h-3 w-32 rounded-md bg-zinc-800"></div>
+      </div>
+    </div>
+  </div>
+)
+
 export default function InstagramReels() {
   const [currentReel, setCurrentReel] = useState(0)
   const [showComments, setShowComments] = useState(false)
@@ -135,7 +170,7 @@ export default function InstagramReels() {
   // Aggressive preloading function
   const preloadVideos = useCallback((reelsList) => {
     reelsList.forEach((reel, index) => {
-      if (!preloadCache.current.has(reel.id) && index < 5) {
+      if (!preloadCache.current.has(reel.id) && index < 2) {
         // Preload first 5 videos
         const video = document.createElement('video')
         video.preload = 'metadata'
@@ -157,7 +192,7 @@ export default function InstagramReels() {
 
   // Fetch mentor shots from API with better error handling
   const fetchMentorShots = useCallback(
-    async (limit = 12, isRefresh = false) => {
+    async (limit = 3, isRefresh = false) => {
       try {
         if (!isRefresh) setLoading(true)
         setError(null)
@@ -249,7 +284,7 @@ export default function InstagramReels() {
   const refreshReels = useCallback(() => {
     isInitialLoad.current = true
     preloadCache.current.clear()
-    fetchMentorShots(12, true)
+    fetchMentorShots(1, true)
   }, [fetchMentorShots])
 
   // Initialize window height on client side
@@ -266,7 +301,7 @@ export default function InstagramReels() {
 
   // Fetch initial reels on component mount - start immediately
   useEffect(() => {
-    fetchMentorShots(12) // Load 12 initial reels for better experience
+    fetchMentorShots(1) // Load 3 initial reels for better experience
   }, [fetchMentorShots])
 
   // Aggressive preloading when user is near the end
@@ -411,16 +446,18 @@ export default function InstagramReels() {
     videoRefs.current.forEach((video, idx) => {
       if (video) {
         if (idx === currentReel) {
-          video.currentTime = 0
-          video
-            .play()
-            .catch((err) => err.name !== 'AbortError' && console.warn(err))
+          if (video.paused) {
+            video.currentTime = 0
+            video
+              .play()
+              .catch((err) => err.name !== 'AbortError' && console.warn(err))
+          }
         } else {
           video.pause()
         }
       }
     })
-  }, [currentReel])
+  }, [currentReel, reels])
 
   // Initialize y position
   useEffect(() => {
@@ -451,17 +488,7 @@ export default function InstagramReels() {
 
   // Loading state
   if (loading && reels.length === 0) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 text-white animate-spin" />
-          <p className="text-white text-sm">Loading mentor shots...</p>
-          <p className="text-gray-400 text-xs">
-            Fetching real content from database
-          </p>
-        </div>
-      </div>
-    )
+    return <ReelSkeleton />
   }
 
   // Error state with retry
@@ -476,7 +503,7 @@ export default function InstagramReels() {
           <p className="text-gray-400 text-sm max-w-sm">{error}</p>
           <div className="flex gap-3 mt-4">
             <Button
-              onClick={() => fetchMentorShots(12)}
+              onClick={() => fetchMentorShots(3)}
               className="flex items-center gap-2"
               variant="outline"
             >
