@@ -23,9 +23,31 @@ export default function Posts({
   fetchMorePosts,
   hasMore,
   isLoading,
+  onScroll,
+  scrollPosition,
 }) {
+  const scrollRef = useRef(null)
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTop = scrollPosition
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      onScroll(scrollRef.current.scrollTop)
+    }
+  }
+
   return (
-    <div className="flex-1 overflow-auto">
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-auto"
+    >
       {posts.map((post, index) => (
         <PostItem
           key={post.id}

@@ -1,8 +1,8 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useSelector, useDispatch } from 'react-redux'
-import { fetchPosts } from '@/app/store/features/feedSlice'
+import { fetchPosts, setScrollPosition } from '@/app/store/features/feedSlice'
 import Header from '@/components/component/Header'
 import {
   ComponentLoader,
@@ -44,7 +44,7 @@ const PostsSkeleton = () => (
 
 export default function FeedScreen() {
   const dispatch = useDispatch()
-  const { posts, hasMore, isLoading, error } = useSelector(
+  const { posts, hasMore, isLoading, error, scrollPosition } = useSelector(
     (state) => state.feed
   )
   const [stories, setStories] = useState([])
@@ -161,6 +161,24 @@ export default function FeedScreen() {
     )
   }
 
+  const debounce = (func, delay) => {
+    let timeoutId
+    return (...args) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        func.apply(this, args)
+      }, delay)
+    }
+  }
+
+  // Debounced scroll handler
+  const handleScroll = useCallback(
+    debounce((position) => {
+      dispatch(setScrollPosition(position))
+    }, 200),
+    [dispatch]
+  )
+
   const handleFetchMorePosts = () => {
     if (hasMore && !isLoading) {
       dispatch(fetchPosts())
@@ -199,6 +217,8 @@ export default function FeedScreen() {
           fetchMorePosts={handleFetchMorePosts}
           hasMore={hasMore}
           isLoading={isLoading}
+          onScroll={handleScroll}
+          scrollPosition={scrollPosition}
         />
       </ComponentLoader>
     </div>

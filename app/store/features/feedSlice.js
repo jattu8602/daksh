@@ -9,6 +9,7 @@ const initialState = {
   hasMore: true,
   isLoading: false,
   error: null,
+  scrollPosition: 0,
 }
 
 export const fetchPosts = createAsyncThunk(
@@ -31,7 +32,11 @@ export const fetchPosts = createAsyncThunk(
 const feedSlice = createSlice({
   name: 'feed',
   initialState,
-  reducers: {},
+  reducers: {
+    setScrollPosition: (state, action) => {
+      state.scrollPosition = action.payload
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchPosts.pending, (state) => {
@@ -58,5 +63,7 @@ const feedSlice = createSlice({
       })
   },
 })
+
+export const { setScrollPosition } = feedSlice.actions
 
 export default feedSlice.reducer
