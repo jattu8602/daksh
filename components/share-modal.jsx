@@ -1,42 +1,40 @@
 'use client'
 
+import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 
 const contacts = [
-  {
-    name: 'ranveer.singh_9',
-    status: 'Online',
-    avatar: '/placeholder.svg?height=40&width=40',
-  },
-  {
-    name: 'ankur.kumar_12',
-    status: 'Online',
-    avatar: '/placeholder.svg?height=40&width=40',
-  },
-  {
-    name: 'anchal.kumar_09',
-    status: 'Online',
-    avatar: '/placeholder.svg?height=40&width=40',
-  },
+  { name: 'ranveer.singh_9', status: 'Online', avatar: '/icons/girl.png' },
+  { name: 'ankur.kumar_12', status: 'Online', avatar: '/icons/girl.png' },
+  { name: 'anchal.kumar_09', status: 'Online', avatar: '/icons/girl.png' },
   {
     name: 'rajveer.saini_87',
     status: '4 hours ago',
-    avatar: '/placeholder.svg?height=40&width=40',
+    avatar: '/icons/girl.png',
   },
+  { name: 'rupali.singh_9', status: '5 hours ago', avatar: '/icons/girl.png' },
+  { name: 'radhika.pal_12', status: '7+ days ago', avatar: '/icons/girl.png' },
   {
-    name: 'rupali.singh_9',
-    status: '5 hours ago',
-    avatar: '/placeholder.svg?height=40&width=40',
+    name: 'rajveer.saini_87',
+    status: '4 hours ago',
+    avatar: '/icons/girl.png',
   },
-  {
-    name: 'radhika.pal_12',
-    status: '7+ days ago',
-    avatar: '/placeholder.svg?height=40&width=40',
-  },
+  { name: 'rupali.singh_9', status: '5 hours ago', avatar: '/icons/girl.png' },
+  { name: 'radhika.pal_12', status: '7+ days ago', avatar: '/icons/girl.png' },
 ]
 
 export default function ShareModal({ onClose }) {
+  const [sentStatus, setSentStatus] = useState(
+    Array(contacts.length).fill(false)
+  )
+
+  const handleSendClick = (index) => {
+    const updatedStatus = [...sentStatus]
+    updatedStatus[index] = true
+    setSentStatus(updatedStatus)
+  }
+
   return (
     <>
       {/* Backdrop */}
@@ -62,7 +60,7 @@ export default function ShareModal({ onClose }) {
               <div className="flex items-center gap-3">
                 <div className="relative">
                   <img
-                    src={contact.avatar || '/placeholder.svg'}
+                    src={contact.avatar}
                     alt={contact.name}
                     className="w-10 h-10 rounded-full"
                   />
@@ -82,9 +80,15 @@ export default function ShareModal({ onClose }) {
 
               <Button
                 size="sm"
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
+                disabled={sentStatus[index]}
+                className={`px-6 ${
+                  sentStatus[index]
+                    ? 'bg-gray-400 text-white cursor-default'
+                    : 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                }`}
+                onClick={() => handleSendClick(index)}
               >
-                Send
+                {sentStatus[index] ? 'Sent' : 'Send'}
               </Button>
             </div>
           ))}
