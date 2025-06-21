@@ -2,7 +2,7 @@
 
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
 import { useInView } from 'react-intersection-observer'
 import clsx from 'clsx'
 import { Button } from '@/components/ui/button' // Make sure this import is correct
@@ -27,14 +27,25 @@ export default function Posts({
   scrollPosition,
 }) {
   const scrollRef = useRef(null)
+  const scrolledRef = useRef(false)
 
-  // Restore scroll position on mount
-  useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollPosition
+  // Restore scroll position on mount, after the layout is painted
+  useLayoutEffect(() => {
+    // Check if we haven't already performed the initial scroll,
+    // and if we have posts and a scroll position to restore.
+    if (!scrolledRef.current && posts.length > 0 && scrollPosition > 0) {
+      // Defer the scroll until after the browser has painted the content
+      const timerId = setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollPosition
+          scrolledRef.current = true // Mark that we've restored the scroll
+        }
+      }, 100) // 100ms delay to allow for rendering
+
+      // Cleanup the timeout if the component unmounts
+      return () => clearTimeout(timerId)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [posts.length, scrollPosition])
 
   const handleScroll = () => {
     if (scrollRef.current) {
