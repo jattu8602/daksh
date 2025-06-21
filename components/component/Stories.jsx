@@ -1,15 +1,35 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import StoryViewer from '../story-viewer'
 
 export default function Stories({ stories }) {
   const [showStory, setShowStory] = useState(false)
 
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // This closes the story viewer on back navigation
+      setShowStory(false)
+    }
+
+    // Add listener when the component mounts
+    window.addEventListener('popstate', handlePopState)
+
+    // Cleanup listener when the component unmounts
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
+
   const handleStoryClick = (story) => {
     if (story.hasStory) {
+      window.history.pushState({ modal: 'story' }, '', window.location.href)
       setShowStory(true)
     }
+  }
+
+  const handleClose = () => {
+    window.history.back()
   }
 
   return (
@@ -47,7 +67,7 @@ export default function Stories({ stories }) {
           ))}
         </div>
       </div>
-      {showStory && <StoryViewer onClose={() => setShowStory(false)} />}
+      {showStory && <StoryViewer onClose={handleClose} />}
     </div>
   )
 }

@@ -2,7 +2,7 @@
 
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import clsx from 'clsx'
 import { Button } from '@/components/ui/button' // Make sure this import is correct
 import Comments from '../comments'
@@ -19,6 +19,36 @@ export default function Posts({
   const [showComments, setShowComments] = useState(null)
   const [showShare, setShowShare] = useState(null)
 
+  useEffect(() => {
+    const handlePopState = (event) => {
+      // This closes any open modal on back navigation
+      setShowComments(null)
+      setShowShare(null)
+    }
+
+    // Add listener when the component mounts
+    window.addEventListener('popstate', handlePopState)
+
+    // Cleanup listener when the component unmounts
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, []) // Empty dependency array means this effect runs only on mount and unmount
+
+  const openComments = (postId) => {
+    window.history.pushState({ modal: 'comments' }, '', window.location.href)
+    setShowComments(postId)
+  }
+
+  const openShare = (postId) => {
+    window.history.pushState({ modal: 'share' }, '', window.location.href)
+    setShowShare(postId)
+  }
+
+  const handleClose = () => {
+    window.history.back()
+  }
+
   return (
     <div className="flex-1 overflow-auto">
       {posts.map((post) => (
@@ -30,20 +60,20 @@ export default function Posts({
           likedPosts={likedPosts}
           savedPosts={savedPosts}
           followedUsers={followedUsers}
-          onCommentClick={() => setShowComments(post.id)}
-          onShareClick={() => setShowShare(post.id)}
+          onCommentClick={() => openComments(post.id)}
+          onShareClick={() => openShare(post.id)}
         />
       ))}
       {showComments && (
         <Comments
           post={posts.find((p) => p.id === showComments)}
-          onClose={() => setShowComments(null)}
+          onClose={handleClose}
         />
       )}
       {showShare && (
         <ShareModal
           post={posts.find((p) => p.id === showShare)}
-          onClose={() => setShowShare(null)}
+          onClose={handleClose}
         />
       )}
     </div>
