@@ -1,14 +1,28 @@
-"use client"
+'use client'
 
-import { useState, useEffect } from "react"
-import { Button } from "@/components/ui/button"
-import { ChevronLeft, Heart, Send, Play, Pause } from "lucide-react"
-
+import { useState, useEffect } from 'react'
+import { Button } from '@/components/ui/button'
+import { ChevronLeft, Heart, Send, Play, Pause } from 'lucide-react'
 
 const stories = [
-  { id: 1, image: "/placeholder.svg?height=600&width=400", user: "sachin.sir", duration: 5000 },
-  { id: 2, image: "/placeholder.svg?height=600&width=400", user: "teacher.math", duration: 4000 },
-  { id: 3, image: "/placeholder.svg?height=600&width=400", user: "study.group", duration: 6000 },
+  {
+    id: 1,
+    image: '/placeholder.svg?height=600&width=400',
+    user: 'sachin.sir',
+    duration: 5000,
+  },
+  {
+    id: 2,
+    image: '/placeholder.svg?height=600&width=400',
+    user: 'teacher.math',
+    duration: 4000,
+  },
+  {
+    id: 3,
+    image: '/placeholder.svg?height=600&width=400',
+    user: 'study.group',
+    duration: 6000,
+  },
 ]
 
 export default function StoryViewer({ onClose }) {
@@ -63,15 +77,23 @@ export default function StoryViewer({ onClose }) {
   }
 
   return (
-    <div className="fixed inset-0 bg-black z-50">
+    <div className="fixed inset-0 bg-black z-[100]">
       {/* Progress bars */}
       <div className="absolute top-4 left-4 right-4 flex gap-1 z-10">
         {stories.map((_, index) => (
-          <div key={index} className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden">
+          <div
+            key={index}
+            className="flex-1 h-1 bg-white/30 rounded-full overflow-hidden"
+          >
             <div
               className="h-full bg-white transition-all duration-100 ease-linear"
               style={{
-                width: index < currentStoryIndex ? "100%" : index === currentStoryIndex ? `${progress}%` : "0%",
+                width:
+                  index < currentStoryIndex
+                    ? '100%'
+                    : index === currentStoryIndex
+                    ? `${progress}%`
+                    : '0%',
               }}
             />
           </div>
@@ -81,7 +103,12 @@ export default function StoryViewer({ onClose }) {
       {/* Header */}
       <div className="absolute top-12 left-4 right-4 flex items-center justify-between z-10">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={onClose} className="text-white hover:bg-white/20">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="text-white hover:bg-white/20"
+          >
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <div className="flex items-center gap-2">
@@ -90,8 +117,17 @@ export default function StoryViewer({ onClose }) {
           </div>
         </div>
 
-        <Button variant="ghost" size="icon" onClick={handlePlayPause} className="text-white hover:bg-white/20">
-          {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handlePlayPause}
+          className="text-white hover:bg-white/20"
+        >
+          {isPaused ? (
+            <Play className="w-5 h-5" />
+          ) : (
+            <Pause className="w-5 h-5" />
+          )}
         </Button>
       </div>
 
@@ -116,10 +152,16 @@ export default function StoryViewer({ onClose }) {
             className="w-full bg-transparent text-white placeholder-white/70 outline-none"
           />
         </div>
-        <Button size="icon" className="bg-white/20 hover:bg-white/30 text-white">
+        <Button
+          size="icon"
+          className="bg-white/20 hover:bg-white/30 text-white"
+        >
           <Heart className="w-5 h-5" />
         </Button>
-        <Button size="icon" className="bg-white/20 hover:bg-white/30 text-white">
+        <Button
+          size="icon"
+          className="bg-white/20 hover:bg-white/30 text-white"
+        >
           <Send className="w-5 h-5" />
         </Button>
       </div>

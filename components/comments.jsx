@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { X, Send, Smile, Paperclip } from 'lucide-react'
 
-
 const messages = [
   {
     id: 1,
@@ -37,12 +36,12 @@ export default function Comments({ onClose }) {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-[99]" onClick={onClose} />
 
       {/* Chat Frame */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[70vh] overflow-hidden flex flex-col">
+      <div className="fixed bottom-0 left-0 right-0 bg-background text-foreground rounded-t-3xl z-[100] max-h-[70vh] overflow-hidden flex flex-col">
         {/* Header */}
-        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+        <div className="p-4 border-b border-border flex items-center justify-between">
           <div className="flex items-center gap-3">
             <img
               src="/placeholder.svg?height=40&width=40"
@@ -51,7 +50,7 @@ export default function Comments({ onClose }) {
             />
             <div>
               <div className="font-medium">sachin.sir_history</div>
-              <div className="text-sm text-gray-500">
+              <div className="text-sm text-muted-foreground">
                 Books are the best friends.
               </div>
             </div>
@@ -77,15 +76,17 @@ export default function Comments({ onClose }) {
                       ? 'sumit.singh_22'
                       : 'yash.singhla_20'}
                   </span>
-                  <span className="text-xs text-gray-500">{message.time}</span>
+                  <span className="text-xs text-muted-foreground">
+                    {message.time}
+                  </span>
                   {message.liked && <span className="text-red-500">❤️</span>}
                 </div>
-                <div className="text-sm text-gray-800">
+                <div className="text-sm text-foreground">
                   {message.text}
                   {message.hashtags && (
                     <div className="mt-1">
                       {message.hashtags.map((tag, index) => (
-                        <span key={index} className="text-blue-600 mr-2">
+                        <span key={index} className="text-primary mr-2">
                           {tag}
                         </span>
                       ))}
@@ -98,7 +99,7 @@ export default function Comments({ onClose }) {
         </div>
 
         {/* Reactions */}
-        <div className="px-4 py-2 border-t border-gray-100">
+        <div className="px-4 py-2 border-t border-border">
           <div className="flex gap-2 overflow-x-auto">
             {reactions.map((reaction, index) => (
               <button
@@ -112,14 +113,14 @@ export default function Comments({ onClose }) {
         </div>
 
         {/* Input */}
-        <div className="p-4 border-t border-gray-200">
+        <div className="p-4 border-t border-border">
           <div className="flex items-center gap-2">
             <div className="flex-1 relative">
               <Input
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Add a comment"
-                className="pr-20 rounded-full border-gray-300"
+                className="pr-20 rounded-full"
                 onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               />
               <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex gap-1">
@@ -134,7 +135,7 @@ export default function Comments({ onClose }) {
             <Button
               onClick={handleSend}
               size="icon"
-              className="rounded-full bg-blue-600 hover:bg-blue-700"
+              className="rounded-full bg-primary text-primary-foreground hover:bg-primary/90"
             >
               <Send className="w-4 h-4" />
             </Button>

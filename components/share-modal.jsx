@@ -3,7 +3,6 @@
 import { Button } from '@/components/ui/button'
 import { X } from 'lucide-react'
 
-
 const contacts = [
   {
     name: 'ranveer.singh_9',
@@ -41,11 +40,11 @@ export default function ShareModal({ onClose }) {
   return (
     <>
       {/* Backdrop */}
-      <div className="fixed inset-0 bg-black/50 z-40" onClick={onClose} />
+      <div className="fixed inset-0 bg-black/50 z-[99]" onClick={onClose} />
 
       {/* Modal */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white rounded-t-3xl z-50 max-h-[60vh] overflow-hidden">
-        <div className="p-4 border-b border-gray-200">
+      <div className="fixed bottom-0 left-0 right-0 bg-background text-foreground rounded-t-3xl z-[100] max-h-[60vh] overflow-hidden">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold">Share</h2>
             <Button variant="ghost" size="icon" onClick={onClose}>
@@ -58,7 +57,7 @@ export default function ShareModal({ onClose }) {
           {contacts.map((contact, index) => (
             <div
               key={index}
-              className="flex items-center justify-between p-4 border-b border-gray-100 last:border-b-0"
+              className="flex items-center justify-between p-4 border-b border-border last:border-b-0"
             >
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -72,16 +71,18 @@ export default function ShareModal({ onClose }) {
                   )}
                 </div>
                 <div>
-                  <div className="font-medium text-gray-900">
+                  <div className="font-medium text-foreground">
                     {contact.name}
                   </div>
-                  <div className="text-sm text-gray-500">{contact.status}</div>
+                  <div className="text-sm text-muted-foreground">
+                    {contact.status}
+                  </div>
                 </div>
               </div>
 
               <Button
                 size="sm"
-                className="bg-purple-600 hover:bg-purple-700 text-white px-6"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6"
               >
                 Send
               </Button>
