@@ -49,6 +49,9 @@ export default function FeedScreen() {
   const [followedUsers, setFollowedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
 
   const [activeModal, setActiveModal] = useState({ type: null, postId: null })
 
@@ -78,69 +81,88 @@ export default function FeedScreen() {
     window.history.back()
   }
 
+  const fetchPosts = async () => {
+    if (isLoading || !hasMore) return
+    setIsLoading(true)
+
+    try {
+      const response = await axios.get(`/api/posts?page=${page}&limit=4`)
+      if (response.data.success && response.data.data.length > 0) {
+        const newPosts = response.data.data
+        setPosts((prevPosts) => {
+          const existingIds = new Set(prevPosts.map((p) => p.id))
+          const uniqueNewPosts = newPosts.filter((p) => !existingIds.has(p.id))
+          return [...prevPosts, ...uniqueNewPosts]
+        })
+
+        const currentPage = response.data.currentPage
+        setPage(currentPage + 1)
+        setHasMore(currentPage < response.data.totalPages)
+      } else {
+        setHasMore(false)
+      }
+    } catch (error) {
+      console.error('Failed to fetch posts:', error)
+      setHasMore(false) // Stop trying if there's an error
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
   // Fetch initial data
   useEffect(() => {
-    const loadSequence = async () => {
-      try {
-        const [postsResponse, storiesData] = await Promise.all([
-          axios.get('/api/posts'),
-          Promise.resolve([
-            {
-              id: '1',
-              username: 'justin',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: false,
-            },
-            {
-              id: '2',
-              username: 'karenme',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: true,
-            },
-            {
-              id: '3',
-              username: 'zackjohn',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: false,
-            },
-            {
-              id: '4',
-              username: 'Starc',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: true,
-            },
-            {
-              id: '5',
-              username: 'kiron_d',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: false,
-            },
-            {
-              id: '6',
-              username: 'kiron_d',
-              avatar: '/placeholder.png',
-              hasStory: true,
-              isWatched: false,
-            },
-          ]),
-        ])
-
-        if (postsResponse.data.success) {
-          setPosts(postsResponse.data.data)
-        }
-        setStories(storiesData)
-      } catch (error) {
-        console.error('Failed to fetch data:', error)
-      }
+    const fetchInitialData = async () => {
+      // Fetch stories (or other initial data)
+      const storiesData = await Promise.resolve([
+        {
+          id: '1',
+          username: 'justin',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '2',
+          username: 'karenme',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: true,
+        },
+        {
+          id: '3',
+          username: 'zackjohn',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '4',
+          username: 'Starc',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: true,
+        },
+        {
+          id: '5',
+          username: 'kiron_d',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '6',
+          username: 'kiron_d',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+      ])
+      setStories(storiesData)
     }
 
-    loadSequence()
-  }, [])
+    fetchInitialData()
+    fetchPosts() // Fetch initial batch of posts
+  }, []) // Empty dependency array ensures this runs only once on mount
 
   const toggleLike = (postId) => {
     setLikedPosts((prev) =>
@@ -187,6 +209,9 @@ export default function FeedScreen() {
           openModal={openModal}
           activeModal={activeModal}
           closeModal={closeModal}
+          fetchMorePosts={fetchPosts}
+          hasMore={hasMore}
+          isLoading={isLoading}
         />
       </ComponentLoader>
     </div>

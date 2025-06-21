@@ -2,9 +2,11 @@
 
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
+import { useInView } from 'react-intersection-observer'
 import clsx from 'clsx'
 import { Button } from '@/components/ui/button' // Make sure this import is correct
+import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
 import Comments from '../comments'
 import ShareModal from '../share-modal'
 
@@ -18,13 +20,19 @@ export default function Posts({
   openModal,
   activeModal,
   closeModal,
+  fetchMorePosts,
+  hasMore,
+  isLoading,
 }) {
   return (
     <div className="flex-1 overflow-auto">
-      {posts.map((post) => (
+      {posts.map((post, index) => (
         <PostItem
           key={post.id}
           post={post}
+          isLast={index === posts.length - 1}
+          fetchMorePosts={fetchMorePosts}
+          hasMore={hasMore}
           toggleLike={toggleLike}
           toggleSave={toggleSave}
           likedPosts={likedPosts}
@@ -34,6 +42,13 @@ export default function Posts({
           onShareClick={() => openModal('share', post.id)}
         />
       ))}
+
+      {isLoading && <PostLoader />}
+      {!hasMore && posts.length > 0 && (
+        <div className="text-center py-4 text-gray-500">
+          You've reached the end.
+        </div>
+      )}
 
       {activeModal.type === 'comments' && (
         <Comments
@@ -52,8 +67,24 @@ export default function Posts({
   )
 }
 
+const PostLoader = () => (
+  <div className="space-y-6 p-4">
+    <div className="space-y-3">
+      <div className="flex items-center space-x-3">
+        <SkeletonCard className="w-10 h-10 rounded-full" />
+        <SkeletonText lines={1} className="flex-1" />
+      </div>
+      <SkeletonCard className="w-full h-64" />
+      <SkeletonText lines={2} />
+    </div>
+  </div>
+)
+
 function PostItem({
   post,
+  isLast,
+  fetchMorePosts,
+  hasMore,
   toggleLike,
   toggleSave,
   likedPosts,
@@ -62,6 +93,17 @@ function PostItem({
   onCommentClick,
   onShareClick,
 }) {
+  const { ref, inView } = useInView({
+    threshold: 0.5,
+    triggerOnce: true,
+  })
+
+  useEffect(() => {
+    if (inView && isLast && hasMore) {
+      fetchMorePosts()
+    }
+  }, [inView, isLast, hasMore, fetchMorePosts])
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFollowed, setIsFollowed] = useState(
     followedUsers.includes(post.username)
@@ -126,7 +168,7 @@ function PostItem({
   }
 
   return (
-    <div className="border-gray-100 pb-4">
+    <div ref={ref} className="border-gray-100 pb-4">
       {/* Header with Avatar + Username + Follow Button */}
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center space-x-3">
