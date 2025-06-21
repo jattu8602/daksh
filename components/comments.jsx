@@ -169,10 +169,11 @@ export default function Comments({ onClose }) {
         liked: false,
         name: 'sumit.singh_22',
       }
-      setMessages([...messages, newMsg])
+      setMessages([newMsg, ...messages]) // <-- this is the key change
       setNewMessage('')
     }
   }
+
 
   const handleLike = (messageId) => {
     setMessages(
