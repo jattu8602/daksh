@@ -234,7 +234,7 @@ export default function Comments({ onClose }) {
                     {message.time}
                   </span>
                 </div>
-                <div className="text-sm text-gray-900 dark:text-white">
+                <div className="text-sm text-gray-900 dark:text-white break-words whitespace-pre-wrap max-w-[90%] sm:max-w-full">
                   {message.text}
                 </div>
               </div>
@@ -292,23 +292,30 @@ export default function Comments({ onClose }) {
             ))}
           </div>
         </div>
-
         {/* Input */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-800">
+        <div className="p-2 border-t border-gray-200 dark:border-gray-800">
           <div className="flex items-center gap-2">
+            {/* Textarea with emoji */}
             <div className="flex-1 relative">
-              <Input
+              <textarea
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 placeholder="Add a comment"
-                className="pr-12 rounded-full border-gray-300 dark:border-gray-700 dark:bg-[#111] dark:text-white focus:border-blue-500 focus:ring-blue-500"
-                onKeyPress={(e) => e.key === 'Enter' && handleSend()}
+                rows={1}
+                className="w-full resize-none pl-4 pr-10 py-2 text-sm rounded-full border border-gray-300 dark:border-gray-700 dark:bg-[#111] dark:text-white focus:border-blue-500 focus:ring-blue-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault()
+                    handleSend()
+                  }
+                }}
               />
-              <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+              {/* Emoji Button */}
+              <div className="absolute right-3 top-1 bottom-3 flex items-center">
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 p-0"
+                  className="h-6 w-6 p-0"
                   style={{
                     transform: showEmojiPicker ? 'rotate(90deg)' : 'none',
                   }}
@@ -322,10 +329,12 @@ export default function Comments({ onClose }) {
                 </Button>
               </div>
             </div>
+
+            {/* Send Button */}
             <Button
               onClick={handleSend}
               size="icon"
-              className="rounded-full bg-blue-500 text-white hover:bg-blue-600"
+              className="rounded-full bg-blue-500 text-white hover:bg-blue-600 h-10 w-10 flex-shrink-0"
             >
               <Send className="w-4 h-4" />
             </Button>
