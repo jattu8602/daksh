@@ -1,46 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
 import StoryViewer from '../story-viewer'
 
-export default function Stories({ stories }) {
-  const [showStory, setShowStory] = useState(false)
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      // This closes the story viewer on back navigation
-      setShowStory(false)
-    }
-
-    // Add listener when the component mounts
-    window.addEventListener('popstate', handlePopState)
-
-    // Cleanup listener when the component unmounts
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, [])
-
+export default function Stories({
+  stories,
+  onStoryClick,
+  activeModal,
+  closeModal,
+}) {
   const handleStoryClick = (story) => {
     if (story.hasStory) {
-      window.history.pushState({ modal: 'story' }, '', window.location.href)
-      setShowStory(true)
+      onStoryClick()
     }
-  }
-
-  const handleClose = () => {
-    window.history.back()
   }
 
   return (
     <div>
       {/* Stories */}
-      <div className="  pb-2">
+      <div className="pb-2">
         <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
           {stories.map((story) => (
             <div
               key={story.id}
-              className="flex flex-col items-center first:ml-3"
+              className="flex flex-col items-center first:ml-3 cursor-pointer"
               onClick={() => handleStoryClick(story)}
             >
               <div className="relative">
@@ -51,7 +33,7 @@ export default function Stories({ stories }) {
                       : ''
                   }`}
                 >
-                  <div className="bg-white rounded-full p-[3px] w-full h-full flex items-center justify-center">
+                  <div className="bg-white dark:bg-black rounded-full p-[3px] w-full h-full flex items-center justify-center">
                     <img
                       src={story.avatar || '/placeholder.svg'}
                       alt={story.username}
@@ -67,7 +49,7 @@ export default function Stories({ stories }) {
           ))}
         </div>
       </div>
-      {showStory && <StoryViewer onClose={handleClose} />}
+      {activeModal.type === 'story' && <StoryViewer onClose={closeModal} />}
     </div>
   )
 }

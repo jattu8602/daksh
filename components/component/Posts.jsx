@@ -2,7 +2,7 @@
 
 import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef } from 'react'
 import clsx from 'clsx'
 import { Button } from '@/components/ui/button' // Make sure this import is correct
 import Comments from '../comments'
@@ -15,40 +15,10 @@ export default function Posts({
   likedPosts,
   savedPosts,
   followedUsers,
+  openModal,
+  activeModal,
+  closeModal,
 }) {
-  const [showComments, setShowComments] = useState(null)
-  const [showShare, setShowShare] = useState(null)
-
-  useEffect(() => {
-    const handlePopState = (event) => {
-      // This closes any open modal on back navigation
-      setShowComments(null)
-      setShowShare(null)
-    }
-
-    // Add listener when the component mounts
-    window.addEventListener('popstate', handlePopState)
-
-    // Cleanup listener when the component unmounts
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
-  }, []) // Empty dependency array means this effect runs only on mount and unmount
-
-  const openComments = (postId) => {
-    window.history.pushState({ modal: 'comments' }, '', window.location.href)
-    setShowComments(postId)
-  }
-
-  const openShare = (postId) => {
-    window.history.pushState({ modal: 'share' }, '', window.location.href)
-    setShowShare(postId)
-  }
-
-  const handleClose = () => {
-    window.history.back()
-  }
-
   return (
     <div className="flex-1 overflow-auto">
       {posts.map((post) => (
@@ -60,20 +30,22 @@ export default function Posts({
           likedPosts={likedPosts}
           savedPosts={savedPosts}
           followedUsers={followedUsers}
-          onCommentClick={() => openComments(post.id)}
-          onShareClick={() => openShare(post.id)}
+          onCommentClick={() => openModal('comments', post.id)}
+          onShareClick={() => openModal('share', post.id)}
         />
       ))}
-      {showComments && (
+
+      {activeModal.type === 'comments' && (
         <Comments
-          post={posts.find((p) => p.id === showComments)}
-          onClose={handleClose}
+          post={posts.find((p) => p.id === activeModal.postId)}
+          onClose={closeModal}
         />
       )}
-      {showShare && (
+
+      {activeModal.type === 'share' && (
         <ShareModal
-          post={posts.find((p) => p.id === showShare)}
-          onClose={handleClose}
+          post={posts.find((p) => p.id === activeModal.postId)}
+          onClose={closeModal}
         />
       )}
     </div>
