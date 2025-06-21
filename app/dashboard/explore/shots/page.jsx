@@ -69,7 +69,9 @@ export default function ShotsContent() {
           <Image
             src={video.thumbnail || '/placeholder.svg'}
             alt={video.title}
-            fill
+            width={400}
+            height={600}
+            unoptimized
             className="object-cover"
           />
           <div className="absolute inset-0 bg-black bg-opacity-20" />
