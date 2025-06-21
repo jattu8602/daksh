@@ -1,18 +1,52 @@
 'use client'
 
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import { useState, useEffect } from 'react'
-import { useSelector } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { Home, Search, BookOpen, Clapperboard } from 'lucide-react' // Lucide icons
 import { PageLoader } from '@/components/ui/loading'
 import { ThemeProvider } from '@/components/theme-provider'
+import { loginSuccess, loginFailure } from '../store/features/authSlice'
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
-  const [isLoading, setIsLoading] = useState(true)
-  const { user } = useSelector((state) => state.auth)
+  const dispatch = useDispatch()
+  const router = useRouter()
+  const { user, isAuthenticated } = useSelector((state) => state.auth)
+  const [isAuthenticating, setIsAuthenticating] = useState(true)
+
+  useEffect(() => {
+    const checkAuth = async () => {
+      if (isAuthenticated) {
+        setIsAuthenticating(false)
+        return
+      }
+
+      try {
+        const response = await fetch('/api/auth/session', {
+          credentials: 'include',
+        })
+        const data = await response.json()
+
+        if (data.success && data.user) {
+          dispatch(loginSuccess(data.user))
+        } else {
+          dispatch(loginFailure(data.error || 'Session expired'))
+          router.push('/')
+        }
+      } catch (err) {
+        console.error('Failed to fetch session:', err)
+        dispatch(loginFailure('Failed to fetch session'))
+        router.push('/')
+      } finally {
+        setIsAuthenticating(false)
+      }
+    }
+
+    checkAuth()
+  }, [isAuthenticated, dispatch, router])
 
   const navItems = [
     {
@@ -41,14 +75,9 @@ export default function DashboardLayout({ children }) {
     pathname.includes('/dashboard/community') ||
     pathname.includes('/dashboard/notifications')
 
-  // Simulate initial loading
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsLoading(false)
-    }, 100) // Very short loading time for layout
-
-    return () => clearTimeout(timer)
-  }, [])
+  if (isAuthenticating) {
+    return <PageLoader />
+  }
 
   return (
     <ThemeProvider

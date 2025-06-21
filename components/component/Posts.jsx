@@ -1,15 +1,12 @@
 'use client'
 
-import {
-  Heart,
-  MessageCircle,
-  Send,
-  Bookmark,
-} from 'lucide-react'
+import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
 import { useState, useRef } from 'react'
 import clsx from 'clsx'
 import { Button } from '@/components/ui/button' // Make sure this import is correct
+import Comments from '../comments'
+import ShareModal from '../share-modal'
 
 export default function Posts({
   posts,
@@ -19,6 +16,9 @@ export default function Posts({
   savedPosts,
   followedUsers,
 }) {
+  const [showComments, setShowComments] = useState(null)
+  const [showShare, setShowShare] = useState(null)
+
   return (
     <div className="flex-1 overflow-auto">
       {posts.map((post) => (
@@ -30,8 +30,22 @@ export default function Posts({
           likedPosts={likedPosts}
           savedPosts={savedPosts}
           followedUsers={followedUsers}
+          onCommentClick={() => setShowComments(post.id)}
+          onShareClick={() => setShowShare(post.id)}
         />
       ))}
+      {showComments && (
+        <Comments
+          post={posts.find((p) => p.id === showComments)}
+          onClose={() => setShowComments(null)}
+        />
+      )}
+      {showShare && (
+        <ShareModal
+          post={posts.find((p) => p.id === showShare)}
+          onClose={() => setShowShare(null)}
+        />
+      )}
     </div>
   )
 }
@@ -43,6 +57,8 @@ function PostItem({
   likedPosts,
   savedPosts,
   followedUsers,
+  onCommentClick,
+  onShareClick,
 }) {
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
   const [isFollowed, setIsFollowed] = useState(
@@ -206,8 +222,12 @@ function PostItem({
               }
             />
           </button>
-          <MessageCircle size={24} />
-          <Send size={24} />
+          <button onClick={onCommentClick}>
+            <MessageCircle size={24} className="text-black dark:text-white" />
+          </button>
+          <button onClick={onShareClick}>
+            <Send size={24} className="text-black dark:text-white" />
+          </button>
         </div>
         <button onClick={() => toggleSave(post.id)}>
           <Bookmark

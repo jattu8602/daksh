@@ -1,11 +1,28 @@
+'use client'
+
+import { useState } from 'react'
+import StoryViewer from '../story-viewer'
+
 export default function Stories({ stories }) {
+  const [showStory, setShowStory] = useState(false)
+
+  const handleStoryClick = (story) => {
+    if (story.hasStory) {
+      setShowStory(true)
+    }
+  }
+
   return (
     <div>
       {/* Stories */}
       <div className="  pb-2">
         <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
           {stories.map((story) => (
-            <div key={story.id} className="flex flex-col items-center first:ml-3">
+            <div
+              key={story.id}
+              className="flex flex-col items-center first:ml-3"
+              onClick={() => handleStoryClick(story)}
+            >
               <div className="relative">
                 <div
                   className={`w-20 h-20 rounded-full flex items-center justify-center ${
@@ -30,6 +47,7 @@ export default function Stories({ stories }) {
           ))}
         </div>
       </div>
+      {showStory && <StoryViewer onClose={() => setShowStory(false)} />}
     </div>
   )
 }
