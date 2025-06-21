@@ -16,6 +16,7 @@ export default function SplashScreen() {
 
   if (!isLoading) return null;
 
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-white">
       <div className="flex flex-col items-center space-y-4">
