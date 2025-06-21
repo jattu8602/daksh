@@ -2,6 +2,12 @@ import { NextResponse } from 'next/server';
 
 // This function can be marked `async` if using `await` inside
 export function middleware(request) {
+
+  const contentType = request.headers.get('content-type') || '';
+  if (contentType.includes('multipart/form-data')) {
+    return NextResponse.next();
+  }
+
   // Get the path of the request
   const path = request.nextUrl.pathname;
 

@@ -28,6 +28,7 @@
     "chart.js": "^4.4.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "framer-motion": "^12.11.4",
     "fs-extra": "^11.3.0",
     "html5-qrcode": "^2.3.8",
