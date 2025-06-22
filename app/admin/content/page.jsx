@@ -294,7 +294,7 @@ const ContentPage = () => {
                     <div className="relative aspect-video">
                       {video.mediaType === 'image' ? (
                         <Image
-                          src={video.url}
+                          src={video.url || video.thumbnailUrl}
                           alt={video.title}
                           fill
                           className="object-cover"
