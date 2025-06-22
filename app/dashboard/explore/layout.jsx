@@ -121,6 +121,7 @@ export default function ExploreLayout({ children }) {
               className="text-purple-600 dark:text-purple-400"
             />
             <input
+              onClick={() => router.push('/dashboard/explore/accounts')}
               type="text"
               placeholder={placeholderToShow}
               value={searchText}
