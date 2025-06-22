@@ -25,7 +25,7 @@ export default function NotificationsLayout({ children }) {
     // Handle mobile back gesture / browser back
     const handlePopState = () => {
       if (isDashboardNotificationRoute) {
-        router.push('/dashboard/home')
+        router.replace('/dashboard/home')
       }
     }
 
