@@ -15,15 +15,25 @@ export default function NotificationsLayout({ children }) {
   )
 
   useEffect(() => {
+    // Prevent scrolling
     if (isDashboardNotificationRoute) {
       document.body.style.overflow = 'hidden'
     } else {
       document.body.style.overflow = 'auto'
     }
 
-    // Clean up on unmount
+    // Handle mobile back gesture / browser back
+    const handlePopState = () => {
+      if (isDashboardNotificationRoute) {
+        router.push('/dashboard/home')
+      }
+    }
+
+    window.addEventListener('popstate', handlePopState)
+
     return () => {
       document.body.style.overflow = 'auto'
+      window.removeEventListener('popstate', handlePopState)
     }
   }, [isDashboardNotificationRoute])
 
@@ -38,7 +48,7 @@ export default function NotificationsLayout({ children }) {
         <div className="flex items-center p-4">
           <div
             onClick={() => router.push('/dashboard/home')}
-            className="text-black dark:text-white"
+            className="text-black dark:text-white cursor-pointer"
           >
             <svg
               width="24"
@@ -132,7 +142,8 @@ export default function NotificationsLayout({ children }) {
       {/* Page content */}
       <div className="flex-1 overflow-auto">
         <ScrollToTop />
-        {children}</div>
+        {children}
+      </div>
     </div>
   )
 }
