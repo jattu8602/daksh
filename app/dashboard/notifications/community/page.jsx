@@ -10,7 +10,7 @@ export default function CommunityNotificationsScreen() {
   // Handle mobile side back or browser back gesture
   useEffect(() => {
     const handlePopState = () => {
-      router.push('/dashboard/home')
+      router.replace('/dashboard/home')
     }
 
     window.addEventListener('popstate', handlePopState)
