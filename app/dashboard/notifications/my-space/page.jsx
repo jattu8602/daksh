@@ -1,8 +1,22 @@
 'use client'
 
 import { ChevronRight } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function MySpaceNotificationsScreen() {
+  const router = useRouter()
+
+  // Handle mobile side back or browser back gesture
+  useEffect(() => {
+    const handlePopState = () => {
+      router.push('/dashboard/home')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
   const todayNotifications = [
     {
       icon: '🍃',

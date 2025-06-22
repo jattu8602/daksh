@@ -1,8 +1,23 @@
 'use client'
 
 import { Check } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 
 export default function CommunityNotificationsScreen() {
+  const router = useRouter()
+
+  // Handle mobile side back or browser back gesture
+  useEffect(() => {
+    const handlePopState = () => {
+      router.push('/dashboard/home')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
+
   const todayNotifications = [
     {
       avatar: '👩‍🦰',
@@ -99,7 +114,7 @@ export default function CommunityNotificationsScreen() {
   ]
 
   return (
-    <div className="flex flex-col bg-white dark:bg-gray-900 max-w-md mx-auto text-black dark:text-white">
+    <div className="flex flex-col bg-white dark:bg-gray-900 max-w-md mx-auto text-black dark:text-white ">
       {/* Today Section */}
       <div className="px-4 py-3">
         <h2 className="text-lg font-bold">Today</h2>

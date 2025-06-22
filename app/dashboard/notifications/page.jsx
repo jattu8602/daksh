@@ -1,6 +1,22 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
+
 export default function SchoolNotificationsScreen() {
+  const router = useRouter()
+
+  // Handle mobile side back or browser back gesture
+  useEffect(() => {
+    const handlePopState = () => {
+      router.push('/dashboard/home')
+    }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
   const notifications = [
     {
       icon: '👨‍🏫',
