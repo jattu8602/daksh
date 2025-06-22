@@ -2,6 +2,7 @@
 
 import { ChevronRight } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function MySpaceNotificationsScreen() {
   const router = useRouter()

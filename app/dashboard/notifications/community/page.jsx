@@ -2,6 +2,7 @@
 
 import { Check } from 'lucide-react'
 import { useRouter } from 'next/navigation'
+import { useEffect } from 'react'
 
 export default function CommunityNotificationsScreen() {
   const router = useRouter()
