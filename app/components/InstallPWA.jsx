@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { motion } from 'framer-motion'
+import { Download } from 'lucide-react'
+import Image from 'next/image'
 
 export default function InstallPWA() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -49,23 +52,55 @@ export default function InstallPWA() {
   if (!showInstallButton) return null;
 
   return (
-    <button
-      onClick={handleInstallClick}
-      className="fixed bottom-4 right-4 z-50 flex items-center gap-2 rounded-full bg-black px-4 py-2 text-sm font-medium text-white shadow-lg hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-    >
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        className="h-5 w-5"
-        viewBox="0 0 20 20"
-        fill="currentColor"
+    <div className="relative">
+      {/* Animated border effect */}
+      <div className="absolute inset-0 rounded-full overflow-hidden">
+        <div className="absolute inset-1 rounded-full border-6 border-transparent bg-gradient-to-r from-blue-800 via-purple-500 to-pink-900 animate-spin-slow opacity-100"></div>
+        <div className="absolute inset-1 rounded-full bg-white"></div>
+      </div>
+
+      {/* Main button */}
+      <motion.button
+        onClick={handleInstallClick}
+        className="relative flex items-center gap-3 rounded-full bg-[#FEFCFB] px-4 py-1 text-gray-800 shadow-xl transition-all duration-300 border-gray-100 z-10"
       >
-        <path
-          fillRule="evenodd"
-          d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-          clipRule="evenodd"
-        />
-      </svg>
-      Install App
-    </button>
-  );
+        {/* Install Icon - Static */}
+        <Download className="h-6 w-6 text-blue-600" />
+
+        {/* Daksh Text */}
+        <motion.span
+          className="text-lg font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          Daksh
+        </motion.span>
+
+        {/* Logo Image */}
+        <motion.div
+          className="relative rounded-full py-auto"
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{
+            delay: 0.4,
+            type: 'spring',
+            stiffness: 500,
+            damping: 15,
+          }}
+          whileHover={{
+            scale: 1.1,
+          }}
+        >
+          <Image
+            src="https://res.cloudinary.com/doxmvuss9/image/upload/v1750571602/link-generator/jh6vkpbei9latdbmnbdz.png"
+            alt="Daksh Logo"
+            width={30}
+            height={30}
+            className="object-cover rounded-full"
+          />
+        </motion.div>
+      </motion.button>
+    </div>
+  )
 }

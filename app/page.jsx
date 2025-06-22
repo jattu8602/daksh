@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import QRScanner from './components/QRScanner'
 import SplashScreen from './components/SplashScreen'
+import InstallPWA from './components/InstallPWA'
 import {
   loginStart,
   loginSuccess,
@@ -461,16 +462,24 @@ export default function StudentLogin() {
             </div>
 
             {/* Footer */}
-            <div className="text-center mt-6">
+            <div className="text-center mt-6 flex flex-col items-center justify-center gap-2">
               <p className="text-xs text-gray-500">
                 Secure student authentication system
               </p>
+
               <button
-                onClick={() => setShowMobileLogin(false)}
+                onClick={() =>
+                  router.push('https://daksh-madhyam.framer.website/')
+                }
                 className="text-indigo-600 hover:text-indigo-800 text-sm font-medium mt-2"
               >
                 Visit Website
               </button>
+
+              {/* Centered InstallPWA */}
+              <div>
+                <InstallPWA />
+              </div>
             </div>
           </div>
         </div>

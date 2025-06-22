@@ -71,7 +71,7 @@ export default function RootLayout({ children }) {
         <Providers>
           {children}
           <Toaster position="top-center" />
-          <InstallPWA />
+          {/* <InstallPWA /> */}
         </Providers>
       </body>
     </html>
