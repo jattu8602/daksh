@@ -318,6 +318,7 @@ const ContentPage = () => {
                           {(video.duration % 60).toString().padStart(2, '0')}
                         </div>
                       )}
+                      
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 md:p-4">
