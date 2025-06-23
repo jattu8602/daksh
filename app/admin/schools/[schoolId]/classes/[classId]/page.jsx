@@ -62,9 +62,10 @@ export default function ClassDetailPage() {
         console.log('Fetching class details for:', schoolId, classId)
         setIsLoading(true)
 
-        // Check URL for no-cache parameter FIRST
+        // Check URL for refresh or no-cache parameters FIRST
         const url = new URL(window.location.href)
-        const noCacheUrlParam = url.searchParams.get('no-cache') === 'true'
+        const noCacheUrlParam = url.searchParams.get('no-cache') === 'true';
+        const refreshUrlParam = url.searchParams.get('refresh') === 'true';
 
         // Check for cached data
         const cacheKey = `class:${schoolId}:${classId}`
@@ -74,9 +75,9 @@ export default function ClassDetailPage() {
           cachedTimestamp && Date.now() - parseInt(cachedTimestamp) < 60000 // 1 min cache
 
         // Determine if we should use cache or force refresh
-        // Prioritize noCacheUrlParam over cache validity
+        // Prioritize URL params over cache validity
         const shouldFetchFresh =
-          forceRefresh || noCacheUrlParam || !cachedData || !isCacheValid
+          forceRefresh || noCacheUrlParam || refreshUrlParam || !cachedData || !isCacheValid
 
         // Use cache if available, valid, and not fetching fresh
         if (!shouldFetchFresh) {
@@ -87,8 +88,8 @@ export default function ClassDetailPage() {
           setStudents(data.class.students || [])
           setIsLoading(false)
 
-          // Clean up no-cache parameter from URL after using cache
-          if (noCacheUrlParam && typeof window !== 'undefined') {
+          // Clean up no-cache/refresh parameter from URL after using cache
+          if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
             window.history.replaceState(
               {},
               document.title,
@@ -105,8 +106,8 @@ export default function ClassDetailPage() {
           localStorage.removeItem(cacheKey)
           localStorage.removeItem(`${cacheKey}:timestamp`)
 
-          // Clean up no-cache parameter from URL after clearing cache
-          if (noCacheUrlParam && typeof window !== 'undefined') {
+          // Clean up no-cache/refresh parameter from URL after clearing cache
+          if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
             window.history.replaceState(
               {},
               document.title,
@@ -171,8 +172,8 @@ export default function ClassDetailPage() {
                   Date.now().toString()
                 )
 
-                // Clean up no-cache parameter from URL after updating cache
-                if (noCacheUrlParam && typeof window !== 'undefined') {
+                // Clean up no-cache/refresh parameter from URL after updating cache
+                if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
                   window.history.replaceState(
                     {},
                     document.title,
@@ -790,12 +791,12 @@ export default function ClassDetailPage() {
       {/* Students Section */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h2 className="text-xl font-bold">Students</h2>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
-            onClick={() => setIsExportModalOpen(true)}
-            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+            onClick={() => setIsAddStudentModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
           >
-            Export Data
+            <span className="mr-2">+</span> Add Student
           </button>
           <Link
             href={`/admin/schools/${schoolId}/classes/${classId}/bulk`}
@@ -803,6 +804,18 @@ export default function ClassDetailPage() {
           >
             <span className="mr-2">+</span> Bulk Import Students
           </Link>
+           <Link href={`/admin/schools/${schoolId}/classes/${classId}/smart-bulk`} className="btn btn-accent">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+            </svg>
+            Smart Bulk Import
+          </Link>
+          <button
+            onClick={() => setIsExportModalOpen(true)}
+            className="inline-flex items-center justify-center rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50 focus:outline-none"
+          >
+            Export Data
+          </button>
         </div>
       </div>
 
