@@ -26,5 +26,8 @@ const config = {
     },
   },
   plugins: [],
+  experimental: {
+    useLightningCss: false, // <-- This disables the native LightningCSS
+  },
 }
 export default config
