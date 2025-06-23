@@ -14,7 +14,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
-  themeColor: '#ffffff',
+  themeColor: '#72717f',
 }
 
 export const metadata = {
@@ -48,11 +48,22 @@ export default function RootLayout({ children }) {
         <link rel="apple-touch-icon" href="/icons/apple-icon.png" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="theme-color" content="#ffffff" />
+        <meta
+          name="theme-color"
+          content="#72717f"
+          media="(prefers-color-scheme: light)"
+        />
+        <meta
+          name="theme-color"
+          content="#1a1a1a"
+          media="(prefers-color-scheme: dark)"
+        />
         <meta
           name="google-site-verification"
           content="1dmarru9P3gaivQMYG8pD5nVERSVBb7rr6ewslRmEiE"
         />
+        {/* add manifest */}
+        <link rel="manifest" href="/manifest.json" />
       </head>
       <body
         className={`${geist.className} min-h-screen bg-background antialiased`}
@@ -60,7 +71,7 @@ export default function RootLayout({ children }) {
         <Providers>
           {children}
           <Toaster position="top-center" />
-          <InstallPWA />
+          {/* <InstallPWA /> */}
         </Providers>
       </body>
     </html>

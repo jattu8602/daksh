@@ -6,11 +6,45 @@
             http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
 <!-- created with Free Online Sitemap Generator www.xml-sitemaps.com -->
 
-
 <url>
-  <loc>https://www.dakshedu.in/</loc>
-  <lastmod>2025-05-25T09:35:47+00:00</lastmod>
+<loc>https://www.dakshedu.in/</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>1.00</priority>
 </url>
-
+<url>
+<loc>https://www.dakshedu.in/about</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/services</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/updates</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/reviews</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/gallery</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/policy</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
+<url>
+<loc>https://www.dakshedu.in/contact</loc>
+<lastmod>2025-06-17T19:14:49+00:00</lastmod>
+<priority>0.80</priority>
+</url>
 
 </urlset>

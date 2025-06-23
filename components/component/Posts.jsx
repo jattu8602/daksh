@@ -1,15 +1,14 @@
 'use client'
 
-import {
-  Heart,
-  MessageCircle,
-  Share,
-  Send,
-  Bookmark,
-  MoreVertical,
-} from 'lucide-react'
+import { Heart, MessageCircle, Send, Bookmark } from 'lucide-react'
 import Image from 'next/image'
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect, useLayoutEffect } from 'react'
+import { useInView } from 'react-intersection-observer'
+import clsx from 'clsx'
+import { Button } from '@/components/ui/button' // Make sure this import is correct
+import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
+import Comments from '../comments'
+import ShareModal from '../share-modal'
 
 export default function Posts({
   posts,
@@ -18,38 +17,141 @@ export default function Posts({
   likedPosts,
   savedPosts,
   followedUsers,
+  openModal,
+  activeModal,
+  closeModal,
+  fetchMorePosts,
+  hasMore,
+  isLoading,
+  onScroll,
+  scrollPosition,
 }) {
+  const scrollRef = useRef(null)
+  const scrolledRef = useRef(false)
+
+  // Restore scroll position on mount, after the layout is painted
+  useLayoutEffect(() => {
+    // Check if we haven't already performed the initial scroll,
+    // and if we have posts and a scroll position to restore.
+    if (!scrolledRef.current && posts.length > 0 && scrollPosition > 0) {
+      // Defer the scroll until after the browser has painted the content
+      const timerId = setTimeout(() => {
+        if (scrollRef.current) {
+          scrollRef.current.scrollTop = scrollPosition
+          scrolledRef.current = true // Mark that we've restored the scroll
+        }
+      }, 100) // 100ms delay to allow for rendering
+
+      // Cleanup the timeout if the component unmounts
+      return () => clearTimeout(timerId)
+    }
+  }, [posts.length, scrollPosition])
+
+  const handleScroll = () => {
+    if (scrollRef.current) {
+      onScroll(scrollRef.current.scrollTop)
+    }
+  }
+
   return (
-    <div className="flex-1 overflow-auto">
-      {posts.map((post) => (
+    <div
+      ref={scrollRef}
+      onScroll={handleScroll}
+      className="flex-1 overflow-auto"
+    >
+      {posts.map((post, index) => (
         <PostItem
           key={post.id}
           post={post}
+          isLast={index === posts.length - 1}
+          fetchMorePosts={fetchMorePosts}
+          hasMore={hasMore}
           toggleLike={toggleLike}
           toggleSave={toggleSave}
           likedPosts={likedPosts}
           savedPosts={savedPosts}
           followedUsers={followedUsers}
+          onCommentClick={() => openModal('comments', post.id)}
+          onShareClick={() => openModal('share', post.id)}
         />
       ))}
+
+      {isLoading && <PostLoader />}
+      {!hasMore && posts.length > 0 && (
+        <div className="text-center py-4 text-gray-500">
+          You've reached the end.
+        </div>
+      )}
+      {!hasMore && posts.length === 0 && !isLoading && (
+        <div className="text-center py-4 text-gray-500">
+          No posts to show right now.
+        </div>
+      )}
+
+      {activeModal.type === 'comments' && (
+        <Comments
+          post={posts.find((p) => p.id === activeModal.postId)}
+          onClose={closeModal}
+        />
+      )}
+
+      {activeModal.type === 'share' && (
+        <ShareModal
+          post={posts.find((p) => p.id === activeModal.postId)}
+          onClose={closeModal}
+        />
+      )}
     </div>
   )
 }
 
+const PostLoader = () => (
+  <div className="space-y-6 p-4">
+    <div className="space-y-3">
+      <div className="flex items-center space-x-3">
+        <SkeletonCard className="w-10 h-10 rounded-full" />
+        <SkeletonText lines={1} className="flex-1" />
+      </div>
+      <SkeletonCard className="w-full h-64" />
+      <SkeletonText lines={2} />
+    </div>
+  </div>
+)
+
 function PostItem({
   post,
+  isLast,
+  fetchMorePosts,
+  hasMore,
   toggleLike,
   toggleSave,
   likedPosts,
   savedPosts,
   followedUsers,
+  onCommentClick,
+  onShareClick,
 }) {
+  const { ref, inView } = useInView({
+    threshold: 0.5,
+    triggerOnce: true,
+  })
+
+  useEffect(() => {
+    if (inView && isLast && hasMore) {
+      fetchMorePosts()
+    }
+  }, [inView, isLast, hasMore, fetchMorePosts])
+
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
+  const [isFollowed, setIsFollowed] = useState(
+    followedUsers.includes(post.username)
+  )
+  const [isExpanded, setIsExpanded] = useState(false)
+
   const images = Array.isArray(post.images) ? post.images : [post.images]
 
   const touchStartX = useRef(null)
   const touchEndX = useRef(null)
-
   const mouseDownX = useRef(null)
   const mouseUpX = useRef(null)
 
@@ -104,8 +206,35 @@ function PostItem({
   }
 
   return (
-    <div className="border-b border-gray-100 pb-4">
-      {/* Image Slider */}
+    <div ref={ref} className="border-gray-100 pb-4">
+      {/* Header with Avatar + Username + Follow Button */}
+      <div className="flex items-center justify-between px-4 py-2">
+        <div className="flex items-center space-x-3">
+          <img
+            src={post.avatar || '/placeholder.png'}
+            alt={post.username}
+            className="w-8 h-8 rounded-full"
+          />
+          <span className="font-medium text-sm text-black dark:text-white">
+            {post.username}
+          </span>
+        </div>
+        <Button
+          variant="outline"
+          size="sm"
+          className={clsx(
+            'border text-sm px-4 py-1.5 rounded-md transition-colors',
+            isFollowed
+              ? 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:bg-black dark:text-white dark:border-gray-700 dark:hover:bg-gray-900'
+              : 'bg-black text-white border-gray-700 hover:bg-gray-800 dark:bg-white dark:text-black dark:border-gray-300 dark:hover:bg-gray-200'
+          )}
+          onClick={() => setIsFollowed((prev) => !prev)}
+        >
+          {isFollowed ? 'Following' : 'Follow'}
+        </Button>
+      </div>
+
+      {/* Image / Video Slider */}
       <div
         className="w-full overflow-hidden relative aspect-square"
         onTouchStart={onTouchStart}
@@ -121,17 +250,27 @@ function PostItem({
             width: `${images.length * 100}%`,
           }}
         >
-          {images.map((img, idx) => (
-            <Image
-              key={idx}
-              src={img}
-              alt={`Slide ${idx + 1}`}
-              width={500}
-              height={500}
-              className="w-full flex-shrink-0 object-cover aspect-square select-none"
-              draggable={false}
-            />
-          ))}
+          {images.map((img, idx) =>
+            post.mediaType === 'video' ? (
+              <video
+                key={idx}
+                src={img}
+                controls
+                className="w-full flex-shrink-0 object-cover aspect-square select-none"
+                playsInline
+              />
+            ) : (
+              <Image
+                key={idx}
+                src={img}
+                alt={`Slide ${idx + 1}`}
+                width={500}
+                height={500}
+                className="w-full flex-shrink-0 object-cover aspect-square select-none"
+                draggable={false}
+              />
+            )
+          )}
         </div>
 
         {/* Dots */}
@@ -149,26 +288,6 @@ function PostItem({
             ))}
           </div>
         )}
-
-        {/* Top Overlay */}
-        <div className="absolute top-0 left-0 w-full flex items-center justify-between px-4 py-2 text-white z-10">
-          <div className="flex items-center space-x-2">
-            <img
-              src={post.avatar || '/placeholder.png'}
-              alt={post.username}
-              className="w-8 h-8 rounded-full"
-            />
-            <span className="font-medium text-sm">{post.username}</span>
-          </div>
-          <div className="flex items-center space-x-3">
-            {!followedUsers.includes(post.username) && (
-              <button className="text-xs bg-white text-black px-3 py-1 rounded-full font-medium hover:bg-gray-200 transition">
-                Follow
-              </button>
-            )}
-            <MoreVertical size={20} />
-          </div>
-        </div>
       </div>
 
       {/* Actions */}
@@ -178,17 +297,31 @@ function PostItem({
             <Heart
               size={24}
               fill={likedPosts.includes(post.id) ? 'red' : 'none'}
-              color={likedPosts.includes(post.id) ? 'red' : 'black'}
+              className={
+                likedPosts.includes(post.id)
+                  ? 'text-red-500'
+                  : 'text-black dark:text-white'
+              }
             />
           </button>
-          <MessageCircle size={24} />
-          <Send size={24} />
+          <button onClick={onCommentClick}>
+            <MessageCircle size={24} className="text-black dark:text-white" />
+          </button>
+          <button onClick={onShareClick}>
+            <Send size={24} className="text-black dark:text-white" />
+          </button>
         </div>
         <button onClick={() => toggleSave(post.id)}>
           <Bookmark
             size={24}
-            fill={savedPosts.includes(post.id) ? 'black' : 'none'}
-            color={savedPosts.includes(post.id) ? 'black' : 'black'}
+            fill="currentColor"
+            strokeWidth={1.5}
+            className={clsx(
+              'transition-colors duration-200',
+              savedPosts.includes(post.id)
+                ? 'text-gray-600 dark:text-gray-300 stroke-gray-600 dark:stroke-gray-300'
+                : 'text-transparent stroke-black dark:stroke-white'
+            )}
           />
         </button>
       </div>
@@ -196,19 +329,33 @@ function PostItem({
       {/* Post Info */}
       <div className="px-4 pt-2">
         <p className="font-medium">{post.likes} Likes</p>
+        <p className="font-medium mt-1">{post.title}</p>
         <p className="text-sm">
-          <span className="font-medium">{post.username}</span> {post.caption}
+          {isExpanded
+            ? post.caption
+            : `${post.caption.substring(0, 70)}${
+                post.caption.length > 70 ? '...' : ''
+              }`}
         </p>
-        <div className="flex flex-wrap gap-2 mt-1">
-          {post.hashtags.map((tag, i) => (
-            <span
-              key={i}
-              className="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-medium"
+        <div className="flex flex-wrap items-center gap-2 mt-1">
+          {(isExpanded ? post.hashtags : post.hashtags.slice(0, 3)).map(
+            (tag, i) => (
+              <span
+                key={i}
+                className="bg-blue-100 text-blue-700 text-[10px] px-2 py-[2px] rounded-full font-medium"
+              >
+                #{tag}
+              </span>
+            )
+          )}
+          {(post.caption.length > 70 || post.hashtags.length > 3) && (
+            <button
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="text-sm text-gray-500 cursor-pointer"
             >
-              #{tag}
-            </span>
-          ))}
-          <span className="text-blue-700 text-sm cursor-pointer">more</span>
+              {isExpanded ? 'show less' : '...more'}
+            </button>
+          )}
         </div>
         <p className="text-gray-400 text-xs mt-1">{post.time}</p>
       </div>

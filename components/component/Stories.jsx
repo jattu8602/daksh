@@ -1,11 +1,30 @@
-export default function Stories({ stories }) {
+'use client'
+
+import StoryViewer from '../story-viewer'
+
+export default function Stories({
+  stories,
+  onStoryClick,
+  activeModal,
+  closeModal,
+}) {
+  const handleStoryClick = (story) => {
+    if (story.hasStory) {
+      onStoryClick()
+    }
+  }
+
   return (
     <div>
       {/* Stories */}
-      <div className=" pt-4 pb-1">
+      <div className="pb-2">
         <div className="flex space-x-2 overflow-x-auto hide-scrollbar">
           {stories.map((story) => (
-            <div key={story.id} className="flex flex-col items-center first:ml-3">
+            <div
+              key={story.id}
+              className="flex flex-col items-center first:ml-3 cursor-pointer"
+              onClick={() => handleStoryClick(story)}
+            >
               <div className="relative">
                 <div
                   className={`w-20 h-20 rounded-full flex items-center justify-center ${
@@ -14,7 +33,7 @@ export default function Stories({ stories }) {
                       : ''
                   }`}
                 >
-                  <div className="bg-white rounded-full p-[3px] w-full h-full flex items-center justify-center">
+                  <div className="bg-white dark:bg-black rounded-full p-[3px] w-full h-full flex items-center justify-center">
                     <img
                       src={story.avatar || '/placeholder.svg'}
                       alt={story.username}
@@ -30,6 +49,7 @@ export default function Stories({ stories }) {
           ))}
         </div>
       </div>
+      {activeModal.type === 'story' && <StoryViewer onClose={closeModal} />}
     </div>
   )
 }

@@ -1,296 +1,150 @@
 'use client'
 
-import React, {
-  useState,
-  useEffect,
-  useMemo,
-  memo,
-  lazy,
-  Suspense,
-} from 'react'
-import { Search, Home, PlusSquare, Play, User } from 'lucide-react'
-import { motion } from 'framer-motion'
-import Link from 'next/link'
 import Image from 'next/image'
-import {
-  PageLoader,
-  ComponentLoader,
-  SkeletonCard,
-  GridSkeleton,
-} from '@/components/ui/loading'
+import { Play, MoreHorizontal } from 'lucide-react'
 
-// Memoized search item component for better performance
-const SearchItem = memo(({ item, idx }) => (
-  <motion.div
-    className="relative aspect-square"
-    initial={{ opacity: 0, scale: 0.9 }}
-    animate={{ opacity: 1, scale: 1 }}
-    transition={{ duration: 0.3, delay: 0.2 + idx * 0.02 }}
-    whileHover={{ scale: 0.98 }}
-  >
-    <Image
-      src={item.image}
-      alt={`Result ${item.id}`}
-      width={200}
-      height={200}
-      className="w-full h-full object-cover"
-      loading="lazy"
-      placeholder="blur"
-      blurDataURL="data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAYEBQYFBAYGBQYHBwYIChAKCgkJChQODwwQFxQYGBcUFhYaHSUfGhsjHBYWICwgIyYnKSopGR8tMC0oMCUoKSj/2wBDAQcHBwoIChMKChMoGhYaKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCgoKCj/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAv/xAAhEAACAQMDBQAAAAAAAAAAAAABAgMABAUGIWGRkqGx0f/EABUBAQEAAAAAAAAAAAAAAAAAAAMF/8QAGhEAAgIDAAAAAAAAAAAAAAAAAAECEgMRkf/aAAwDAQACEQMRAD8AltJagyeH0AthI5xdrLcNM91BF5pX2HaH9bcfaSXWGaRmknyBYkYZmClCw/qDKIz5wLl5vCGJsQnR1SXKiFFrEIUKKYg/DM8hNFgE1LGnQhwPP1FmgN5/U4SPHD9qGfOOW0IKS3YiVb0ZLIQZE1ks7Uif20rVOp2jmlDjO8IjzJNSrYH2rJMKnNaC4MDQzj1zMRIKtOzq/0vUz+YOxGlXk3Wx8zQ5+3KOjJJKvKr/xAAfEAACAgIDAQEBAAAAAAAAAAABAgAREgMhMUFRYYH/2gAIAQEAAT8A3Y4C2yqEYqVDAMv3AsTQq2AxjBCkMrKgAZrQH8RofoFhb0mEYXOh1KjQFMqDcJM0qhYMh3jG2jOPw2KuMqKmM8iZHF1QIaXLFHUGOjKSDm4gZlhHYOFv/9k="
-    />
-
-    {item.type === 'video' && (
-      <motion.div
-        className="absolute top-2 right-2 bg-black bg-opacity-70 rounded-full w-6 h-6 flex items-center justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.3 + idx * 0.02 }}
-      >
-        <Play size={12} className="text-white" />
-      </motion.div>
-    )}
-
-    {item.type === 'carousel' && (
-      <motion.div
-        className="absolute top-2 right-2 bg-black bg-opacity-70 rounded-full w-6 h-6 flex items-center justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.3 + idx * 0.02 }}
-      >
-        {/* Carousel SVG */}
-      </motion.div>
-    )}
-
-    {item.hasQuestion && (
-      <motion.div
-        className="absolute top-2 right-2 bg-black bg-opacity-70 rounded-full w-6 h-6 flex items-center justify-center"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.3 + idx * 0.02 }}
-      >
-        <span className="text-white text-xs font-bold">?</span>
-      </motion.div>
-    )}
-  </motion.div>
-))
-
-SearchItem.displayName = 'SearchItem'
-
-export default function SearchScreen() {
-  const [activeTab, setActiveTab] = useState('all')
-  const [searchValue, setSearchValue] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [itemsLoaded, setItemsLoaded] = useState(false)
-
-  const tabs = [
-    { id: 'all', name: 'All' },
-    { id: 'posts', name: 'Posts' },
-    { id: 'shots', name: 'Shots' },
-    { id: 'videos', name: 'Videos' },
-    { id: 'audios', name: 'Audios' },
-    { id: 'docs', name: 'Docs' },
-    { id: 'books', name: 'Books' },
+export default function AllContent() {
+  const randomShots = [
+    'Exploring Atoms',
+    'Gravity Demo',
+    'Robotics Lab',
+    'Energy Conservation',
+    'Photosynthesis Explained',
+    'Rocket Launch Project',
+    'Microscope Wonders',
+    'DNA Structure',
+    'Acid-Base Reaction',
+    'Magnetism in Action',
+    'The Water Cycle',
+    'Newton’s Cradle',
+    'Drone Test Flight',
+    'VR Learning',
+    'Volcano Model Eruption',
+    'Chemistry Lab Setup',
+    'Artificial Intelligence Demo',
+    'Circuit Building',
+    'Solar System Display',
+    'Cloud Computing Workshop',
+    'Bridge Strength Test',
+    'DNA Extraction Lab',
+    'Physics Pendulum',
+    'Environmental Awareness Video',
+    'Solar Cooker Test',
   ]
 
-  const searchItems = useMemo(
-    () => [
-      {
-        id: '1',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '2',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '3',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '4',
-        image: '/placeholder.svg?height=300&width=200',
-        type: 'video',
-      },
-      {
-        id: '5',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '6',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '7',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '8',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'video',
-      },
-      {
-        id: '9',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '10',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'carousel',
-      },
-      {
-        id: '11',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '12',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'video',
-      },
-      {
-        id: '13',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '14',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '15',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'video',
-      },
-      {
-        id: '16',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-      },
-      {
-        id: '17',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'image',
-        hasQuestion: true,
-      },
-      {
-        id: '18',
-        image: '/placeholder.svg?height=200&width=200',
-        type: 'video',
-      },
-    ],
-    []
-  )
+  const thumbnails = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1501594907352-04cda38ebc29?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1518837695005-2083093ee35b?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1447752875215-b2761acb3c5d?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1500382017468-9049fed747ef?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1519904981063-b0cf448d479e?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1506197603052-3cc9c3a201bd?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1451187580459-43490279c0fa?w=400&h=600&fit=crop&crop=center',
+    'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=600&fit=crop&crop=center',
+    'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=600&fit=crop&crop=center',
+    'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=600&fit=crop&crop=center',
+    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1581833971358-2c8b550f87b3?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1446776653964-20c1d3a81b06?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1448375240586-882707db888b?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1480714378408-67cf0d13bc1f?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1518717758536-85ae29035b6d?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1583337130417-3346a1be7dee?w=400&h=400&fit=crop',
+    'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=400&fit=crop',
+  ]
 
-  // Filtered search items based on active tab
-  const filteredItems = useMemo(() => {
-    if (activeTab === 'all') return searchItems
-    return searchItems.filter((item) => {
-      if (activeTab === 'videos') return item.type === 'video'
-      if (activeTab === 'posts')
-        return item.type === 'image' && !item.hasQuestion
-      // Add other filtering logic as needed
-      return searchItems
-    })
-  }, [searchItems, activeTab])
-
-  // Simulate loading sequence
-  useEffect(() => {
-    const loadSequence = async () => {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      setIsLoading(false)
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      setItemsLoaded(true)
+  const generateRandomContent = (count = 50) => {
+    const items = []
+    for (let i = 0; i < count; i++) {
+      const isShot = Math.random() < 0.4 // 40% chance for 'shot'
+      const thumb = thumbnails[i % thumbnails.length]
+      if (isShot) {
+        const title = randomShots[i % randomShots.length]
+        items.push({ type: 'shot', title, thumbnail: thumb })
+      } else {
+        items.push({ type: 'post', thumbnail: thumb })
+      }
     }
-
-    loadSequence()
-  }, [])
-
-  if (isLoading) {
-    return <PageLoader message="Exploring content..." />
+    return items
   }
 
+  const content = [
+    // original few
+    {
+      type: 'shot',
+      title: 'Cells in the blood',
+      thumbnail:
+        'https://images.unsplash.com/photo-1559757148-5c350d0d3c56?w=400&h=600&fit=crop&crop=center',
+    },
+    {
+      type: 'post',
+      thumbnail:
+        'https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=400&h=400&fit=crop',
+    },
+    {
+      type: 'shot',
+      title: 'Science Fair 2023',
+      thumbnail:
+        'https://images.unsplash.com/photo-1559757175-0eb30cd8c063?w=400&h=600&fit=crop&crop=center',
+    },
+    {
+      type: 'post',
+      thumbnail:
+        'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400&h=400&fit=crop',
+    },
+    // generated batch
+    ...generateRandomContent(50),
+  ]
+
   return (
-    <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
-      {/* Search Bar */}
-      <motion.div
-        className="p-4"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-center bg-gray-100 rounded-lg px-3 py-2">
-          <Search size={18} className="text-gray-500 mr-2" />
-          <input
-            type="text"
-            placeholder="Search by keyword, topic or subject"
-            className="bg-transparent border-none outline-none w-full text-sm"
-            value={searchValue}
-            onChange={(e) => setSearchValue(e.target.value)}
-          />
-          <button className="text-gray-500">
-            {/* Search Settings Icon SVG */}
-          </button>
-          <button className="text-gray-500 ml-2">
-            {/* Filter Icon SVG */}
-          </button>
-        </div>
-      </motion.div>
-
-      {/* Tabs */}
-      <motion.div
-        className="flex space-x-2 px-5 overflow-x-auto hide-scrollbar"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
-      >
-        {tabs.map((tab) => (
-          <motion.button
-            key={tab.id}
-            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap ${
-              activeTab === tab.id
-                ? 'bg-purple-100 text-purple-600'
-                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
-            }`}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setActiveTab(tab.id)}
-          >
-            {tab.name}
-          </motion.button>
-        ))}
-      </motion.div>
-
-      {/* Search Results */}
-      <div className="flex-1 overflow-auto mt-4">
-        <ComponentLoader
-          isLoading={!itemsLoaded}
-          skeleton={<GridSkeleton items={18} />}
+    <div className="grid grid-cols-3 gap-2 px-2 py-3 auto-rows-[120px]">
+      {content.map((item, index) => (
+        <div
+          key={index}
+          className={`relative bg-white rounded-xl overflow-hidden shadow group ${
+            item.type === 'shot' ? 'row-span-2' : 'row-span-1'
+          }`}
         >
-          <motion.div
-            className="grid grid-cols-3 gap-[2px]"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5, delay: 0.2 }}
-          >
-            {filteredItems.map((item, idx) => (
-              <SearchItem key={item.id} item={item} idx={idx} />
-            ))}
-          </motion.div>
-        </ComponentLoader>
-      </div>
+          <Image
+            src={item.thumbnail || '/placeholder.svg'}
+            alt={item.title || `Post ${index + 1}`}
+            fill
+            className="object-cover"
+            unoptimized
+          />
+
+          {/* Overlay on hover */}
+          <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
+
+          {/* Icons */}
+          {item.type === 'shot' ? (
+            <>
+              <div className="absolute top-2 left-2 z-10">
+                <div className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center">
+                  <Play className="w-4 h-4 text-white" />
+                </div>
+              </div>
+              <p className="absolute bottom-2 left-2 text-sm font-semibold text-white z-10">
+                {item.title}
+              </p>
+            </>
+          ) : (
+            <div className="absolute top-2 right-2 z-10">
+              <div className="w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
+                <MoreHorizontal className="w-4 h-4 text-white" />
+              </div>
+            </div>
+          )}
+        </div>
+      ))}
     </div>
   )
 }

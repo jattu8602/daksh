@@ -1,32 +1,19 @@
 'use client'
 
+import { useState, useEffect, useCallback } from 'react'
+import { useSelector, useDispatch } from 'react-redux'
+import { fetchPosts, setScrollPosition } from '@/app/store/features/feedSlice'
+import Header from '@/components/component/Header'
 import {
-  Heart,
-  MessageCircle,
-  Share,
-  Bookmark,
-  Send,
-  Home,
-  Search,
-  PlusSquare,
-  Play,
-  User,
-} from 'lucide-react'
-import Link from 'next/link'
-import { useState, useEffect, lazy, Suspense } from 'react'
-import Image from 'next/image'
-import {
-  PageLoader,
   ComponentLoader,
   SkeletonCard,
   SkeletonText,
 } from '@/components/ui/loading'
-import { dummyPosts, followedUsersDummy } from './dummyDataFile'
+// import { dummyPosts, followedUsersDummy } from './dummyDataFile'
 
 // Lazy load components for better performance
-const Stories = lazy(() => import('@/components/component/Stories'))
-const Header = lazy(() => import('@/components/component/Header'))
-const Posts = lazy(() => import('@/components/component/Posts'))
+import Stories from '@/components/component/Stories'
+import Posts from '@/components/component/Posts'
 
 // Skeleton components for loading states
 const StoriesSkeleton = () => (
@@ -56,151 +43,183 @@ const PostsSkeleton = () => (
 )
 
 export default function FeedScreen() {
-  const [isLoading, setIsLoading] = useState(true)
-  const [componentsLoaded, setComponentsLoaded] = useState({
-    header: false,
-    stories: false,
-    posts: false,
-  })
-
-  // Stories data - simplified without interfaces
-  const [stories, setStories] = useState([
-    {
-      id: '1',
-      username: 'justin',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: false,
-    },
-    {
-      id: '2',
-      username: 'karenme',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: true,
-    },
-    {
-      id: '3',
-      username: 'zackjohn',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: false,
-    },
-    {
-      id: '4',
-      username: 'Starc',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: true,
-    },
-    {
-      id: '5',
-      username: 'kiron_d',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: false,
-    },
-    {
-      id: '6',
-      username: 'kiron_d',
-      avatar: '/placeholder.png',
-      hasStory: true,
-      isWatched: false,
-    },
-  ])
-
-  // Posts data - simplified without interfaces
-  const [posts, setPosts] = useState([
-    {
-      id: '1',
-      username: 'sachin.sir_history',
-      avatar: '/placeholder.svg?height=40&width=40',
-      image: '/images/books-image.png',
-      caption: 'Books are the best friends',
-      likes: 100,
-      comments: 16,
-      time: '30 minutes ago',
-      hashtags: ['hardwork', 'studymotivation'],
-    },
-  ])
-
+  const dispatch = useDispatch()
+  const { posts, hasMore, isLoading, error, scrollPosition } = useSelector(
+    (state) => state.feed
+  )
+  const [stories, setStories] = useState([])
+  const [followedUsers, setFollowedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
 
-  const toggleLike = (postId) => {
-    if (likedPosts.includes(postId)) {
-      setLikedPosts(likedPosts.filter((id) => id !== postId))
-    } else {
-      setLikedPosts([...likedPosts, postId])
+  const [activeModal, setActiveModal] = useState({ type: null, postId: null })
+
+  // Centralized history management for modals
+  useEffect(() => {
+    const handlePopState = () => {
+      // When user navigates back (e.g., swipe), close any active modal.
+      setActiveModal({ type: null, postId: null })
     }
+
+    window.addEventListener('popstate', handlePopState)
+    return () => {
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [])
+
+  const openModal = (type, postId = null) => {
+    if (activeModal.type) return // Prevent opening multiple modals
+
+    // Push a state to the history to handle back navigation
+    window.history.pushState({ modal: type }, '', window.location.href)
+    setActiveModal({ type, postId })
+  }
+
+  const closeModal = () => {
+    // Go back in history, which triggers popstate and closes the modal
+    window.history.back()
+  }
+
+  useEffect(() => {
+    if (error) {
+      console.error('Error fetching posts:', error)
+    }
+  }, [error])
+
+  // Fetch initial posts only if the list is empty
+  useEffect(() => {
+    if (posts.length === 0) {
+      dispatch(fetchPosts())
+    }
+  }, [dispatch, posts.length])
+
+  // Fetch stories (assuming this is local to the home page)
+  useEffect(() => {
+    const fetchStories = async () => {
+      const storiesData = await Promise.resolve([
+        {
+          id: '1',
+          username: 'justin',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '2',
+          username: 'karenme',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: true,
+        },
+        {
+          id: '3',
+          username: 'zackjohn',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '4',
+          username: 'Starc',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: true,
+        },
+        {
+          id: '5',
+          username: 'kiron_d',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+        {
+          id: '6',
+          username: 'kiron_d',
+          avatar: '/placeholder.png',
+          hasStory: true,
+          isWatched: false,
+        },
+      ])
+      setStories(storiesData)
+    }
+    fetchStories()
+  }, [])
+
+  const toggleLike = (postId) => {
+    setLikedPosts((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
+        : [...prev, postId]
+    )
   }
 
   const toggleSave = (postId) => {
-    if (savedPosts.includes(postId)) {
-      setSavedPosts(savedPosts.filter((id) => id !== postId))
-    } else {
-      setSavedPosts([...savedPosts, postId])
+    setSavedPosts((prev) =>
+      prev.includes(postId)
+        ? prev.filter((id) => id !== postId)
+        : [...prev, postId]
+    )
+  }
+
+  const debounce = (func, delay) => {
+    let timeoutId
+    return (...args) => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(() => {
+        func.apply(this, args)
+      }, delay)
     }
   }
 
-  // Simulate component loading with staggered timing
-  useEffect(() => {
-    const loadSequence = async () => {
-      // Simulate initial loading
-      await new Promise((resolve) => setTimeout(resolve, 300))
-      setComponentsLoaded((prev) => ({ ...prev, header: true }))
+  // Debounced scroll handler
+  const handleScroll = useCallback(
+    debounce((position) => {
+      dispatch(setScrollPosition(position))
+    }, 200),
+    [dispatch]
+  )
 
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      setComponentsLoaded((prev) => ({ ...prev, stories: true }))
-
-      await new Promise((resolve) => setTimeout(resolve, 200))
-      setComponentsLoaded((prev) => ({ ...prev, posts: true }))
-
-      setIsLoading(false)
+  const handleFetchMorePosts = () => {
+    if (hasMore && !isLoading) {
+      dispatch(fetchPosts())
     }
-
-    loadSequence()
-  }, [])
-
-  // Show full page loader initially
-  if (isLoading && !componentsLoaded.header) {
-    return <PageLoader message="Loading your feed..." />
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-white max-w-md mx-auto">
+    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
+      <Header />
       <ComponentLoader
-        isLoading={!componentsLoaded.header}
-        skeleton={<SkeletonCard className="h-16 m-4" />}
-      >
-        <Suspense fallback={<SkeletonCard className="h-16 m-4" />}>
-          <Header />
-        </Suspense>
-      </ComponentLoader>
-
-      <ComponentLoader
-        isLoading={!componentsLoaded.stories}
+        isLoading={stories.length === 0}
         skeleton={<StoriesSkeleton />}
       >
-        <Suspense fallback={<StoriesSkeleton />}>
-          <Stories stories={stories} likedPosts={likedPosts} />
-        </Suspense>
+        <Stories
+          stories={stories}
+          onStoryClick={() => openModal('story')}
+          activeModal={activeModal}
+          closeModal={closeModal}
+        />
       </ComponentLoader>
 
       <ComponentLoader
-        isLoading={!componentsLoaded.posts}
+        isLoading={posts.length === 0 && hasMore}
         skeleton={<PostsSkeleton />}
       >
-        <Suspense fallback={<PostsSkeleton />}>
-          <Posts
-            posts={dummyPosts}
-            likedPosts={likedPosts}
-            savedPosts={savedPosts}
-            toggleLike={toggleLike}
-            toggleSave={toggleSave}
-            followedUsers={followedUsersDummy}
-          />
-        </Suspense>
+        <Posts
+          posts={posts}
+          likedPosts={likedPosts}
+          savedPosts={savedPosts}
+          toggleLike={toggleLike}
+          toggleSave={toggleSave}
+          followedUsers={followedUsers}
+          openModal={openModal}
+          activeModal={activeModal}
+          closeModal={closeModal}
+          fetchMorePosts={handleFetchMorePosts}
+          hasMore={hasMore}
+          isLoading={isLoading}
+          onScroll={handleScroll}
+          scrollPosition={scrollPosition}
+        />
       </ComponentLoader>
     </div>
   )
