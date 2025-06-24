@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "xyz.appmaker.cagvbl",
+      "sha256_cert_fingerprints": [
+        "47:FF:DE:95:FB:D5:4D:79:C7:3A:E8:B9:34:A6:94:01:4B:22:14:62:4B:62:A3:01:B4:94:66:89:C1:76:A6:80"
+      ]
+    }
+  }
+]
