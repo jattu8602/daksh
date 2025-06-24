@@ -213,3 +213,18 @@
 .animate-spin-slow {
   animation: spin-slow 6s linear infinite;
 }
+
+
+
+/* Safe Area Top Padding for Notch (Fix red line issue) */
+body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: env(safe-area-inset-top);
+  width: 100%;
+  background-color: #B60D0E; /* Your red background */
+  z-index: 9999;
+  pointer-events: none;
+}
