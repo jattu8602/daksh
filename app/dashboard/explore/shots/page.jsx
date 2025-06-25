@@ -80,7 +80,7 @@ export default function ShotsContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-2 px-2 py-2">
+    <div className="grid grid-cols-3 gap-1 px-1">
       {videos.map((video) => (
         <div
           key={video.id}

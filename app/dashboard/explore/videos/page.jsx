@@ -66,28 +66,48 @@ export default function VideosContent() {
         'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop',
     },
     {
-      id: 11,
-      title: 'Human Expressions',
-      thumbnail:
-        'https://images.unsplash.com/photo-1494790108755-2616c9c0e8d3?w=400&h=400&fit=crop',
-    },
-    {
       id: 12,
       title: 'Wildlife in Africa',
       thumbnail:
         'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
     },
+    // repeat the above 10 videos increment the id
+    {
+      id: 13,
+      title: 'Wildlife in Africa',
+      thumbnail:
+        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    },
+    {
+      id: 14,
+      title: 'Wildlife in Africa',
+      thumbnail:
+        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    },
+    {
+      id: 15,
+      title: 'Wildlife in Africa',
+      thumbnail:
+        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    },
+    {
+      id: 16,
+      title: 'Wildlife in Africa',
+      thumbnail:
+        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
+    },
+
   ]
 
 
   return (
-    <div className="grid grid-cols-3 gap-2 px-2 py-2">
+    <div className="grid grid-cols-3 gap-1 px-1">
       {videos.map((video) => (
         <div
           key={video.id}
           className="bg-white rounded-xl overflow-hidden shadow relative group"
         >
-          <div className="relative h-60 w-full">
+          <div className="relative h-66 w-full">
             <Image
               src={video.thumbnail || '/placeholder.svg'}
               alt={video.title}

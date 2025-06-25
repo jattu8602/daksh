@@ -105,7 +105,7 @@ export default function AllContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-2 px-2 py-3 auto-rows-[120px]">
+    <div className="grid grid-cols-3 gap-1 px-1 auto-rows-[130px]">
       {content.map((item, index) => (
         <div
           key={index}
@@ -138,9 +138,9 @@ export default function AllContent() {
             </>
           ) : (
             <div className="absolute top-2 right-2 z-10">
-              <div className="w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
+              {/* <div className="w-6 h-6 bg-black/60 rounded-full flex items-center justify-center">
                 <MoreHorizontal className="w-4 h-4 text-white" />
-              </div>
+              </div> */}
             </div>
           )}
         </div>
