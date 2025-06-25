@@ -131,3 +131,17 @@ This is the final step! The specifics will change depending on your cloud provid
 "Run it on port 3000."
 The cloud provider will then go to the registry, pull your image, and run it for you, making it available to the world.
 And that's it! You've successfully taken your application from local development to being ready for a cloud deployment using Docker. I hope this "kid-friendly" guide was helpful! Let me know if you have any more questions.
+
+
+
+
+
+
+
+
+
+
+## teleport inside container
+```
+docker exec -it daksh-app-1 sh
+```
