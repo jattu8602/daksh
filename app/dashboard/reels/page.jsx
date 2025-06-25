@@ -25,6 +25,38 @@ import {
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
 
+// --- START: localStorage Caching ---
+const REELS_CACHE_KEY = 'daksh_reels_cache'
+const MAX_CACHED_REELS = 5 // Keep up to 20 most recent reels in cache
+
+const getCachedReels = () => {
+  if (typeof window === 'undefined') return []
+  try {
+    const cachedData = localStorage.getItem(REELS_CACHE_KEY)
+    if (cachedData) {
+      const reels = JSON.parse(cachedData)
+      if (Array.isArray(reels)) {
+        return reels
+      }
+    }
+  } catch (error) {
+    console.error('Error reading reels cache:', error)
+    localStorage.removeItem(REELS_CACHE_KEY)
+  }
+  return []
+}
+
+const saveReelsToCache = (reels) => {
+  if (typeof window === 'undefined') return
+  try {
+    const reelsToCache = reels.slice(-MAX_CACHED_REELS)
+    localStorage.setItem(REELS_CACHE_KEY, JSON.stringify(reelsToCache))
+  } catch (error) {
+    console.error('Error saving reels to cache:', error)
+  }
+}
+// --- END: localStorage Caching ---
+
 const commentsData = [
   {
     id: 1,
@@ -163,9 +195,20 @@ export default function InstagramReels() {
   const preloadCache = useRef(new Set())
   const isInitialLoad = useRef(true)
 
+  const reelsRef = useRef(reels)
+  reelsRef.current = reels
+
   // Motion values for smooth scrolling
   const y = useMotionValue(0)
   const isDragging = useRef(false)
+
+  // --- START: Cache reels whenever the list is updated ---
+  useEffect(() => {
+    if (reels.length > 0) {
+      saveReelsToCache(reels)
+    }
+  }, [reels])
+  // --- END: Cache reels whenever the list is updated ---
 
   // Aggressive preloading function
   const preloadVideos = useCallback((reelsList) => {
@@ -194,7 +237,7 @@ export default function InstagramReels() {
   const fetchMentorShots = useCallback(
     async (limit = 3, isRefresh = false) => {
       try {
-        if (!isRefresh) setLoading(true)
+        if (!isRefresh && reelsRef.current.length === 0) setLoading(true)
         setError(null)
 
         console.log('Fetching mentor shots:', { limit, isRefresh })
@@ -227,9 +270,14 @@ export default function InstagramReels() {
             setReels(newReels)
             setCurrentReel(0)
           } else {
-            setReels((prev) =>
-              isInitialLoad.current ? newReels : [...prev, ...newReels]
-            )
+            setReels((prev) => {
+              const combined = [...prev, ...newReels]
+              // Remove duplicates, keeping the one from newReels if any
+              const uniqueReels = combined.filter(
+                (v, i, a) => a.findIndex((t) => t.id === v.id) === i
+              )
+              return uniqueReels
+            })
           }
 
           // Preload videos immediately
@@ -301,12 +349,20 @@ export default function InstagramReels() {
 
   // Fetch initial reels on component mount - start immediately
   useEffect(() => {
-    fetchMentorShots(1) // Load 3 initial reels for better experience
-  }, [fetchMentorShots])
+    const cachedReels = getCachedReels()
+    if (cachedReels.length > 0) {
+      console.log('Loaded reels from cache:', cachedReels.length)
+      setReels(cachedReels)
+      setLoading(false)
+    } else {
+      fetchMentorShots(1) // Load 1 initial reel for better experience
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   // Aggressive preloading when user is near the end
   useEffect(() => {
-    if (reels.length > 0 && currentReel >= reels.length - 3) {
+    if (reels.length > 0 && currentReel >= reels.length - 2) {
       loadMoreReels()
     }
   }, [currentReel, reels.length, loadMoreReels])
