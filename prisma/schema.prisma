@@ -72,9 +72,9 @@ model Class {
   name            String
   schoolId        String?   @db.ObjectId
   isCommon        Boolean   @default(false)
-  totalStudents   Int?
-  boys            Int?
-  girls           Int?
+  totalStudents   Int       @default(0)
+  boys            Int       @default(0)
+  girls           Int       @default(0)
   startRollNumber Int       @default(1)
   section         String?
   createdAt       DateTime  @default(now())
