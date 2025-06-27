@@ -86,7 +86,7 @@ export default function ShotsContent() {
           key={video.id}
           className="bg-white rounded-xl overflow-hidden shadow relative group"
         >
-          <div className="relative h-60 w-full">
+          <div className="relative h-66 w-full">
             <Image
               src={video.thumbnail || '/placeholder.svg'}
               alt={video.title}
