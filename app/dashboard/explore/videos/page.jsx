@@ -1,7 +1,7 @@
 'use client'
 
 import Image from 'next/image'
-import { Play } from 'lucide-react'
+import VideoComponent from './VideoComponent' // Adjust the path based on your file structure
 
 export default function VideosContent() {
   const videos = [
@@ -10,124 +10,72 @@ export default function VideosContent() {
       title: 'Wonders of Nature',
       thumbnail:
         'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&h=400&fit=crop',
+      duration: '8:23',
+      views: '1.2M views',
+      timeAgo: '2 months ago',
+      mentorPhoto: 'https://randomuser.me/api/portraits/men/45.jpg',
+      mentorName: 'David Attenborough',
     },
     {
       id: 2,
       title: 'Mountain Hike Documentary',
       thumbnail:
         'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?w=400&h=400&fit=crop',
+      duration: '12:10',
+      views: '530K views',
+      timeAgo: '1 year ago',
+      mentorPhoto: 'https://randomuser.me/api/portraits/women/32.jpg',
+      mentorName: 'Emily Rose',
     },
     {
       id: 3,
       title: 'Architectural Tour',
       thumbnail:
         'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=400&fit=crop',
+      duration: '9:45',
+      views: '856K views',
+      timeAgo: '3 years ago',
+      mentorPhoto: 'https://randomuser.me/api/portraits/men/11.jpg',
+      mentorName: 'John Doe',
     },
     {
       id: 4,
       title: 'City Timelapse',
       thumbnail:
         'https://images.unsplash.com/photo-1514565131-fce0801e5785?w=400&h=400&fit=crop',
+      duration: '5:50',
+      views: '2.3M views',
+      timeAgo: '6 months ago',
+      mentorPhoto: 'https://randomuser.me/api/portraits/men/22.jpg',
+      mentorName: 'Alex Rider',
     },
     {
       id: 5,
       title: 'Cooking Masterclass',
       thumbnail:
         'https://images.unsplash.com/photo-1504674900247-0877df9cc836?w=400&h=400&fit=crop',
+      duration: '14:02',
+      views: '3.5M views',
+      timeAgo: '1 week ago',
+      mentorPhoto: 'https://randomuser.me/api/portraits/women/77.jpg',
+      mentorName: 'Chef Priya',
     },
-    {
-      id: 6,
-      title: 'Street Food Stories',
-      thumbnail:
-        'https://images.unsplash.com/photo-1551024506-0bccd828d307?w=400&h=400&fit=crop',
-    },
-    {
-      id: 7,
-      title: 'Tech Review 2025',
-      thumbnail:
-        'https://images.unsplash.com/photo-1460925895917-afdab827c52f?w=400&h=400&fit=crop',
-    },
-    {
-      id: 8,
-      title: 'Startup Pitch Day',
-      thumbnail:
-        'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=400&h=400&fit=crop',
-    },
-    {
-      id: 9,
-      title: 'Digital Artwork Process',
-      thumbnail:
-        'https://images.unsplash.com/photo-1558591710-4b4a1ae0f04d?w=400&h=400&fit=crop',
-    },
-    {
-      id: 10,
-      title: 'Creative Design Reel',
-      thumbnail:
-        'https://images.unsplash.com/photo-1557672172-298e090bd0f1?w=400&h=400&fit=crop',
-    },
-    {
-      id: 12,
-      title: 'Wildlife in Africa',
-      thumbnail:
-        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
-    },
-    // repeat the above 10 videos increment the id
-    {
-      id: 13,
-      title: 'Wildlife in Africa',
-      thumbnail:
-        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
-    },
-    {
-      id: 14,
-      title: 'Wildlife in Africa',
-      thumbnail:
-        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
-    },
-    {
-      id: 15,
-      title: 'Wildlife in Africa',
-      thumbnail:
-        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
-    },
-    {
-      id: 16,
-      title: 'Wildlife in Africa',
-      thumbnail:
-        'https://images.unsplash.com/photo-1544947950-fa07a98d237f?w=400&h=400&fit=crop',
-    },
-
+    // Add more if needed...
   ]
 
-
   return (
-    <div className="grid grid-cols-3 gap-1 px-1">
+    <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-2 px-1">
       {videos.map((video) => (
-        <div
+        <VideoComponent
           key={video.id}
-          className="bg-white rounded-xl overflow-hidden shadow relative group"
-        >
-          <div className="relative h-66 w-full">
-            <Image
-              src={video.thumbnail || '/placeholder.svg'}
-              alt={video.title}
-              width={100}
-              height={500}
-              className="object-cover w-full h-full"
-              unoptimized
-            />
-            <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity" />
-            <div className="absolute top-2 left-2 z-10">
-              <div className="w-8 h-8 bg-black/60 rounded-full flex items-center justify-center">
-                <Play className="w-4 h-4 text-white" />
-              </div>
-            </div>
-
-            <p className="absolute bottom-2 left-2 text-sm font-semibold text-gray-800 leading-snug dark:text-white">
-              {video.title}
-            </p>
-          </div>
-        </div>
+          thumbnail={video.thumbnail}
+          duration={video.duration}
+          title={video.title}
+          views={video.views}
+          timeAgo={video.timeAgo}
+          mentorPhoto={video.mentorPhoto}
+          mentorName={video.mentorName}
+        />
       ))}
     </div>
   )

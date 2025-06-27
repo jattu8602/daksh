@@ -18,6 +18,7 @@ export default function ExploreLayout({ children }) {
     'Search for accounts...',
     'Search for shots...',
     'Search for videos...',
+    'Search for playlists...',
     'Search NCERT content...',
     'Search docs...',
   ]
@@ -93,6 +94,7 @@ export default function ExploreLayout({ children }) {
     { id: 'posts', name: 'Posts', href: '/dashboard/explore/posts' },
     { id: 'shots', name: 'Shots', href: '/dashboard/explore/shots' },
     { id: 'videos', name: 'Videos', href: '/dashboard/explore/videos' },
+    { id: 'playlists', name: 'Playlists', href: '/dashboard/explore/playlists' },
     { id: 'ncert', name: 'NCERT', href: '/dashboard/explore/ncert' },
     { id: 'docs', name: 'Docs', href: '/dashboard/explore/docs' },
   ]
