@@ -32,18 +32,18 @@ export default function PlaylistComponent({
 
       {/* Playlist details */}
       <div className="flex-1 min-w-0">
-        <h3 className="text-white font-medium text-sm leading-5 mb-1 line-clamp-2">
+        <h3 className="text-gray-800 dark:text-white font-medium text-sm leading-5 mb-1 line-clamp-2">
           {title}
         </h3>
 
         <div className="flex items-center gap-2 mb-1">
           <Avatar className="w-6 h-6">
             <AvatarImage src={mentorPhoto} alt={mentorName} />
-            <AvatarFallback className="text-xs bg-gray-600 text-white">
+            <AvatarFallback className="text-xs bg-gray-600 text-gray-800 dark:text-white">
               {mentorName.charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
-          <span className="text-gray-400 text-xs">{mentorName}</span>
+          <span className="text-gray-800 dark:text-white text-xs">{mentorName}</span>
         </div>
 
       </div>
