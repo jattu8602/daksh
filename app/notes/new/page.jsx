@@ -10,13 +10,13 @@ import { motion } from 'framer-motion'
 
 const COLORS = [
   { name: 'white', value: '#ffffff', border: '#e5e7eb' },
-  { name: 'pink', value: '#fce7f3' },
-  { name: 'orange', value: '#fed7aa' },
-  { name: 'yellow', value: '#fef3c7' },
-  { name: 'green', value: '#d1fae5' },
-  { name: 'cyan', value: '#cffafe' },
+  { name: 'orange', value: '#f97316' },
+  { name: 'yellow', value: '#eab308' },
+  { name: 'cyan', value: '#06b6d4' },
+  { name: 'green', value: '#22c55e' },
+  { name: 'pink', value: '#ec4899' },
+  { name: 'purple', value: '#8b5cf6' },
   { name: 'blue', value: '#dbeafe' },
-  { name: 'purple', value: '#e9d5ff' },
 ]
 
 export default function NewNotePage() {
@@ -69,7 +69,8 @@ export default function NewNotePage() {
 
   const handleBack = () => {
     saveNote()
-    router.push('/dashboard/notes')
+    // UPDATED PATH
+    router.push('/notes')
   }
 
   useEffect(() => {
@@ -80,26 +81,24 @@ export default function NewNotePage() {
 
   return (
     <motion.div
-      className="min-h-screen bg-white"
+      className="min-h-screen bg-background"
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: 'easeOut' }}
     >
-      <div className="max-w-2xl mx-auto">
+      <div className="max-w-md mx-auto">
         {/* Header */}
-        <div className="flex items-center justify-between p-4 md:p-6">
-          <div className="flex items-center gap-4">
+        <div className="flex items-center justify-between p-4">
+          <div className="flex items-center gap-3">
             <Button
               variant="ghost"
               size="icon"
               onClick={handleBack}
-              className="text-orange-500 hover:text-orange-600 h-8 w-8 md:h-10 md:w-10"
+              className="text-orange-500 hover:text-orange-600 h-8 w-8"
             >
-              <ArrowLeft className="h-5 w-5 md:h-6 md:w-6" />
+              <ArrowLeft className="h-5 w-5" />
             </Button>
-            <h1 className="text-lg md:text-xl font-medium text-gray-900">
-              Add Note
-            </h1>
+            <h1 className="text-lg font-medium text-foreground">Add Note</h1>
           </div>
 
           <div className="flex items-center gap-2">
@@ -108,14 +107,14 @@ export default function NewNotePage() {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowColorPicker(!showColorPicker)}
-                className="text-gray-600 hover:text-gray-800 h-8 w-8 md:h-10 md:w-10"
+                className="text-muted-foreground hover:text-foreground h-8 w-8"
               >
-                <Palette className="h-5 w-5 md:h-6 md:w-6" />
+                <Palette className="h-5 w-5" />
               </Button>
 
               {showColorPicker && (
-                <div className="absolute top-full right-0 mt-2 p-3 bg-white border border-gray-200 rounded-2xl shadow-lg z-20 min-w-[200px]">
-                  <div className="grid grid-cols-4 gap-3">
+                <div className="absolute top-full right-0 mt-2 p-3 bg-card border border-border rounded-xl shadow-lg z-20 min-w-[180px]">
+                  <div className="grid grid-cols-4 gap-2">
                     {COLORS.map((color) => (
                       <button
                         key={color.name}
@@ -123,18 +122,18 @@ export default function NewNotePage() {
                           setSelectedColor(color.value)
                           setShowColorPicker(false)
                         }}
-                        className={`w-8 h-8 rounded-full border-2 transition-all ${
+                        className={`w-7 h-7 rounded-full border-2 transition-all ${
                           selectedColor === color.value
-                            ? 'border-gray-900 scale-110'
-                            : 'border-gray-300'
+                            ? 'border-foreground scale-110'
+                            : 'border-border'
                         }`}
                         style={{
                           backgroundColor: color.value,
                           borderColor:
                             color.border ||
                             (selectedColor === color.value
-                              ? '#000'
-                              : '#d1d5db'),
+                              ? 'var(--foreground)'
+                              : 'var(--border)'),
                         }}
                       />
                     ))}
@@ -146,22 +145,22 @@ export default function NewNotePage() {
             <Button
               variant="ghost"
               size="icon"
-              className="text-gray-600 hover:text-gray-800 h-8 w-8 md:h-10 md:w-10"
+              className="text-muted-foreground hover:text-foreground h-8 w-8"
             >
-              <MoreHorizontal className="h-5 w-5 md:h-6 md:w-6" />
+              <MoreHorizontal className="h-5 w-5" />
             </Button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="px-4 md:px-6 py-4 md:py-6">
+        <div className="px-4 pb-20">
           {/* Title Input */}
           <Input
             ref={titleRef}
             placeholder="Type something..."
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="text-3xl md:text-4xl font-semibold border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent placeholder:text-gray-400 mb-6"
+            className="text-2xl font-semibold border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent placeholder:text-muted-foreground mb-4"
           />
 
           {/* Description / Textarea */}
@@ -169,18 +168,18 @@ export default function NewNotePage() {
             placeholder="Start writing your note..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="min-h-[300px] h-auto border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent resize-none placeholder:text-gray-400 text-base md:text-lg"
+            className="min-h-[250px] h-auto border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent resize-none placeholder:text-muted-foreground text-base"
             style={{ whiteSpace: 'pre-wrap' }}
           />
         </div>
 
         {/* Color Dot Indicator */}
-        <div className="fixed bottom-6 left-6 z-40">
+        <div className="fixed bottom-20 left-4 z-40">
           <div
-            className="w-4 h-4 rounded-full border-2 border-gray-300"
+            className="w-4 h-4 rounded-full border-2 border-border"
             style={{
               backgroundColor:
-                selectedColor === '#ffffff' ? '#e5e7eb' : selectedColor,
+                selectedColor === '#ffffff' ? 'var(--border)' : selectedColor,
             }}
           />
         </div>

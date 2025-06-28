@@ -30,8 +30,8 @@ export function ColorFilter({
             }
             className={`w-7 h-7 md:w-8 md:h-8 rounded-full border-2 transition-all flex-shrink-0 relative ${
               selectedColor === color.value && !isSelectionMode
-                ? 'border-gray-900 dark:border-white scale-110'
-                : 'border-gray-300 dark:border-gray-600'
+                ? 'border-foreground scale-110'
+                : 'border-border'
             } ${
               isSelectionMode ? 'hover:scale-110 hover:border-blue-500' : ''
             }`}
@@ -40,8 +40,8 @@ export function ColorFilter({
               borderColor:
                 color.border ||
                 (selectedColor === color.value && !isSelectionMode
-                  ? undefined
-                  : color.border),
+                  ? 'var(--foreground)'
+                  : 'var(--border)'),
             }}
             title={
               isSelectionMode
@@ -58,7 +58,7 @@ export function ColorFilter({
         ))}
 
         {isSelectionMode && (
-          <div className="ml-2 md:ml-4 text-xs md:text-sm text-gray-600 dark:text-gray-400 flex-shrink-0">
+          <div className="ml-2 md:ml-4 text-xs md:text-sm text-muted-foreground flex-shrink-0">
             Click colors to select all notes of that color
           </div>
         )}

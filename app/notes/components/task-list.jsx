@@ -51,13 +51,13 @@ export function TaskList({ tasks, onTasksChange, selectedColor }) {
     <div className="space-y-4">
       {/* Add Task Input */}
       <div className="flex items-center gap-2">
-        <Plus className="h-4 w-4 text-gray-400" />
+        <Plus className="h-4 w-4 text-muted-foreground" />
         <Input
           placeholder="Type something..."
           value={newTaskText}
           onChange={(e) => setNewTaskText(e.target.value)}
           onKeyPress={(e) => e.key === 'Enter' && addTask()}
-          className="border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-gray-400"
+          className="border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground"
         />
       </div>
 
@@ -82,7 +82,7 @@ export function TaskList({ tasks, onTasksChange, selectedColor }) {
             value={task.text}
             onChange={(e) => updateTaskText(task.id, e.target.value)}
             className={`flex-1 border-none px-0 focus-visible:ring-0 bg-transparent ${
-              task.completed ? 'line-through text-gray-500' : ''
+              task.completed ? 'line-through text-muted-foreground' : ''
             }`}
           />
 

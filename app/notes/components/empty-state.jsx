@@ -17,7 +17,7 @@ export function EmptyState() {
         className="mb-8"
       >
         <img
-          src="/images/notes-illustration.png"
+          src="https://res.cloudinary.com/doxmvuss9/image/upload/v1751108014/link-generator/vaclahmuqvywuffb5p3e.png"
           alt="Create your first note"
           className="w-48 h-48 object-contain"
         />
@@ -27,7 +27,7 @@ export function EmptyState() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="text-gray-600 dark:text-gray-400 text-center text-lg"
+        className="text-muted-foreground text-center text-lg"
       >
         Create your first note !
       </motion.p>
