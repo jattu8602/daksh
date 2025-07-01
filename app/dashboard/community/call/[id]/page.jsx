@@ -9,8 +9,9 @@ export default function CallPage() {
   const params = useParams()
   const router = useRouter()
   const callId = params.id
-  const [callStatus, setCallStatus] =
-    (useState < 'requesting') | ('no-response' > 'requesting')
+
+  // ✅ Correct useState usage
+  const [callStatus, setCallStatus] = useState('requesting')
 
   const callData = getCallData(callId)
 
