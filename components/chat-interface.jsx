@@ -53,7 +53,7 @@ export default function ChatInterface({ chatData, onBack }) {
   return (
     <div className="relative h-screen bg-white dark:bg-black text-black dark:text-white overflow-hidden">
       {/* HEADER - fixed top */}
-      <div className="fixed top-0 left-0 right-0 z-20 p-4 border-b bg-white dark:bg-black shadow-sm">
+      <div className="fixed top-0 left-0 right-0 p-4 z-20 border-b bg-white dark:bg-black shadow-sm">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <ArrowLeft className="w-6 h-6 cursor-pointer" onClick={onBack} />
@@ -98,10 +98,11 @@ export default function ChatInterface({ chatData, onBack }) {
 
       {/* MESSAGE AREA */}
       <div
-        className="overflow-y-auto bg-gray-50 dark:bg-zinc-900 px-4 py-3 space-y-4 mt-10"
+        className="overflow-y-auto bg-gray-50 dark:bg-zinc-900 px-2 space-y-2"
         style={{
-          paddingTop: '80px', // Header height
-          paddingBottom: '80px', // Footer height
+          marginTop: '80px',
+          paddingTop: '160px',
+
           height: '100%',
         }}
       >
@@ -114,6 +115,7 @@ export default function ChatInterface({ chatData, onBack }) {
 
           return (
             <div key={message.id} className="space-y-1">
+              {/* Show sender info for group chats */}
               {showSenderInfo && message.senderInfo && (
                 <div
                   className="flex items-center space-x-2 mb-1 cursor-pointer ml-2"
@@ -137,6 +139,7 @@ export default function ChatInterface({ chatData, onBack }) {
                 </div>
               )}
 
+              {/* Message bubble */}
               <div
                 className={`flex ${
                   message.sender === 'user' ? 'justify-end' : 'justify-start'
@@ -149,17 +152,20 @@ export default function ChatInterface({ chatData, onBack }) {
                       : 'bg-white dark:bg-zinc-800 text-black dark:text-white rounded-bl-none'
                   }`}
                 >
-                  <p>{message.text}</p>
-                  <span
-                    className={`absolute bottom-1 right-3 text-xs ${
-                      message.sender === 'user'
-                        ? 'text-blue-200'
-                        : 'text-gray-400 dark:text-gray-500'
-                    }`}
-                    style={{ fontSize: '10px' }}
-                  >
-                    {message.time}
-                  </span>
+                  {/* Message Text and Time */}
+                  <div className="flex flex-col space-y-1">
+                    <p>{message.text}</p>
+                    <span
+                      className={`self-end text-xs ${
+                        message.sender === 'user'
+                          ? 'text-blue-200'
+                          : 'text-gray-400 dark:text-gray-500'
+                      }`}
+                      style={{ fontSize: '10px', marginTop: '4px' }}
+                    >
+                      {message.time}
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
