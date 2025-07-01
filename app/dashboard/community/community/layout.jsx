@@ -108,7 +108,7 @@ export default function CommunityPage() {
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4">
+      <div className="flex-1 overflow-y-auto pb-4">
         {filteredData.length > 0 ? (
           <ContactList data={filteredData} type={activeTab.toLowerCase()} />
         ) : searchQuery ? (

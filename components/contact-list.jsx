@@ -40,7 +40,7 @@ export default function ContactList({ data, type, searchQuery = '' }) {
         <div
           key={contact.id}
           onClick={() => handleContactClick(contact)}
-          className="flex items-center space-x-3 p-3 hover:bg-gray-100 dark:hover:bg-gray-800 bg-white dark:bg-gray-900 rounded-lg cursor-pointer transition-colors"
+          className="flex items-center space-x-3 p-3 bg-white dark:bg-black "
         >
           <div className="relative">
             <Avatar className="w-12 h-12">
