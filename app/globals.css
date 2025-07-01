@@ -205,6 +205,7 @@
   0% {
     transform: rotate(0deg);
   }
+
   100% {
     transform: rotate(360deg);
   }
@@ -224,7 +225,8 @@ body::before {
   left: 0;
   height: env(safe-area-inset-top);
   width: 100%;
-  background-color: #B60D0E; /* Your red background */
+  background-color: #B60D0E;
+  /* Your red background */
   z-index: 9999;
   pointer-events: none;
 }
