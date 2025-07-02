@@ -44,7 +44,7 @@ export default function Dashboard() {
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 pt-[116px] text-black dark:text-white">
       {/* Header */}
-      <div className="bg-white dark:bg-gray-900 fixed top-0 left-0 right-0 z-50">
+      <div className="bg-white dark:bg-gray-900 fixed top-0 left-0 right-0 z-50 border-b border-gray-200 dark:border-gray-800">
         <div className="max-w-md mx-auto px-4 py-3">
           <h1 className="text-2xl font-bold text-center text-gray-900 dark:text-white">
             Daksh
