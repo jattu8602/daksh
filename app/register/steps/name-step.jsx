@@ -16,7 +16,7 @@ export default function NameStep({ formData, updateFormData }) {
           type="text"
           value={formData.name}
           onChange={(e) => updateFormData('name', e.target.value)}
-          className="text-center text-xl py-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none ring-0 focus:outline-none !focus:ring-0 focus:border-none active:outline-none active:ring-0 active:border-none text-gray-900 dark:text-white"
+          className="text-center text-xl py-6 rounded-2xl bg-gray-50 dark:bg-gray-800 border-none outline-none ring-0 focus:outline-none !focus:ring-0 focus:border-none active:outline-none active:ring-0 active:border-none text-gray-900 dark:text-white shadow-none "
           placeholder="Enter your name"
         />
       </div>

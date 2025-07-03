@@ -300,7 +300,7 @@ export default function NotesPage() {
 
         {/* Color Filter */}
         <div className="mb-4">
-          <div className="flex items-center gap-2 p-2 border border-border rounded-lg overflow-x-auto scrollbar-hide">
+          <div className="flex items-center gap-2 p-2 border border-none rounded-lg overflow-x-auto scrollbar-hide">
             <Button
               variant={selectedColor === null ? 'default' : 'ghost'}
               size="sm"
@@ -315,7 +315,7 @@ export default function NotesPage() {
                 onClick={() => handleColorClick(color.value)}
                 className={`w-6 h-6 rounded-full border-2 transition-all flex-shrink-0 ${
                   selectedColor === color.value
-                    ? 'border-foreground scale-110'
+                    ? 'border-foreground scale-120'
                     : 'border-border'
                 }`}
                 style={{
@@ -373,15 +373,11 @@ export default function NotesPage() {
                   onMouseLeave={handleLongPressEnd}
                 >
                   <div className="flex items-center gap-3">
-                    {isSelectionMode ? (
-                      <div className="flex items-center justify-center w-5 h-5 rounded border border-border">
-                        {selectedNotes.has(note.id) && (
-                          <Check className="h-3 w-3" />
-                        )}
-                      </div>
-                    ) : (
-                      <div className="w-5 h-5" /> // Spacer for consistent alignment
-                    )}
+                    <Checkbox
+                      checked={selectedNotes.has(note.id)}
+                      onCheckedChange={() => toggleNoteSelection(note.id)}
+                      className="h-4 w-4 border-2 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                    />
                     <span className="text-base text-foreground">
                       {note.title || 'Untitled'}
                     </span>
