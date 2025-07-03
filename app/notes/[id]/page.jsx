@@ -10,13 +10,13 @@ import { use } from 'react'
 
 const COLORS = [
   { name: 'white', value: '#ffffff', border: '#e5e7eb' },
-  { name: 'pink', value: '#fce7f3' },
-  { name: 'orange', value: '#fed7aa' },
-  { name: 'yellow', value: '#fef3c7' },
-  { name: 'green', value: '#d1fae5' },
-  { name: 'cyan', value: '#cffafe' },
+  { name: 'orange', value: '#f97316' },
+  { name: 'yellow', value: '#eab308' },
+  { name: 'cyan', value: '#06b6d4' },
+  { name: 'green', value: '#22c55e' },
+  { name: 'pink', value: '#ec4899' },
+  { name: 'purple', value: '#8b5cf6' },
   { name: 'blue', value: '#dbeafe' },
-  { name: 'purple', value: '#e9d5ff' },
 ]
 
 export default function EditNotePage({ params }) {
@@ -166,7 +166,7 @@ export default function EditNotePage({ params }) {
               placeholder="Type something..."
               value={note.title}
               onChange={(e) => setNote({ ...note, title: e.target.value })}
-              className="text-lg border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground font-normal"
+              className="text-3xl border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground font-semibold dark:bg-background"
             />
           </div>
 
@@ -175,7 +175,7 @@ export default function EditNotePage({ params }) {
               placeholder="Start writing your note..."
               value={note.content}
               onChange={(e) => setNote({ ...note, content: e.target.value })}
-              className="min-h-[250px] border-none px-0 focus-visible:ring-0 bg-transparent resize-none placeholder:text-muted-foreground text-base"
+              className="min-h-[250px] border-none px-0 focus-visible:ring-0 bg-background  resize-none placeholder:text-muted-foreground text-base dark:bg-transparent"
             />
           </div>
         </div>

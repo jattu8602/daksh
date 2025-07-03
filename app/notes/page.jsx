@@ -245,7 +245,7 @@ export default function NotesPage() {
 
   // Mobile Layout Only
   return (
-    <div className="min-h-screen bg-muted">
+    <div className="min-h-screen ">
       <div className="container mx-auto px-4 py-4 max-w-md">
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
@@ -334,14 +334,14 @@ export default function NotesPage() {
         {/* Add Task Input */}
         {!isSelectionMode && (
           <div className="mb-4">
-            <div className="flex items-center gap-3 p-3 bg-card rounded-lg">
+            <div className="flex items-center gap-3 p-3 bg-background rounded-lg dark:bg-background">
               <Plus className="h-4 w-4 text-muted-foreground flex-shrink-0" />
               <Input
                 placeholder="Type something..."
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addNewTask()}
-                className="border-none bg-transparent text-base placeholder:text-muted-foreground focus-visible:ring-0 px-0"
+                className="border-none bg-transparent text-base placeholder:text-muted-foreground focus-visible:ring-0 px-0 dark:bg-background"
               />
             </div>
           </div>
@@ -354,7 +354,7 @@ export default function NotesPage() {
               {filteredNotes.map((note) => (
                 <div
                   key={note.id}
-                  className={`flex items-center justify-between cursor-pointer p-3 bg-card rounded-lg ${
+                  className={`flex items-center justify-between cursor-pointer p-3 bg-background rounded-lg dark:bg-background ${
                     isSelectionMode ? '' : 'hover:bg-muted/50'
                   }`}
                   onClick={() => {
