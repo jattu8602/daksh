@@ -41,9 +41,9 @@ export default function AgeStep({ formData, updateFormData }) {
       </p>
 
       <div className="flex-1 flex items-center justify-center">
-        <div className="relative h-60 w-24 overflow-hidden">
+        <div className="relative h-60 w-26 overflow-hidden">
           {/* Highlight bar */}
-          <div className="absolute inset-x-0 top-1/2 h-12 -translate-y-1/2 bg-primary/10 border-2 border-primary/20 rounded-xl z-10 pointer-events-none" />
+          <div className="absolute inset-x-0 top-1/2 h-12 w-full -translate-y-1/2 bg-transparent border-t-2 border-b-2 border-black dark:border-zinc-200 z-10 pointer-events-none" />
 
           {/* Scrollable list */}
           <div
@@ -62,8 +62,8 @@ export default function AgeStep({ formData, updateFormData }) {
                 key={age}
                 className={`h-12 flex items-center justify-center snap-center cursor-pointer transition-all duration-200 ${
                   formData.age === age
-                    ? 'text-2xl font-bold text-black dark:text-white'
-                    : 'text-lg text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400'
+                    ? 'text-3xl font-bold text-black dark:text-white'
+                    : 'text-xl text-gray-400 dark:text-gray-600 hover:text-gray-600 dark:hover:text-gray-400'
                 }`}
                 onClick={() => updateFormData('age', age)}
               >

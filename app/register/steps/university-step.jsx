@@ -1,15 +1,15 @@
-"use client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Search, Check } from "lucide-react"
+'use client'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Search, Check } from 'lucide-react'
 
 export default function UniversityStep({ formData, updateFormData }) {
   const universities = [
-    "Harvard University",
-    "Stanford University",
-    "Massachusetts Institute of Technology",
-    "NMIT",
-    "Yale University",
+    'Harvard University',
+    'Stanford University',
+    'Massachusetts Institute of Technology',
+    'NMIT',
+    'Yale University',
   ]
 
   return (
@@ -27,7 +27,7 @@ export default function UniversityStep({ formData, updateFormData }) {
           <Input
             type="text"
             placeholder="Search"
-            className="pl-10 py-3 bg-gray-100 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white"
+            className="pl-10 py-3 bg-gray-50 dark:bg-gray-800 border-0 focus:ring-0 focus:outline-none text-gray-900 dark:text-white dark:focus:ring-0 dark:focus:outline-none"
           />
         </div>
       </div>
@@ -36,20 +36,20 @@ export default function UniversityStep({ formData, updateFormData }) {
         {universities.map((u) => (
           <Card
             key={u}
-            className={`mb-3 relative cursor-pointer transition-colors ${
+            className={`mb-3 !p-4 relative cursor-pointer transition-colors ${
               formData.university === u
-                ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-800'
-                : 'border-gray-200 dark:border-gray-700'
+                ? 'border-black dark:border-white bg-gray-50 dark:bg-transparent'
+                : 'border-gray-200 dark:border-gray-700 dark:bg-gray-800'
             }`}
             onClick={() => updateFormData('university', u)}
           >
             <CardContent className="px-4 py-0.5 flex items-center justify-between">
-              <span className="font-medium text-gray-900 dark:text-white">
+              <span className="font-medium text-gray-900 dark:text-white dear">
                 {u}
               </span>
               {formData.university === u && (
-                <div className="w-6 h-6 bg-black dark:bg-white rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white dark:text-black" />
+                <div className="w-6 h-6 bg-transparent flex items-center justify-center">
+                  <Check className="w-6 h-6 font-semibold dark:text-white text-black" />
                 </div>
               )}
             </CardContent>

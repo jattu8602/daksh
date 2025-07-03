@@ -1,20 +1,20 @@
-"use client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
-import { Search, Check } from "lucide-react"
+'use client'
+import { Card, CardContent } from '@/components/ui/card'
+import { Input } from '@/components/ui/input'
+import { Search, Check } from 'lucide-react'
 
 export default function SchoolStep({ formData, updateFormData }) {
   const schools = [
-    "Lincoln High School",
-    "Washington Elementary",
-    "Roosevelt Middle School",
-    "Jefferson Academy",
-    "Madison Prep School",
+    'Lincoln High School',
+    'Washington Elementary',
+    'Roosevelt Middle School',
+    'Jefferson Academy',
+    'Madison Prep School',
   ]
 
   return (
     <div className="flex flex-col h-full">
-      <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+      <h1 className="text-3xl font-bold mb-4 text-center text-gray-900 dark:text-white">
         Select your school
       </h1>
       <p className="text-gray-500 dark:text-gray-400 mb-8 text-center">
@@ -27,7 +27,7 @@ export default function SchoolStep({ formData, updateFormData }) {
           <Input
             type="text"
             placeholder="Search"
-            className="pl-10 py-3 bg-gray-100 dark:bg-gray-800 border-0 rounded-xl text-gray-900 dark:text-white"
+            className="pl-10 py-3 bg-gray-50 dark:bg-gray-800 border-0 focus:ring-0 focus:outline-none text-gray-900 dark:text-white dark:focus:ring-0 dark:focus:outline-none"
           />
         </div>
       </div>
@@ -36,10 +36,10 @@ export default function SchoolStep({ formData, updateFormData }) {
         {schools.map((s) => (
           <Card
             key={s}
-            className={`mb-3 relative cursor-pointer transition-colors ${
+            className={`mb-3 !p-4 relative cursor-pointer transition-colors ${
               formData.school === s
-                ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-800'
-                : 'border-gray-200 dark:border-gray-700'
+                ? 'border-black dark:border-white bg-transparent'
+                : 'border-gray-200 dark:border-gray-700 dark:bg-gray-800'
             }`}
             onClick={() => updateFormData('school', s)}
           >
@@ -48,8 +48,8 @@ export default function SchoolStep({ formData, updateFormData }) {
                 {s}
               </span>
               {formData.school === s && (
-                <div className="w-6 h-6 bg-black dark:bg-white rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white dark:text-black" />
+                <div className="w-6 h-6  flex items-center justify-center">
+                  <Check className="w-6 h-6 font-semibold dark:text-white text-black" />
                 </div>
               )}
             </CardContent>

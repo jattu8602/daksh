@@ -2,7 +2,7 @@
 import { useRef, useEffect, forwardRef } from 'react'
 
 // Constants
-const ITEM_HEIGHT = 40    // px
+const ITEM_HEIGHT = 40 // px
 const CONTAINER_HEIGHT = 192 // px (h-48)
 const PADDING = (CONTAINER_HEIGHT - ITEM_HEIGHT) / 2 // px
 
@@ -27,7 +27,7 @@ export default function ReminderStep({ formData, updateFormData }) {
 
   return (
     <div className="text-center flex flex-col h-full">
-      <h1 className="text-3xl font-bold mb-4 text-gray-900 dark:text-white">
+      <h1 className="text-3xl text-center font-bold mb-4 text-gray-900 dark:text-white">
         Set your study reminder
       </h1>
       <p className="text-gray-500 dark:text-gray-400 mb-16">
@@ -41,7 +41,9 @@ export default function ReminderStep({ formData, updateFormData }) {
           value={formData.reminderHour}
           onSnap={(v) => updateFormData('reminderHour', v)}
         />
-        <span className="text-2xl font-bold text-gray-900 dark:text-white">:</span>
+        <span className="text-3xl font-bold text-gray-900 dark:text-white">
+          :
+        </span>
         <Dial
           ref={minRef}
           list={minutes}
@@ -94,12 +96,13 @@ const Dial = forwardRef(function Dial({ list, value, onSnap, pad = 1 }, ref) {
   const choose = (v) => {
     onSnap(v)
     const idx = list.indexOf(v)
-    if (ref.current) ref.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' })
+    if (ref.current)
+      ref.current.scrollTo({ top: idx * ITEM_HEIGHT, behavior: 'smooth' })
   }
 
   return (
     <div className="relative h-48 w-16 overflow-hidden">
-      <div className="absolute inset-x-0 top-1/2 h-10 -translate-y-1/2 bg-primary/10 border-2 border-primary/20 rounded-xl z-10 pointer-events-none" />
+      <div className="absolute inset-x-0 top-1/2 h-10 -translate-y-1/2 bg-transparent border-2 border-t-black border-b-black dark:border-b-white dark:border-t-white  z-10 pointer-events-none" />
       <div
         ref={ref}
         onScroll={handleScroll}
@@ -111,7 +114,11 @@ const Dial = forwardRef(function Dial({ list, value, onSnap, pad = 1 }, ref) {
           msOverflowStyle: 'none',
         }}
       >
-        <style jsx>{`::-webkit-scrollbar { display: none; }`}</style>
+        <style jsx>{`
+          ::-webkit-scrollbar {
+            display: none;
+          }
+        `}</style>
         {list.map((n) => (
           <div
             key={n}

@@ -1,9 +1,9 @@
-"use client"
-import { Card, CardContent } from "@/components/ui/card"
-import { Check } from "lucide-react"
+'use client'
+import { Card, CardContent } from '@/components/ui/card'
+import { Check } from 'lucide-react'
 
 export default function EducationStep({ formData, updateFormData }) {
-  const levels = ["School", "College/University", "Online Courses", "Other"]
+  const levels = ['School', 'College/University', 'Online Courses', 'Other']
 
   return (
     <div className="flex flex-col h-full">
@@ -18,10 +18,10 @@ export default function EducationStep({ formData, updateFormData }) {
         {levels.map((lvl) => (
           <Card
             key={lvl}
-            className={`mb-3 relative cursor-pointer transition-colors ${
+            className={`mb-3 !p-4 relative cursor-pointer transition-colors ${
               formData.education === lvl
-                ? 'border-black dark:border-white bg-gray-50 dark:bg-gray-800'
-                : 'border-gray-200 dark:border-gray-700'
+                ? 'border-black dark:border-white bg-gray-50 dark:bg-transparent'
+                : 'border-gray-200 dark:border-gray-700 dark:bg-gray-800'
             }`}
             onClick={() => updateFormData('education', lvl)}
           >
@@ -30,8 +30,8 @@ export default function EducationStep({ formData, updateFormData }) {
                 {lvl}
               </span>
               {formData.education === lvl && (
-                <div className="w-6 h-6 bg-black dark:bg-white rounded-full flex items-center justify-center">
-                  <Check className="w-4 h-4 text-white dark:text-black" />
+                <div className="w-6 h-6 bg-transparent flex items-center justify-center">
+                  <Check className="w-6 h-6 font-semibold text-black dark:text-white" />
                 </div>
               )}
             </CardContent>
