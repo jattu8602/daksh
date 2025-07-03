@@ -13,6 +13,7 @@ export function middleware(request) {
   return NextResponse.next();
 }
 
+
 export const config = {
   matcher: '/api/schools/:schoolId/classes/:classId/students/bulk',
 };
