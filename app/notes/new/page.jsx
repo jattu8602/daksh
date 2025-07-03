@@ -153,22 +153,24 @@ export default function NewNotePage() {
         </div>
 
         {/* Content */}
-        <div className="px-4 pb-20">
+        <div className="px-4 pb-20 bg-transparent">
           {/* Title Input */}
           <Input
             ref={titleRef}
-            placeholder="Type something..."
+            placeholder="Title"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            className="text-2xl font-semibold border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent placeholder:text-muted-foreground mb-4"
+            className="text-3xl font-semibold border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent dark:bg-transparent placeholder:text-muted-foreground mb-4 shadow-none focus:shadow-none focus-visible:shadow-none
+             ring-0 focus:ring-0 "
           />
 
           {/* Description / Textarea */}
           <Textarea
-            placeholder="Start writing your note..."
+            placeholder="Type something..."
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            className="min-h-[250px] h-auto border-none px-0 focus-visible:ring-0 focus:outline-none bg-transparent resize-none placeholder:text-muted-foreground text-base"
+            className="min-h-[60vh] h-auto border-none px-0 focus-visible:ring-0 focus:outline-none bg-background dark:bg-transparent resize-none placeholder:text-muted-foreground text-base shadow-none focus:shadow-none focus-visible:shadow-none
+             ring-0 focus:ring-0 "
             style={{ whiteSpace: 'pre-wrap' }}
           />
         </div>

@@ -341,7 +341,9 @@ export default function NotesPage() {
                 value={newTaskText}
                 onChange={(e) => setNewTaskText(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && addNewTask()}
-                className="border-none bg-transparent text-base placeholder:text-muted-foreground focus-visible:ring-0 px-0 dark:bg-background"
+                className="border-none bg-background text-base placeholder:text-muted-foreground px-0 dark:bg-background
+             shadow-none focus:shadow-none focus-visible:shadow-none
+             ring-0 focus:ring-0 focus-visible:ring-0 "
               />
             </div>
           </div>

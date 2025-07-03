@@ -161,18 +161,18 @@ export default function EditNotePage({ params }) {
         {/* Content */}
         <div className="px-4 pb-20">
           <div className="mb-6">
-            <h2 className="text-xl font-bold text-foreground mb-3">Title</h2>
             <Input
-              placeholder="Type something..."
+              placeholder="Title"
               value={note.title}
               onChange={(e) => setNote({ ...note, title: e.target.value })}
-              className="text-3xl border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground font-semibold dark:bg-background"
+              className="text-3xl border-none px-0 focus-visible:ring-0 bg-transparent placeholder:text-muted-foreground font-semibold dark:bg-background shadow-none focus:shadow-none focus-visible:shadow-none
+             ring-0 focus:ring-0"
             />
           </div>
 
           <div className="mb-6">
             <Textarea
-              placeholder="Start writing your note..."
+              placeholder="Type Something..."
               value={note.content}
               onChange={(e) => setNote({ ...note, content: e.target.value })}
               className="min-h-[250px] border-none px-0 focus-visible:ring-0 bg-background  resize-none placeholder:text-muted-foreground text-base dark:bg-transparent"
