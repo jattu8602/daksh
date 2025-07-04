@@ -1,0 +1,13 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# pinterest Scrapper
+workflow-in content library section there will be one more scrapper option named pinterest
+1. we can click on that option and go to the pinterest scrapper
+2. we can describe the type of content we want in some words  and we need to choose the number of images to be scrapped
+3. now we click on generate
+4. ai first generates the nnumber different title description hashtags bases on our main description  -  using title it searches on pineterst (make sure title must be different so search will be different too right )
+5. generates everything using scrapper and uploads it in cloudflare db
+6. for uploadiing you can see the youtube scrapper  and it api for reference

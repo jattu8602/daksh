@@ -132,6 +132,19 @@ const ContentPage = () => {
               <span className="sm:hidden">Upload</span>
             </button>
           </Link>
+          <Link href="/admin/content/pinterest" className="flex-1 sm:flex-none">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-400 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-500 transition-colors text-sm sm:text-base">
+              <svg
+                className="w-4 h-4 sm:w-5 sm:h-5"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+              >
+                <path d="M12 2C6.48 2 2 6.48 2 12c0 4.08 2.44 7.56 6.09 8.94-.08-.76-.15-1.93.03-2.76.16-.74 1.04-4.7 1.04-4.7s-.26-.52-.26-1.29c0-1.21.7-2.12 1.57-2.12.74 0 1.1.56 1.1 1.23 0 .75-.48 1.87-.73 2.91-.21.89.45 1.62 1.33 1.62 1.6 0 2.83-1.69 2.83-4.13 0-2.16-1.56-3.67-3.79-3.67-2.58 0-4.1 1.93-4.1 3.93 0 .78.3 1.62.68 2.07.08.1.09.19.07.29-.08.32-.26 1.01-.29 1.15-.05.21-.17.26-.39.16-1.45-.67-2.36-2.77-2.36-4.46 0-3.63 2.64-6.97 7.61-6.97 3.99 0 6.36 2.87 6.36 5.96 0 3.97-2.2 6.93-5.45 6.93-1.09 0-2.12-.59-2.47-1.25l-.67 2.56c-.2.77-.6 1.74-.89 2.33.67.21 1.38.32 2.12.32 5.52 0 10-4.48 10-10S17.52 2 12 2z" />
+              </svg>
+              <span className="hidden sm:inline">Pinterest Content</span>
+              <span className="sm:hidden">Pinterest</span>
+            </button>
+          </Link>
         </div>
       </div>
 
@@ -318,7 +331,6 @@ const ContentPage = () => {
                           {(video.duration % 60).toString().padStart(2, '0')}
                         </div>
                       )}
-                      
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 md:p-4">
