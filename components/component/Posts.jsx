@@ -235,8 +235,13 @@ function PostItem({
       </div>
 
       {/* Image / Video Slider */}
+      {/* Change object-contain ➝ object-cover.
+
+Keep w-full but apply max-h-[some-limit] if needed. */}
+      {/* className="w-full h-auto max-h-[600px] object-cover select-none"
+       */}
       <div
-        className="w-full overflow-hidden relative aspect-square"
+        className="w-full overflow-hidden relative"
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -253,41 +258,27 @@ function PostItem({
           {images.map((img, idx) =>
             post.mediaType === 'video' ? (
               <video
-                key={idx}
+                key={img || idx}
                 src={img}
                 controls
-                className="w-full flex-shrink-0 object-cover aspect-square select-none"
+                className="w-full flex-shrink-0 object-contain select-none"
                 playsInline
               />
             ) : (
-              <Image
-                key={idx}
-                src={img}
-                alt={`Slide ${idx + 1}`}
-                width={500}
-                height={500}
-                className="w-full flex-shrink-0 object-cover aspect-square select-none"
-                draggable={false}
-              />
+              <div key={img || idx} className="w-full flex-shrink-0">
+                <Image
+                  src={img}
+                  alt={`Slide ${idx + 1}`}
+                  layout="intrinsic"
+                  width={500}
+                  height={300} // Optional default
+                  className="w-full h-auto object-contain select-none"
+                  draggable={false}
+                />
+              </div>
             )
           )}
         </div>
-
-        {/* Dots */}
-        {images.length > 1 && (
-          <div className="absolute bottom-2 left-0 right-0 flex justify-center space-x-2 z-10">
-            {images.map((_, idx) => (
-              <button
-                key={idx}
-                onClick={() => handleDotClick(idx)}
-                className={`w-3 h-3 rounded-full ${
-                  currentImageIndex === idx ? 'bg-white' : 'bg-gray-400'
-                }`}
-                aria-label={`Slide ${idx + 1}`}
-              />
-            ))}
-          </div>
-        )}
       </div>
 
       {/* Actions */}
