@@ -9,6 +9,7 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
   const [stories, setStories] = useState([])
   const [groups, setGroups] = useState([])
   const [viewerIndex, setViewerIndex] = useState(0)
+  const [storyStart, setStoryStart] = useState(0)
 
   // Fetch stories with caching
   useEffect(() => {
@@ -62,6 +63,7 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
         (story.mentorId || story.mentorUsername)
     )
     setViewerIndex(idx >= 0 ? idx : 0)
+    setStoryStart(0)
     onStoryClick(story)
   }
 
@@ -102,13 +104,23 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
       </div>
       {activeModal.type === 'story' && (
         <StoryViewer
-          key={viewerIndex}
+          key={`${viewerIndex}-${storyStart}`}
           stories={groups[viewerIndex]?.stories || []}
-          startIndex={0}
+          startIndex={storyStart}
           onClose={closeModal}
           onComplete={() => {
             if (viewerIndex < groups.length - 1) {
               setViewerIndex(viewerIndex + 1)
+              setStoryStart(0)
+            } else {
+              closeModal()
+            }
+          }}
+          onPrev={() => {
+            if (viewerIndex > 0) {
+              const newIdx = viewerIndex - 1
+              setViewerIndex(newIdx)
+              setStoryStart(groups[newIdx].stories.length - 1)
             } else {
               closeModal()
             }

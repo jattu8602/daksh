@@ -9,6 +9,7 @@ export default function StoryViewer({
   startIndex = 0,
   onClose,
   onComplete,
+  onPrev,
 }) {
   const [currentStoryIndex, setCurrentStoryIndex] = useState(startIndex)
   const [progress, setProgress] = useState(0)
@@ -57,6 +58,12 @@ export default function StoryViewer({
     if (currentStoryIndex > 0) {
       setCurrentStoryIndex(currentStoryIndex - 1)
       setProgress(0)
+    } else {
+      if (typeof onPrev === 'function') {
+        onPrev()
+      } else {
+        onClose()
+      }
     }
   }
 
@@ -96,7 +103,13 @@ export default function StoryViewer({
             <ChevronLeft className="w-6 h-6" />
           </Button>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500" />
+            <div className="w-8 h-8 rounded-full bg-gradient-to-r from-purple-500 to-pink-500">
+              <img
+                src={currentStory?.mentorAvatar || '/placeholder.svg'}
+                alt={currentStory?.mentorUsername || ''}
+                className="w-full h-full rounded-full object-cover"
+              />
+            </div>
             <span className="text-white font-medium">
               {currentStory?.mentorUsername || ''}
             </span>
