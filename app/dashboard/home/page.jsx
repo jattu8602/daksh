@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useSelector, useDispatch } from 'react-redux'
-import { fetchPosts, setScrollPosition } from '@/app/store/features/feedSlice'
 import Header from '@/components/component/Header'
 import {
   ComponentLoader,
@@ -14,6 +12,11 @@ import {
 // Lazy load components for better performance
 import Stories from '@/components/component/Stories'
 import Posts from '@/components/component/Posts'
+
+// Local-storage keys and constants
+const LOCAL_POSTS_KEY = 'feed_last_chunk'
+const LOCAL_SCROLL_KEY = 'feed_scroll_position'
+const POSTS_PER_PAGE = 6
 
 // Skeleton components for loading states
 const StoriesSkeleton = () => (
@@ -43,16 +46,20 @@ const PostsSkeleton = () => (
 )
 
 export default function FeedScreen() {
-  const dispatch = useDispatch()
-  const { posts, hasMore, isLoading, error, scrollPosition } = useSelector(
-    (state) => state.feed
-  )
   const [stories, setStories] = useState([])
   const [followedUsers, setFollowedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
 
   const [activeModal, setActiveModal] = useState({ type: null, postId: null })
+
+  // Feed state (previously from Redux)
+  const [posts, setPosts] = useState([])
+  const [page, setPage] = useState(1)
+  const [hasMore, setHasMore] = useState(true)
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState(null)
+  const [scrollPosition, setScrollPos] = useState(0)
 
   // Centralized history management for modals
   useEffect(() => {
@@ -86,12 +93,83 @@ export default function FeedScreen() {
     }
   }, [error])
 
-  // Fetch initial posts only if the list is empty
-  useEffect(() => {
-    if (posts.length === 0) {
-      dispatch(fetchPosts())
+  // Helper to shuffle an array (for random feed order)
+  const shuffle = (arr) => arr.sort(() => Math.random() - 0.5)
+
+  // Fetch posts from API (6 at a time)
+  const fetchPosts = useCallback(async () => {
+    if (isLoading || !hasMore) return
+
+    setIsLoading(true)
+    try {
+      const res = await fetch(`/api/posts?page=${page}&limit=${POSTS_PER_PAGE}`)
+      const data = await res.json()
+
+      if (data.success) {
+        const incoming = shuffle(data.data)
+
+        // Remove duplicates if any
+        const existingIds = new Set(posts.map((p) => p.id))
+        const uniqueNew = incoming.filter((p) => !existingIds.has(p.id))
+
+        setPosts((prev) => [...prev, ...uniqueNew])
+
+        // Update paging info
+        setPage((prev) => prev + 1)
+        setHasMore(data.currentPage < data.totalPages)
+
+        // Persist the last FULL chunk (6 posts) to localStorage
+        if (uniqueNew.length === POSTS_PER_PAGE) {
+          localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(uniqueNew))
+        }
+      } else {
+        setHasMore(false)
+      }
+    } catch (err) {
+      setError(err.message)
+      setHasMore(false)
+    } finally {
+      setIsLoading(false)
     }
-  }, [dispatch, posts.length])
+  }, [isLoading, hasMore, page, posts])
+
+  // On mount: try restoring from sessionStorage first. If not present, use localStorage chunk, otherwise fetch.
+  useEffect(() => {
+    // 1️⃣ Same-session restore (navigate back)
+    const sessionPosts = JSON.parse(
+      sessionStorage.getItem('feed_session_posts') || '[]'
+    )
+    const sessionScroll = Number(
+      sessionStorage.getItem('feed_session_scroll') || 0
+    )
+
+    if (sessionPosts.length > 0) {
+      setPosts(sessionPosts)
+      setPage(Math.floor(sessionPosts.length / POSTS_PER_PAGE) + 1)
+      setHasMore(true)
+      setScrollPos(sessionScroll)
+      return
+    }
+
+    // 2️⃣ First visit in new session – show cached last chunk if any
+    const savedPosts = JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY) || '[]')
+    const savedScroll = Number(localStorage.getItem(LOCAL_SCROLL_KEY) || 0)
+
+    if (savedPosts.length > 0) {
+      setPosts(savedPosts)
+      setPage(2) // next API page when user scrolls
+      setScrollPos(savedScroll)
+    } else {
+      // 3️⃣ Absolutely fresh – fetch first batch
+      fetchPosts()
+    }
+  }, [])
+
+  // Save full feed + scroll into sessionStorage whenever they change, so navigating away/back is instant.
+  useEffect(() => {
+    sessionStorage.setItem('feed_session_posts', JSON.stringify(posts))
+    sessionStorage.setItem('feed_session_scroll', scrollPosition)
+  }, [posts, scrollPosition])
 
   // Fetch stories (assuming this is local to the home page)
   useEffect(() => {
@@ -171,17 +249,18 @@ export default function FeedScreen() {
     }
   }
 
-  // Debounced scroll handler
+  // Debounced scroll handler (persists to localStorage)
   const handleScroll = useCallback(
     debounce((position) => {
-      dispatch(setScrollPosition(position))
+      setScrollPos(position)
+      localStorage.setItem(LOCAL_SCROLL_KEY, position)
     }, 200),
-    [dispatch]
+    []
   )
 
   const handleFetchMorePosts = () => {
     if (hasMore && !isLoading) {
-      dispatch(fetchPosts())
+      fetchPosts()
     }
   }
 
@@ -219,6 +298,7 @@ export default function FeedScreen() {
           isLoading={isLoading}
           onScroll={handleScroll}
           scrollPosition={scrollPosition}
+          storageKey={LOCAL_SCROLL_KEY}
         />
       </ComponentLoader>
     </div>

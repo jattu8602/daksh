@@ -25,31 +25,53 @@ export default function Posts({
   isLoading,
   onScroll,
   scrollPosition,
+  storageKey = 'feed_scroll_position',
 }) {
   const scrollRef = useRef(null)
   const scrolledRef = useRef(false)
 
-  // Restore scroll position on mount, after the layout is painted
+  // Early prefetch sentinel (600px before bottom)
+  const { ref: sentinelRef, inView: sentinelInView } = useInView({
+    rootMargin: '2500px 0px',
+    triggerOnce: false,
+  })
+
+  useEffect(() => {
+    if (sentinelInView && hasMore && !isLoading) {
+      fetchMorePosts()
+    }
+  }, [sentinelInView, hasMore, isLoading, fetchMorePosts])
+
+  // Restore scroll position on mount
   useLayoutEffect(() => {
-    // Check if we haven't already performed the initial scroll,
-    // and if we have posts and a scroll position to restore.
-    if (!scrolledRef.current && posts.length > 0 && scrollPosition > 0) {
-      // Defer the scroll until after the browser has painted the content
+    if (scrolledRef.current || posts.length === 0) return
+
+    const savedPos =
+      scrollPosition && scrollPosition > 0
+        ? scrollPosition
+        : Number(localStorage.getItem(storageKey) || 0)
+
+    if (savedPos > 0) {
       const timerId = setTimeout(() => {
         if (scrollRef.current) {
-          scrollRef.current.scrollTop = scrollPosition
-          scrolledRef.current = true // Mark that we've restored the scroll
+          scrollRef.current.scrollTop = savedPos
+          scrolledRef.current = true
         }
-      }, 100) // 100ms delay to allow for rendering
+      }, 100)
 
-      // Cleanup the timeout if the component unmounts
       return () => clearTimeout(timerId)
     }
-  }, [posts.length, scrollPosition])
+  }, [posts.length, scrollPosition, storageKey])
 
   const handleScroll = () => {
-    if (scrollRef.current) {
-      onScroll(scrollRef.current.scrollTop)
+    if (!scrollRef.current) return
+    const pos = scrollRef.current.scrollTop
+
+    // Persist for next visit
+    localStorage.setItem(storageKey, pos)
+
+    if (typeof onScroll === 'function') {
+      onScroll(pos)
     }
   }
 
@@ -76,7 +98,12 @@ export default function Posts({
         />
       ))}
 
-      {isLoading && <PostLoader />}
+      {/* Only show loader for first load */}
+      {isLoading && posts.length === 0 && <PostLoader />}
+
+      {/* Sentinel element for prefetching */}
+      <div ref={sentinelRef} className="h-1" />
+
       {!hasMore && posts.length > 0 && (
         <div className="text-center py-4 text-gray-500">
           You've reached the end.
