@@ -31,9 +31,9 @@ model User {
   sessions     Session[]
 
   // Relations (only name + relationName here)
-  student      Student?  @relation("StudentToUser")
-  mentor       Mentor?   @relation("MentorToUser")
-  admin        Admin?    @relation("AdminToUser")
+  student Student? @relation("StudentToUser")
+  mentor  Mentor?  @relation("MentorToUser")
+  admin   Admin?   @relation("AdminToUser")
 
   // keep a non-unique index on role
   @@index([role])
@@ -49,7 +49,7 @@ model Admin {
   updatedAt DateTime @updatedAt
 
   // Child side declares fields+references
-  user      User     @relation("AdminToUser", fields: [userId], references: [id])
+  user User @relation("AdminToUser", fields: [userId], references: [id])
 }
 
 model School {
@@ -61,28 +61,28 @@ model School {
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
-  classes   Class[]
+  classes Class[]
 
   // keep an index on name only
   @@index([name])
 }
 
 model Class {
-  id              String    @id @default(auto()) @map("_id") @db.ObjectId
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
-  schoolId        String?   @db.ObjectId
-  isCommon        Boolean   @default(false)
-  totalStudents   Int       @default(0)
-  boys            Int       @default(0)
-  girls           Int       @default(0)
-  startRollNumber Int       @default(1)
+  schoolId        String?  @db.ObjectId
+  isCommon        Boolean  @default(false)
+  totalStudents   Int      @default(0)
+  boys            Int      @default(0)
+  girls           Int      @default(0)
+  startRollNumber Int      @default(1)
   section         String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
-  school          School?   @relation(fields: [schoolId], references: [id])
-  students        Student[]
-  messages        Message[]
+  school   School?   @relation(fields: [schoolId], references: [id])
+  students Student[]
+  messages Message[]
 
   @@index([schoolId])
   @@index([createdAt])
@@ -91,24 +91,25 @@ model Class {
 }
 
 model Student {
-  id           String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId       String    @unique @db.ObjectId
-  rollNo       Int
-  classId      String    @db.ObjectId
-  name         String
-  gender       String
-  username     String
-  password     String
-  qrCode       String
-  profileImage String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  reviews      Review[]
+  id             String          @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String          @unique @db.ObjectId
+  rollNo         Int
+  classId        String          @db.ObjectId
+  name           String
+  gender         String
+  username       String
+  password       String
+  qrCode         String
+  profileImage   String?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  reviews        Review[]
+  highlightStats HighlightStat[]
 
   // Child side declares fields+references
-  user         User      @relation("StudentToUser", fields: [userId], references: [id])
-  class        Class     @relation(fields: [classId], references: [id])
-  messages     Message[] @relation("StudentMessages")
+  user     User      @relation("StudentToUser", fields: [userId], references: [id])
+  class    Class     @relation(fields: [classId], references: [id])
+  messages Message[] @relation("StudentMessages")
 
   @@index([classId])
   @@index([rollNo])
@@ -142,7 +143,7 @@ model Mentor {
   videoAssignments VideoAssignment[]
 
   // Child side declares fields+references
-  user             User              @relation("MentorToUser", fields: [userId], references: [id])
+  user User @relation("MentorToUser", fields: [userId], references: [id])
 
   @@index([isOrganic])
   @@index([tag])
@@ -151,18 +152,18 @@ model Mentor {
 }
 
 model Video {
-  id              String           @id @default(auto()) @map("_id") @db.ObjectId
+  id              String            @id @default(auto()) @map("_id") @db.ObjectId
   title           String
   description     String
   source          String
   sourcePlatform  String // 'youtube', 'instagram', or 'unknown'
   url             String
-  mediaType       String           @default("video") // 'video' or 'image'
+  mediaType       String            @default("video") // 'video' or 'image'
   metaDescription String?
   videoHashtags   VideoHashtag[]
   assignments     VideoAssignment[]
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
 
   @@index([title])
   @@index([source])
@@ -188,8 +189,8 @@ model VideoHashtag {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  video     Video    @relation(fields: [videoId], references: [id])
-  hashtag   Hashtag  @relation(fields: [hashtagId], references: [id])
+  video   Video   @relation(fields: [videoId], references: [id])
+  hashtag Hashtag @relation(fields: [hashtagId], references: [id])
 
   @@unique([videoId, hashtagId])
   @@index([videoId])
@@ -228,8 +229,8 @@ model Message {
   text      String
   createdAt DateTime @default(now())
 
-  class     Class    @relation(fields: [classId], references: [id])
-  sender    Student  @relation("StudentMessages", fields: [senderId], references: [id])
+  class  Class   @relation(fields: [classId], references: [id])
+  sender Student @relation("StudentMessages", fields: [senderId], references: [id])
 
   @@index([classId])
   @@index([senderId])
@@ -244,8 +245,11 @@ model VideoAssignment {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  video       Video    @relation(fields: [videoId], references: [id])
-  mentor      Mentor   @relation(fields: [mentorId], references: [id])
+  video  Video  @relation(fields: [videoId], references: [id])
+  mentor Mentor @relation(fields: [mentorId], references: [id])
+
+  // Relations
+  highlightStats HighlightStat[]
 
   @@unique([videoId, mentorId, contentType])
   @@index([videoId])
@@ -261,8 +265,26 @@ model Review {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  student     Student  @relation(fields: [studentId], references: [id])
+  student Student @relation(fields: [studentId], references: [id])
 
+  @@index([studentId])
+  @@index([createdAt])
+}
+
+model HighlightStat {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  videoAssignId String   @db.ObjectId
+  studentId     String   @db.ObjectId
+  watched       Boolean  @default(false)
+  liked         Boolean  @default(false)
+  comment       String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  videoAssign VideoAssignment @relation(fields: [videoAssignId], references: [id])
+  student     Student         @relation(fields: [studentId], references: [id])
+
+  @@index([videoAssignId])
   @@index([studentId])
   @@index([createdAt])
 }
