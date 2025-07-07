@@ -14,13 +14,55 @@ export default function StoryViewer({
   const [currentStoryIndex, setCurrentStoryIndex] = useState(startIndex)
   const [progress, setProgress] = useState(0)
   const [isPaused, setIsPaused] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [hasError, setHasError] = useState(false)
   const intervalRef = useRef(null)
+  const preloadRef = useRef(new Set())
 
   const currentStory = stories[currentStoryIndex]
 
+  // Preload adjacent stories for smoother transitions
+  useEffect(() => {
+    const preloadStory = (index) => {
+      if (index < 0 || index >= stories.length || preloadRef.current.has(index))
+        return
+
+      const story = stories[index]
+      if (!story?.url) return
+
+      if (story.mediaType === 'video') {
+        const video = document.createElement('video')
+        video.preload = 'metadata'
+        video.crossOrigin = 'anonymous'
+        video.src = story.url
+        video.muted = true
+        video.playsInline = true
+        video.addEventListener(
+          'canplaythrough',
+          () => {
+            preloadRef.current.add(index)
+          },
+          { once: true }
+        )
+      } else {
+        const img = new Image()
+        img.crossOrigin = 'anonymous'
+        img.src = story.url
+        img.onload = () => {
+          preloadRef.current.add(index)
+        }
+      }
+    }
+
+    // Preload current, next, and previous stories
+    preloadStory(currentStoryIndex - 1)
+    preloadStory(currentStoryIndex)
+    preloadStory(currentStoryIndex + 1)
+  }, [currentStoryIndex, stories])
+
   // Auto-progress effect (~5s per story)
   useEffect(() => {
-    if (isPaused) return
+    if (isPaused || isLoading) return
 
     clearInterval(intervalRef.current)
 
@@ -37,7 +79,14 @@ export default function StoryViewer({
     }, 100)
 
     return () => clearInterval(intervalRef.current)
-  }, [currentStoryIndex, isPaused])
+  }, [currentStoryIndex, isPaused, isLoading])
+
+  // Reset loading state when story changes
+  useEffect(() => {
+    setIsLoading(true)
+    setHasError(false)
+    setProgress(0)
+  }, [currentStoryIndex])
 
   const handlePauseToggle = () => setIsPaused((p) => !p)
 
@@ -65,6 +114,16 @@ export default function StoryViewer({
         onClose()
       }
     }
+  }
+
+  const handleMediaLoad = () => {
+    setIsLoading(false)
+    setHasError(false)
+  }
+
+  const handleMediaError = () => {
+    setIsLoading(false)
+    setHasError(true)
   }
 
   return (
@@ -108,6 +167,7 @@ export default function StoryViewer({
                 src={currentStory?.mentorAvatar || '/placeholder.svg'}
                 alt={currentStory?.mentorUsername || ''}
                 className="w-full h-full rounded-full object-cover"
+                loading="eager"
               />
             </div>
             <span className="text-white font-medium">
@@ -138,6 +198,24 @@ export default function StoryViewer({
         onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
       >
+        {/* Loading indicator */}
+        {isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+            <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+          </div>
+        )}
+
+        {/* Error state */}
+        {hasError && !isLoading && (
+          <div className="absolute inset-0 flex items-center justify-center bg-black/50 z-10">
+            <div className="text-white text-center">
+              <div className="text-4xl mb-2">⚠️</div>
+              <p>Failed to load story</p>
+            </div>
+          </div>
+        )}
+
+        {/* Media content */}
         {currentStory?.mediaType === 'video' ? (
           <video
             key={currentStory.id}
@@ -146,6 +224,9 @@ export default function StoryViewer({
             autoPlay
             muted
             playsInline
+            onLoadedData={handleMediaLoad}
+            onError={handleMediaError}
+            onCanPlay={handleMediaLoad}
           />
         ) : (
           <img
@@ -153,6 +234,9 @@ export default function StoryViewer({
             src={currentStory.url}
             alt="story"
             className="max-h-full max-w-full object-contain"
+            onLoad={handleMediaLoad}
+            onError={handleMediaError}
+            loading="eager"
           />
         )}
 

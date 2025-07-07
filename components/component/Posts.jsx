@@ -10,6 +10,60 @@ import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
 import Comments from '../comments'
 import ShareModal from '../share-modal'
 
+const AVATAR_CACHE_KEY = 'mentor_avatar_cache'
+
+// Simple avatar cache for consistent loading
+class AvatarCache {
+  constructor() {
+    this.cache = this.loadFromStorage()
+  }
+
+  loadFromStorage() {
+    try {
+      return JSON.parse(localStorage.getItem(AVATAR_CACHE_KEY) || '{}')
+    } catch {
+      return {}
+    }
+  }
+
+  saveToStorage() {
+    try {
+      localStorage.setItem(AVATAR_CACHE_KEY, JSON.stringify(this.cache))
+    } catch (e) {
+      console.warn('Failed to save avatar cache:', e)
+    }
+  }
+
+  async preloadAvatar(url) {
+    if (this.cache[url]) return this.cache[url]
+
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error('Failed to fetch')
+
+      const blob = await response.blob()
+      const base64 = await new Promise((resolve) => {
+        const reader = new FileReader()
+        reader.onload = () => resolve(reader.result)
+        reader.readAsDataURL(blob)
+      })
+
+      this.cache[url] = base64
+      this.saveToStorage()
+      return base64
+    } catch (e) {
+      console.warn('Failed to preload avatar:', url, e)
+      return url // fallback to original URL
+    }
+  }
+
+  getCachedAvatar(url) {
+    return this.cache[url] || url
+  }
+}
+
+const avatarCache = new AvatarCache()
+
 export default function Posts({
   posts,
   toggleLike,
@@ -41,6 +95,15 @@ export default function Posts({
       fetchMorePosts()
     }
   }, [sentinelInView, hasMore, isLoading, fetchMorePosts])
+
+  // Preload avatars when posts change
+  useEffect(() => {
+    posts.forEach((post) => {
+      if (post.avatar && post.avatar !== '/placeholder.png') {
+        avatarCache.preloadAvatar(post.avatar)
+      }
+    })
+  }, [posts])
 
   // Restore scroll position on mount
   useLayoutEffect(() => {
@@ -238,9 +301,10 @@ function PostItem({
       <div className="flex items-center justify-between px-4 py-2">
         <div className="flex items-center space-x-3">
           <img
-            src={post.avatar || '/placeholder.png'}
+            src={avatarCache.getCachedAvatar(post.avatar || '/placeholder.png')}
             alt={post.username}
             className="w-8 h-8 rounded-full"
+            loading="eager"
           />
           <span className="font-medium text-sm text-black dark:text-white">
             {post.username}
