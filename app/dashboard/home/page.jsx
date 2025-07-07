@@ -1,80 +1,86 @@
 'use client'
 
-import { useState, useEffect, useCallback, useMemo, Suspense } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import Header from '@/components/component/Header'
 import {
   ComponentLoader,
   SkeletonCard,
   SkeletonText,
 } from '@/components/ui/loading'
-// import { dummyPosts, followedUsersDummy } from './dummyDataFile'
 
-// Lazy load components for better performance
-import dynamic from 'next/dynamic'
-
-// Lazy load heavy components
-const Stories = dynamic(() => import('@/components/component/Stories'), {
-  loading: () => <StoriesSkeleton />,
-  ssr: false,
-})
-
-const Posts = dynamic(() => import('@/components/component/Posts'), {
-  loading: () => <PostsSkeleton />,
-  ssr: false,
-})
+// Import components directly for instant loading (no dynamic imports)
+import Stories from '@/components/component/Stories'
+import Posts from '@/components/component/Posts'
 
 // Local-storage keys and constants
 const LOCAL_POSTS_KEY = 'feed_last_chunk'
 const LOCAL_SCROLL_KEY = 'feed_scroll_position'
 const POSTS_PER_PAGE = 6
 
-// Helper to synchronously pull cached feed data before first render
-function getInitialFeedData() {
+// Pre-load all data synchronously before component renders
+function initializeAppData() {
   if (typeof window === 'undefined') {
-    return { posts: [], page: 1, scroll: 0 }
+    return {
+      posts: [],
+      page: 1,
+      scroll: 0,
+      stories: [],
+      initialized: false,
+    }
   }
 
   try {
-    // 1️⃣ Same-session restore
+    // 1️⃣ Load posts from session/localStorage
+    let posts = []
+    let page = 1
+    let scroll = 0
+
     const sessionPosts = JSON.parse(
       sessionStorage.getItem('feed_session_posts') || '[]'
     )
     const sessionScroll = Number(
       sessionStorage.getItem('feed_session_scroll') || 0
     )
+
     if (sessionPosts.length) {
-      return {
-        posts: sessionPosts,
-        page: Math.floor(sessionPosts.length / POSTS_PER_PAGE) + 1,
-        scroll: sessionScroll,
-      }
+      posts = sessionPosts
+      page = Math.floor(sessionPosts.length / POSTS_PER_PAGE) + 1
+      scroll = sessionScroll
+    } else {
+      const savedPosts = JSON.parse(
+        localStorage.getItem(LOCAL_POSTS_KEY) || '[]'
+      )
+      const savedScroll = Number(localStorage.getItem(LOCAL_SCROLL_KEY) || 0)
+      posts = savedPosts
+      page = savedPosts.length > 0 ? 2 : 1
+      scroll = savedScroll
     }
 
-    // 2️⃣ Cached last chunk from previous sessions
-    const savedPosts = JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY) || '[]')
-    const savedScroll = Number(localStorage.getItem(LOCAL_SCROLL_KEY) || 0)
+    // 2️⃣ Load stories from localStorage
+    const stories = JSON.parse(
+      localStorage.getItem('feed_stories_cache') || '[]'
+    )
 
     return {
-      posts: savedPosts,
-      page: savedPosts.length > 0 ? 2 : 1,
-      scroll: savedScroll,
+      posts,
+      page,
+      scroll,
+      stories,
+      initialized: true,
     }
   } catch (e) {
-    console.error('Error parsing cached feed data', e)
-    return { posts: [], page: 1, scroll: 0 }
+    console.error('Error loading cached data:', e)
+    return {
+      posts: [],
+      page: 1,
+      scroll: 0,
+      stories: [],
+      initialized: true,
+    }
   }
 }
 
-function getInitialStories() {
-  if (typeof window === 'undefined') return []
-  try {
-    return JSON.parse(localStorage.getItem('feed_stories_cache') || '[]')
-  } catch {
-    return []
-  }
-}
-
-// Skeleton components for loading states
+// Skeleton components for loading states (only used for truly empty states)
 const StoriesSkeleton = () => (
   <div className="flex space-x-3 p-4 overflow-x-auto">
     {Array.from({ length: 6 }).map((_, i) => (
@@ -102,65 +108,44 @@ const PostsSkeleton = () => (
 )
 
 export default function FeedScreen() {
-  // Pre-initialize with cached data to prevent loading states
-  const initialFeed = useMemo(() => getInitialFeedData(), [])
-  const initialStoriesData = useMemo(() => getInitialStories(), [])
+  // Initialize all data synchronously for instant rendering
+  const appData = useMemo(() => initializeAppData(), [])
 
-  const [stories, setStories] = useState(initialStoriesData)
-  const [followedUsers, setFollowedUsers] = useState([])
+  // State initialized with cached data - no loading states needed
+  const [stories] = useState(appData.stories)
+  const [followedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
-
   const [activeModal, setActiveModal] = useState({ type: null, postId: null })
 
-  // Feed state (previously from Redux)
-  const [posts, setPosts] = useState(initialFeed.posts)
-  const [page, setPage] = useState(initialFeed.page)
+  // Feed state
+  const [posts, setPosts] = useState(appData.posts)
+  const [page, setPage] = useState(appData.page)
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [scrollPosition, setScrollPos] = useState(initialFeed.scroll)
-  const [isInitialized, setIsInitialized] = useState(false)
+  const [scrollPosition, setScrollPos] = useState(appData.scroll)
 
-  // Centralized history management for modals
+  // Minimal modal history management
   useEffect(() => {
-    const handlePopState = () => {
-      // When user navigates back (e.g., swipe), close any active modal.
-      setActiveModal({ type: null, postId: null })
-    }
-
+    const handlePopState = () => setActiveModal({ type: null, postId: null })
     window.addEventListener('popstate', handlePopState)
-    return () => {
-      window.removeEventListener('popstate', handlePopState)
-    }
+    return () => window.removeEventListener('popstate', handlePopState)
   }, [])
 
+  // Optimized modal functions
   const openModal = useCallback(
     (type, postId = null) => {
-      if (activeModal.type) return // Prevent opening multiple modals
-
-      // Push a state to the history to handle back navigation
+      if (activeModal.type) return
       window.history.pushState({ modal: type }, '', window.location.href)
       setActiveModal({ type, postId })
     },
     [activeModal.type]
   )
 
-  const closeModal = useCallback(() => {
-    // Go back in history, which triggers popstate and closes the modal
-    window.history.back()
-  }, [])
+  const closeModal = useCallback(() => window.history.back(), [])
 
-  useEffect(() => {
-    if (error) {
-      console.error('Error fetching posts:', error)
-    }
-  }, [error])
-
-  // Helper to shuffle an array (for random feed order)
-  const shuffle = useCallback((arr) => arr.sort(() => Math.random() - 0.5), [])
-
-  // Fetch posts from API (6 at a time)
+  // Optimized fetch function
   const fetchPosts = useCallback(async () => {
     if (isLoading || !hasMore) return
 
@@ -170,19 +155,15 @@ export default function FeedScreen() {
       const data = await res.json()
 
       if (data.success) {
-        const incoming = shuffle(data.data)
-
-        // Remove duplicates if any
+        // Simple randomization without heavy shuffle
+        const incoming = data.data.sort(() => Math.random() - 0.5)
         const existingIds = new Set(posts.map((p) => p.id))
         const uniqueNew = incoming.filter((p) => !existingIds.has(p.id))
 
         setPosts((prev) => [...prev, ...uniqueNew])
-
-        // Update paging info
         setPage((prev) => prev + 1)
         setHasMore(data.currentPage < data.totalPages)
 
-        // Persist the last FULL chunk (6 posts) to localStorage
         if (uniqueNew.length === POSTS_PER_PAGE) {
           localStorage.setItem(LOCAL_POSTS_KEY, JSON.stringify(uniqueNew))
         }
@@ -195,36 +176,32 @@ export default function FeedScreen() {
     } finally {
       setIsLoading(false)
     }
-  }, [isLoading, hasMore, page, posts, shuffle])
+  }, [isLoading, hasMore, page, posts])
 
-  // On mount: if we already have cached posts, skip fetching; otherwise fetch first batch.
+  // Deferred initialization - only fetch if no cached data
   useEffect(() => {
-    let timeoutId
-
-    // Mark as initialized immediately for better UX
-    setIsInitialized(true)
-
-    // Defer API calls slightly to allow smooth page transition
-    if (posts.length === 0) {
-      timeoutId = setTimeout(() => {
-        fetchPosts()
-      }, 100) // Small delay for smoother navigation
+    if (appData.initialized && posts.length === 0) {
+      // Use requestIdleCallback for non-critical fetch
+      if (window.requestIdleCallback) {
+        window.requestIdleCallback(() => fetchPosts())
+      } else {
+        setTimeout(fetchPosts, 50)
+      }
     }
+  }, [appData.initialized, posts.length, fetchPosts])
 
-    return () => {
-      if (timeoutId) clearTimeout(timeoutId)
-    }
-  }, [])
-
-  // Save full feed + scroll into sessionStorage whenever they change, so navigating away/back is instant.
+  // Session storage persistence (throttled)
   useEffect(() => {
-    if (isInitialized) {
-      sessionStorage.setItem('feed_session_posts', JSON.stringify(posts))
-      sessionStorage.setItem('feed_session_scroll', scrollPosition)
+    if (appData.initialized) {
+      const timeoutId = setTimeout(() => {
+        sessionStorage.setItem('feed_session_posts', JSON.stringify(posts))
+        sessionStorage.setItem('feed_session_scroll', scrollPosition)
+      }, 200)
+      return () => clearTimeout(timeoutId)
     }
-  }, [posts, scrollPosition, isInitialized])
+  }, [posts, scrollPosition, appData.initialized])
 
-  // Optimized toggle functions with useCallback
+  // Optimized handlers
   const toggleLike = useCallback((postId) => {
     setLikedPosts((prev) =>
       prev.includes(postId)
@@ -241,85 +218,63 @@ export default function FeedScreen() {
     )
   }, [])
 
-  const debounce = useCallback((func, delay) => {
-    let timeoutId
-    return (...args) => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(() => {
-        func.apply(this, args)
-      }, delay)
+  // Optimized scroll handler with throttling
+  const handleScroll = useCallback((position) => {
+    setScrollPos(position)
+    // Throttle localStorage writes
+    if (window.requestIdleCallback) {
+      window.requestIdleCallback(() => {
+        localStorage.setItem(LOCAL_SCROLL_KEY, position)
+      })
     }
   }, [])
 
-  // Debounced scroll handler (persists to localStorage)
-  const handleScroll = useCallback(
-    debounce((position) => {
-      setScrollPos(position)
-      localStorage.setItem(LOCAL_SCROLL_KEY, position)
-    }, 200),
-    [debounce]
-  )
-
   const handleFetchMorePosts = useCallback(() => {
-    if (hasMore && !isLoading) {
-      fetchPosts()
-    }
+    if (hasMore && !isLoading) fetchPosts()
   }, [hasMore, isLoading, fetchPosts])
 
-  // Memoize story loading check
-  const showStorySkeleton = useMemo(
-    () => stories.length === 0 && !isInitialized,
-    [stories.length, isInitialized]
-  )
-
-  // Memoize post loading check
-  const showPostSkeleton = useMemo(
-    () => posts.length === 0 && hasMore && !isInitialized,
-    [posts.length, hasMore, isInitialized]
-  )
+  // Only show skeletons for truly empty states (rare)
+  const showStorySkeleton = stories.length === 0 && !appData.initialized
+  const showPostSkeleton = posts.length === 0 && !appData.initialized
 
   return (
     <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto">
       <Header />
 
-      <Suspense fallback={<StoriesSkeleton />}>
-        <ComponentLoader
-          isLoading={showStorySkeleton}
-          skeleton={<StoriesSkeleton />}
-        >
-          <Stories
-            stories={stories}
-            onStoryClick={openModal}
-            activeModal={activeModal}
-            closeModal={closeModal}
-          />
-        </ComponentLoader>
-      </Suspense>
+      {/* Stories - no ComponentLoader wrapper for better performance */}
+      {showStorySkeleton ? (
+        <StoriesSkeleton />
+      ) : (
+        <Stories
+          stories={stories}
+          onStoryClick={openModal}
+          activeModal={activeModal}
+          closeModal={closeModal}
+        />
+      )}
 
-      <Suspense fallback={<PostsSkeleton />}>
-        <ComponentLoader
-          isLoading={showPostSkeleton}
-          skeleton={<PostsSkeleton />}
-        >
-          <Posts
-            posts={posts}
-            likedPosts={likedPosts}
-            savedPosts={savedPosts}
-            toggleLike={toggleLike}
-            toggleSave={toggleSave}
-            followedUsers={followedUsers}
-            openModal={openModal}
-            activeModal={activeModal}
-            closeModal={closeModal}
-            fetchMorePosts={handleFetchMorePosts}
-            hasMore={hasMore}
-            isLoading={isLoading}
-            onScroll={handleScroll}
-            scrollPosition={scrollPosition}
-            storageKey={LOCAL_SCROLL_KEY}
-          />
-        </ComponentLoader>
-      </Suspense>
+      {/* Posts - no ComponentLoader wrapper for better performance */}
+      {showPostSkeleton ? (
+        <PostsSkeleton />
+      ) : (
+        <Posts
+          posts={posts}
+          likedPosts={likedPosts}
+          savedPosts={savedPosts}
+          toggleLike={toggleLike}
+          toggleSave={toggleSave}
+          followedUsers={followedUsers}
+          openModal={openModal}
+          activeModal={activeModal}
+          closeModal={closeModal}
+          fetchMorePosts={handleFetchMorePosts}
+          hasMore={hasMore}
+          isLoading={isLoading}
+          onScroll={handleScroll}
+          scrollPosition={scrollPosition}
+          storageKey={LOCAL_SCROLL_KEY}
+        />
+      )}
     </div>
   )
 }

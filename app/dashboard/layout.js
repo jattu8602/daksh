@@ -28,13 +28,46 @@ const preloadRoutes = () => {
   })
 }
 
+// Check if we have valid cached authentication
+function hasValidAuthCache() {
+  try {
+    const authState = localStorage.getItem('auth_cache')
+    if (!authState) return false
+
+    const { user, timestamp } = JSON.parse(authState)
+    const isRecent = Date.now() - timestamp < 5 * 60 * 1000 // 5 minutes
+
+    return user && isRecent
+  } catch {
+    return false
+  }
+}
+
+// Cache auth state
+function cacheAuthState(user) {
+  try {
+    localStorage.setItem(
+      'auth_cache',
+      JSON.stringify({
+        user,
+        timestamp: Date.now(),
+      })
+    )
+  } catch (e) {
+    console.warn('Failed to cache auth state:', e)
+  }
+}
+
 export default function DashboardLayout({ children }) {
   const pathname = usePathname()
   const dispatch = useDispatch()
   const router = useRouter()
   const { user, isAuthenticated } = useSelector((state) => state.auth)
-  const [isAuthenticating, setIsAuthenticating] = useState(!isAuthenticated)
-  const [authChecked, setAuthChecked] = useState(isAuthenticated)
+
+  // Skip loading state if we have valid cached auth
+  const [isAuthenticating, setIsAuthenticating] = useState(
+    !isAuthenticated && !hasValidAuthCache()
+  )
 
   // Memoize navigation items to prevent re-renders
   const navItems = useMemo(
@@ -63,21 +96,33 @@ export default function DashboardLayout({ children }) {
     []
   )
 
-  // Optimized authentication check - only run once or when explicitly needed
+  // Non-blocking authentication check
   useEffect(() => {
     let isMounted = true
 
     const checkAuth = async () => {
-      // Skip if already authenticated and checked
-      if (isAuthenticated && authChecked) {
+      // If already authenticated, just cache and continue
+      if (isAuthenticated && user) {
+        cacheAuthState(user)
         setIsAuthenticating(false)
         return
       }
 
+      // If we have recent cached auth, assume valid and check in background
+      if (hasValidAuthCache()) {
+        setIsAuthenticating(false)
+      }
+
       try {
+        const controller = new AbortController()
+        const timeoutId = setTimeout(() => controller.abort(), 3000) // 3s timeout
+
         const response = await fetch('/api/auth/session', {
           credentials: 'include',
+          signal: controller.signal,
         })
+
+        clearTimeout(timeoutId)
 
         if (!isMounted) return
 
@@ -85,18 +130,30 @@ export default function DashboardLayout({ children }) {
 
         if (data.success && data.user) {
           dispatch(loginSuccess(data.user))
-          setAuthChecked(true)
+          cacheAuthState(data.user)
         } else {
-          dispatch(loginFailure(data.error || 'Session expired'))
-          router.replace('/')
-          return
+          // Only redirect if we're definitely not authenticated
+          if (!hasValidAuthCache()) {
+            dispatch(loginFailure(data.error || 'Session expired'))
+            router.replace('/')
+            return
+          }
         }
       } catch (err) {
         if (!isMounted) return
-        console.error('Failed to fetch session:', err)
-        dispatch(loginFailure('Failed to fetch session'))
-        router.replace('/')
-        return
+
+        // Don't fail if request times out - just continue with cached state
+        if (err.name === 'AbortError') {
+          console.warn('Auth check timed out, continuing with cached state')
+        } else {
+          console.error('Auth check failed:', err)
+          // Only redirect if we have no fallback
+          if (!hasValidAuthCache()) {
+            dispatch(loginFailure('Failed to fetch session'))
+            router.replace('/')
+            return
+          }
+        }
       } finally {
         if (isMounted) {
           setIsAuthenticating(false)
@@ -104,17 +161,12 @@ export default function DashboardLayout({ children }) {
       }
     }
 
-    // Only check auth if not already authenticated or not yet checked
-    if (!isAuthenticated || !authChecked) {
-      checkAuth()
-    } else {
-      setIsAuthenticating(false)
-    }
+    checkAuth()
 
     return () => {
       isMounted = false
     }
-  }, [isAuthenticated, authChecked, dispatch, router])
+  }, [isAuthenticated, user, dispatch, router])
 
   // Memoize navigation visibility logic
   const shouldHideNav = useMemo(
@@ -130,18 +182,16 @@ export default function DashboardLayout({ children }) {
     [user?.student?.profileImage]
   )
 
-  // Preload routes when user is authenticated and idle
+  // Preload routes when idle
   useEffect(() => {
-    if (isAuthenticated && !isAuthenticating) {
-      const timeoutId = setTimeout(() => {
-        preloadRoutes()
-      }, 2000) // Preload after 2 seconds of being on the page
-
+    if (!isAuthenticating) {
+      const timeoutId = setTimeout(preloadRoutes, 1000)
       return () => clearTimeout(timeoutId)
     }
-  }, [isAuthenticated, isAuthenticating])
+  }, [isAuthenticating])
 
-  if (isAuthenticating) {
+  // Only show loader if truly needed (no cached auth)
+  if (isAuthenticating && !hasValidAuthCache()) {
     return <PageLoader />
   }
 
