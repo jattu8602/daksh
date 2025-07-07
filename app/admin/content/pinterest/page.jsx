@@ -33,7 +33,7 @@ async function urlToFile(url, filename, mimeType) {
 
 const PinterestScrapperPage = () => {
   const [description, setDescription] = useState('')
-  const [count, setCount] = useState(10)
+  const [count, setCount] = useState(5)
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState([])
   const [error, setError] = useState('')
