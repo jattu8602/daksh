@@ -2,6 +2,10 @@
 
 import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
 import { User, School, Users, Award, Mail, Phone } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { FileText } from 'lucide-react'
+import Image from 'next/image'
+import Link from 'next/link'
 
 const ProfileSkeleton = () => (
   <div className="space-y-8">
@@ -142,6 +146,27 @@ export default function Profile({ user, isLoading }) {
           />
         </div>
       </div>
+      {/* Notes Button */}
+      <Link href="/dashboard/notes">
+        <div className="w-full max-w-md">
+          <Button className="w-full h-24 text-xl font-semibold bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-200 flex items-center justify-between gap-3 p-4">
+            <div className="flex items-center gap-4">
+              {/* <FileText className="w-12 h-12" /> */}
+              <span className="text-2xl font-bold">Notes</span>
+            </div>
+
+            <div className="w-16 h-16 relative">
+              <Image
+                src="https://res.cloudinary.com/doxmvuss9/image/upload/v1751108014/link-generator/vaclahmuqvywuffb5p3e.png"
+                alt="Notes icon"
+                width={64}
+                height={64}
+                className="object-contain rounded"
+              />
+            </div>
+          </Button>
+        </div>
+      </Link>
     </div>
   )
 }

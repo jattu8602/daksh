@@ -34,12 +34,18 @@ export default function NotesPage() {
   const [selectedNotes, setSelectedNotes] = useState(new Set())
   const [selectAll, setSelectAll] = useState(false)
   const [showBulkColorPicker, setShowBulkColorPicker] = useState(false)
-  const longPressTimer = useRef(null)
 
   // Initialize mounted
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Exit selection mode if no notes are selected
+  useEffect(() => {
+    if (isSelectionMode && selectedNotes.size === 0) {
+      cancelSelection()
+    }
+  }, [selectedNotes, isSelectionMode])
 
   // Load notes from localStorage on mount
   useEffect(() => {
@@ -188,6 +194,8 @@ export default function NotesPage() {
       // Toggle color filter
       setSelectedColor(selectedColor === colorValue ? null : colorValue)
     }
+    localStorage.setItem('dashboard-notes', JSON.stringify(notes))
+    setShowBulkColorPicker(false)
   }
 
   const updateNoteColors = (newColor) => {
@@ -202,22 +210,6 @@ export default function NotesPage() {
     setNotes(updatedNotes)
     localStorage.setItem('dashboard-notes', JSON.stringify(updatedNotes))
     setShowBulkColorPicker(false)
-  }
-
-  const handleLongPressStart = (noteId) => {
-    longPressTimer.current = setTimeout(() => {
-      if (!isSelectionMode) {
-        startSelectionMode()
-        toggleNoteSelection(noteId)
-      }
-    }, 500)
-  }
-
-  const handleLongPressEnd = () => {
-    if (longPressTimer.current) {
-      clearTimeout(longPressTimer.current)
-      longPressTimer.current = null
-    }
   }
 
   // Filter notes and tasks based on selected color
@@ -365,22 +357,21 @@ export default function NotesPage() {
                     isSelectionMode ? '' : 'hover:bg-muted/50'
                   }`}
                   onClick={() => {
-                    if (isSelectionMode) {
-                      toggleNoteSelection(note.id)
-                    } else {
+                    if (!isSelectionMode) {
                       router.push(`/dashboard/notes/${note.id}`)
                     }
                   }}
-                  onTouchStart={() => handleLongPressStart(note.id)}
-                  onTouchEnd={handleLongPressEnd}
-                  onMouseDown={() => handleLongPressStart(note.id)}
-                  onMouseUp={handleLongPressEnd}
-                  onMouseLeave={handleLongPressEnd}
                 >
                   <div className="flex items-center gap-3">
                     <Checkbox
                       checked={selectedNotes.has(note.id)}
-                      onCheckedChange={() => toggleNoteSelection(note.id)}
+                      onCheckedChange={() => {
+                        if (!isSelectionMode) {
+                          startSelectionMode()
+                        }
+                        toggleNoteSelection(note.id)
+                      }}
+                      onClick={(e) => e.stopPropagation()}
                       className="h-4 w-4 border-2 border-border data-[state=checked]:bg-primary data-[state=checked]:border-primary"
                     />
                     <span className="text-base text-foreground">
