@@ -7,7 +7,8 @@ const LOCAL_STORIES_KEY = 'feed_stories_cache'
 const STORIES_TIMESTAMP_KEY = 'feed_stories_timestamp'
 const MEDIA_CACHE_KEY = 'story_media_cache'
 const AVATAR_CACHE_KEY = 'mentor_avatar_cache'
-const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes cache
+const CACHE_DURATION = 24 * 60 * 60 * 1000; // 1 day cache
+
 
 // Media preloader with localStorage caching
 class MediaPreloader {
