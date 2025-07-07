@@ -70,7 +70,7 @@ export default function NewNotePage() {
   const handleBack = () => {
     saveNote()
     // UPDATED PATH
-    router.push('/notes')
+    router.push('/dashboard/notes')
   }
 
   useEffect(() => {

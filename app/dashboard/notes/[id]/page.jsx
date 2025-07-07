@@ -62,7 +62,7 @@ export default function EditNotePage({ params }) {
 
   const handleBack = () => {
     autoSave()
-    router.push('/notes')
+    router.push('/dashboard/notes')
   }
 
   useEffect(() => {

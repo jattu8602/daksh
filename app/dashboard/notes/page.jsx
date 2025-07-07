@@ -272,7 +272,12 @@ export default function NotesPage() {
                 >
                   <Trash2 className="h-4 w-4" />
                 </Button>
-                <Button variant="ghost" size="icon" className="h-8 w-8">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={startSelectionMode}
+                >
                   <Palette className="h-4 w-4" />
                 </Button>
                 <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -363,7 +368,7 @@ export default function NotesPage() {
                     if (isSelectionMode) {
                       toggleNoteSelection(note.id)
                     } else {
-                      router.push(`/notes/${note.id}`)
+                      router.push(`/dashboard/notes/${note.id}`)
                     }
                   }}
                   onTouchStart={() => handleLongPressStart(note.id)}
@@ -429,7 +434,7 @@ export default function NotesPage() {
 
         {/* Floating Action Button (only when not in selection mode) */}
         {!isSelectionMode && (
-          <Link href="/notes/new">
+          <Link href="/dashboard/notes/new">
             <div className="fixed bottom-20 right-4 z-50">
               <Button
                 size="lg"
