@@ -7,7 +7,7 @@ export async function GET(req) {
   try {
     const { searchParams } = new URL(req.url);
     const page = parseInt(searchParams.get("page")) || 1;
-    const limit = parseInt(searchParams.get("limit")) || 10;
+    const limit = parseInt(searchParams.get("limit")) || 21;
     const search = searchParams.get("search") || "";
     const isOrganic = searchParams.get("isOrganic");
     const tag = searchParams.get("tag");
