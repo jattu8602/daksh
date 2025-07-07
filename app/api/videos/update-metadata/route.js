@@ -1,13 +1,13 @@
-import { NextResponse } from "next/server"
-import prisma from "@/lib/prisma"
+import { NextResponse } from 'next/server'
+import prisma from '@/lib/prisma'
 
 export async function POST(request) {
   try {
-    const { videoId, metaDescription, hashtags } = await request.json()
+    const { videoId, title, metaDescription, hashtags } = await request.json()
 
     if (!videoId) {
       return NextResponse.json(
-        { error: "Video ID is required" },
+        { error: 'Video ID is required' },
         { status: 400 }
       )
     }
@@ -15,24 +15,34 @@ export async function POST(request) {
     // Start a transaction to ensure data consistency
     const result = await prisma.$transaction(async (tx) => {
       try {
-        // Update video meta description
-        const updatedVideo = await tx.video.update({
+        // Update video fields (title & metaDescription)
+        await tx.video.update({
           where: { id: videoId },
           data: {
-            metaDescription: metaDescription || undefined,
+            title: title !== undefined ? title : undefined,
+            metaDescription:
+              metaDescription !== undefined ? metaDescription : undefined,
           },
         })
 
-        // If hashtags are provided, update them
-        if (hashtags && Array.isArray(hashtags)) {
+        const tagsArray = Array.isArray(hashtags)
+          ? hashtags
+          : typeof hashtags === 'string'
+          ? hashtags
+              .split(',')
+              .map((t) => t.trim())
+              .filter(Boolean)
+          : null
+
+        if (tagsArray && tagsArray.length > 0) {
           // Remove existing hashtag connections
           await tx.videoHashtag.deleteMany({
             where: { videoId },
           })
 
           // Create or find hashtags and connect them
-          for (const tag of hashtags) {
-            const cleanTag = tag.startsWith("#") ? tag.slice(1) : tag
+          for (const tag of tagsArray) {
+            const cleanTag = tag.startsWith('#') ? tag.slice(1) : tag
 
             // Find or create the hashtag
             const hashtag = await tx.hashtag.upsert({
@@ -63,7 +73,7 @@ export async function POST(request) {
           },
         })
       } catch (error) {
-        console.error("Transaction error:", error)
+        console.error('Transaction error:', error)
         throw error
       }
     })
@@ -72,16 +82,16 @@ export async function POST(request) {
       success: true,
       video: {
         ...result,
-        hashtags: result.videoHashtags.map(vh => vh.hashtag.tag),
+        hashtags: result.videoHashtags.map((vh) => vh.hashtag.tag),
       },
     })
   } catch (error) {
-    console.error("Error updating video metadata:", error)
+    console.error('Error updating video metadata:', error)
     return NextResponse.json(
       {
-        error: "Failed to update video metadata",
+        error: 'Failed to update video metadata',
         details: error.message,
-        code: error.code
+        code: error.code,
       },
       { status: 500 }
     )
