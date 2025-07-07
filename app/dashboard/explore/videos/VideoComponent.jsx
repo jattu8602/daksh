@@ -14,7 +14,7 @@ export default function VideoComponent({
   mentorName = "Unknown",
 }) {
   return (
-    <div className="flex gap-3 hover:bg-muted/50 rounded-lg transition-colors cursor-pointer">
+    <div className="flex gap-3 hover:bg-muted/50 transition-colors cursor-pointer">
       {/* Thumbnail with duration overlay */}
       <div className="relative flex-shrink-0">
         <Image
@@ -22,7 +22,7 @@ export default function VideoComponent({
           alt={title}
           width={200}
           height={120}
-          className="rounded-lg object-cover w-[200px] h-[120px]"
+          className=" object-cover w-[200px] h-[120px]"
         />
         <div className="absolute bottom-2 right-2 bg-black/80 text-white text-xs px-1.5 py-0.5 rounded">
           {duration}

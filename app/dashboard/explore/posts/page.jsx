@@ -138,11 +138,11 @@ export default function PostsContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-1 px-1">
+    <div className="grid grid-cols-3">
       {postImages.map((image, index) => (
         <div
           key={index}
-          className="aspect-square relative rounded-lg overflow-hidden"
+          className="aspect-square relative overflow-hidden"
         >
           <Image
             src={image || '/placeholder.svg'}

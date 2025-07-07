@@ -80,11 +80,11 @@ export default function ShotsContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-1 px-1">
+    <div className="grid grid-cols-3">
       {videos.map((video) => (
         <div
           key={video.id}
-          className="bg-white rounded-xl overflow-hidden shadow relative group"
+          className="bg-white overflow-hidden shadow relative group"
         >
           <div className="relative h-66 w-full">
             <Image

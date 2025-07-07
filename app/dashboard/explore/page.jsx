@@ -105,11 +105,11 @@ export default function AllContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 gap-1 px-1 auto-rows-[130px]">
+    <div className="grid grid-cols-3 auto-rows-[130px]">
       {content.map((item, index) => (
         <div
           key={index}
-          className={`relative bg-white rounded-xl overflow-hidden shadow group ${
+          className={`relative bg-white overflow-hidden shadow group ${
             item.type === 'shot' ? 'row-span-2' : 'row-span-1'
           }`}
         >
