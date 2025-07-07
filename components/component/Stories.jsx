@@ -1,11 +1,13 @@
 'use client'
 
 import StoryViewer from '../story-viewer'
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 
 const LOCAL_STORIES_KEY = 'feed_stories_cache'
+const STORIES_TIMESTAMP_KEY = 'feed_stories_timestamp'
 const MEDIA_CACHE_KEY = 'story_media_cache'
 const AVATAR_CACHE_KEY = 'mentor_avatar_cache'
+const CACHE_DURATION = 5 * 60 * 1000 // 5 minutes cache
 
 // Media preloader with localStorage caching
 class MediaPreloader {
@@ -127,9 +129,30 @@ class MediaPreloader {
 // Global instance
 const mediaPreloader = new MediaPreloader()
 
+// Check if stories cache is fresh (less than 5 minutes old)
+function isCacheFresh() {
+  try {
+    const timestamp = localStorage.getItem(STORIES_TIMESTAMP_KEY)
+    if (!timestamp) return false
+    return Date.now() - parseInt(timestamp) < CACHE_DURATION
+  } catch {
+    return false
+  }
+}
+
+// Save stories with timestamp
+function saveStoriesWithTimestamp(stories) {
+  try {
+    localStorage.setItem(LOCAL_STORIES_KEY, JSON.stringify(stories))
+    localStorage.setItem(STORIES_TIMESTAMP_KEY, Date.now().toString())
+  } catch (e) {
+    console.warn('Failed to save stories cache:', e)
+  }
+}
+
 export default function Stories({ onStoryClick, activeModal, closeModal }) {
   // Helper to group highlights per mentor
-  const groupByMentor = (items) => {
+  const groupByMentor = useCallback((items) => {
     const map = new Map()
     items.forEach((item) => {
       const key = item.mentorId || item.mentorUsername
@@ -149,7 +172,7 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
       ...g,
       isWatched: g.stories.every((s) => s.isWatched),
     }))
-  }
+  }, [])
 
   // Preload cached stories before first paint to avoid flicker
   const initialStories =
@@ -168,93 +191,141 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
   const [viewerIndex, setViewerIndex] = useState(0)
   const [storyStart, setStoryStart] = useState(0)
   const [preloadedGroups, setPreloadedGroups] = useState([])
+  const [isRefreshing, setIsRefreshing] = useState(false)
 
   // Preload media for stories
-  const preloadStoryMedia = async (storiesData) => {
-    if (!storiesData.length) return
+  const preloadStoryMedia = useCallback(
+    async (storiesData) => {
+      if (!storiesData.length) return
+
+      try {
+        // Preload first 10 stories' media + all mentor avatars
+        const preloadPromises = storiesData.slice(0, 10).map(async (story) => {
+          const promises = []
+
+          // Preload story media
+          if (story.mediaType === 'video') {
+            promises.push(mediaPreloader.preloadVideo(story.url))
+          } else {
+            promises.push(mediaPreloader.preloadImage(story.url))
+          }
+
+          // Preload mentor avatar
+          if (story.mentorAvatar && story.mentorAvatar !== '/placeholder.svg') {
+            promises.push(mediaPreloader.preloadAvatar(story.mentorAvatar))
+          }
+
+          return Promise.all(promises)
+        })
+
+        await Promise.allSettled(preloadPromises)
+
+        // Update groups with preloaded media URLs
+        const groupsWithPreloadedMedia = groupByMentor(storiesData).map(
+          (group) => ({
+            ...group,
+            mentorAvatar: mediaPreloader.getCachedAvatar(group.mentorAvatar),
+            stories: group.stories.map((story) => ({
+              ...story,
+              url:
+                story.mediaType === 'video'
+                  ? story.url
+                  : mediaPreloader.getCachedMedia(story.url),
+              mentorAvatar: mediaPreloader.getCachedAvatar(story.mentorAvatar),
+            })),
+          })
+        )
+
+        setPreloadedGroups(groupsWithPreloadedMedia)
+      } catch (e) {
+        console.warn('Media preloading failed:', e)
+      }
+    },
+    [groupByMentor]
+  )
+
+  // Background fetch function with timeout
+  const fetchStoriesInBackground = useCallback(async () => {
+    if (isRefreshing) return // Prevent multiple concurrent requests
+
+    setIsRefreshing(true)
 
     try {
-      // Preload first 10 stories' media + all mentor avatars
-      const preloadPromises = storiesData.slice(0, 10).map(async (story) => {
-        const promises = []
+      // Add timeout to the fetch request
+      const controller = new AbortController()
+      const timeoutId = setTimeout(() => controller.abort(), 5000) // 5 second timeout
 
-        // Preload story media
-        if (story.mediaType === 'video') {
-          promises.push(mediaPreloader.preloadVideo(story.url))
-        } else {
-          promises.push(mediaPreloader.preloadImage(story.url))
-        }
-
-        // Preload mentor avatar
-        if (story.mentorAvatar && story.mentorAvatar !== '/placeholder.svg') {
-          promises.push(mediaPreloader.preloadAvatar(story.mentorAvatar))
-        }
-
-        return Promise.all(promises)
+      const response = await fetch('/api/stories?limit=15', {
+        signal: controller.signal,
       })
 
-      await Promise.allSettled(preloadPromises)
+      clearTimeout(timeoutId)
 
-      // Update groups with preloaded media URLs
-      const groupsWithPreloadedMedia = groupByMentor(storiesData).map(
-        (group) => ({
-          ...group,
-          mentorAvatar: mediaPreloader.getCachedAvatar(group.mentorAvatar),
-          stories: group.stories.map((story) => ({
-            ...story,
-            url:
-              story.mediaType === 'video'
-                ? story.url
-                : mediaPreloader.getCachedMedia(story.url),
-            mentorAvatar: mediaPreloader.getCachedAvatar(story.mentorAvatar),
-          })),
-        })
-      )
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`)
+      }
 
-      setPreloadedGroups(groupsWithPreloadedMedia)
-    } catch (e) {
-      console.warn('Media preloading failed:', e)
+      const data = await response.json()
+
+      if (data.success && data.data) {
+        setStories(data.data)
+        setGroups(groupByMentor(data.data))
+        saveStoriesWithTimestamp(data.data)
+
+        // Start preloading media in background
+        preloadStoryMedia(data.data)
+      }
+    } catch (error) {
+      if (error.name === 'AbortError') {
+        console.warn('Stories API request timed out')
+      } else {
+        console.warn('Failed to fetch stories:', error)
+      }
+      // Don't show error to user, just use cached data
+    } finally {
+      setIsRefreshing(false)
     }
-  }
+  }, [isRefreshing, groupByMentor, preloadStoryMedia])
 
-  // Fetch latest stories (cache thereafter)
+  // Fetch stories with stale-while-revalidate pattern
   useEffect(() => {
-    fetch('/api/stories?limit=15')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStories(data.data)
-          setGroups(groupByMentor(data.data))
-          localStorage.setItem(LOCAL_STORIES_KEY, JSON.stringify(data.data))
+    const shouldFetchFresh = !isCacheFresh()
 
-          // Start preloading media
-          preloadStoryMedia(data.data)
-        }
-      })
-      .catch(console.error)
+    if (shouldFetchFresh) {
+      // If cache is stale, fetch in background but don't block UI
+      setTimeout(() => {
+        fetchStoriesInBackground()
+      }, 100) // Small delay to not block initial render
+    } else if (initialStories.length > 0) {
+      // If cache is fresh, start preloading media immediately
+      preloadStoryMedia(initialStories)
+    }
   }, [])
 
   // Keep groups in sync if stories change from other interactions
   useEffect(() => {
     setGroups(groupByMentor(stories))
-  }, [stories])
+  }, [stories, groupByMentor])
 
   // Clear old cache on mount
   useEffect(() => {
     mediaPreloader.clearOldCache()
   }, [])
 
-  const handleStoryClick = (story) => {
-    const targetGroups = preloadedGroups.length ? preloadedGroups : groups
-    const idx = targetGroups.findIndex(
-      (g) =>
-        (g.mentorId || g.mentorUsername) ===
-        (story.mentorId || story.mentorUsername)
-    )
-    setViewerIndex(idx >= 0 ? idx : 0)
-    setStoryStart(0)
-    onStoryClick(story)
-  }
+  const handleStoryClick = useCallback(
+    (story) => {
+      const targetGroups = preloadedGroups.length ? preloadedGroups : groups
+      const idx = targetGroups.findIndex(
+        (g) =>
+          (g.mentorId || g.mentorUsername) ===
+          (story.mentorId || story.mentorUsername)
+      )
+      setViewerIndex(idx >= 0 ? idx : 0)
+      setStoryStart(0)
+      onStoryClick('story')
+    },
+    [preloadedGroups, groups, onStoryClick]
+  )
 
   const displayGroups = preloadedGroups.length ? preloadedGroups : groups
 
@@ -286,6 +357,10 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
                     />
                   </div>
                 </div>
+                {/* Show subtle refresh indicator when updating in background */}
+                {isRefreshing && (
+                  <div className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full animate-pulse" />
+                )}
               </div>
               <span className="text-xs mt-1 truncate w-16 text-center">
                 {group.mentorUsername}
