@@ -317,7 +317,7 @@ export default function MentorProfilePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatCard
-            icon={<VideoIcon />}
+            icon={<ShortsIcon />}
             label="Videos"
             value={mentor.contentCounts?.videos || 0}
           />
@@ -423,7 +423,7 @@ export default function MentorProfilePage() {
                   </div>
                   {hoverInfo.id === item.id && (
                     <div
-                      className={`absolute z-[9999] w-72 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl rounded-lg p-4 transition-opacity duration-200 max-h-60 overflow-y-auto
+                      className={`absolute z-[9999] w-90 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl rounded-lg p-4 transition-opacity duration-200 max-h-110 overflow-y-auto
                         ${
                           hoverInfo.placement === 'right'
                             ? 'top-0 left-full ml-2'
