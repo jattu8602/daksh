@@ -105,7 +105,7 @@ export default function MentorProfilePage() {
   const [editingItem, setEditingItem] = useState(null)
   const [itemToDelete, setItemToDelete] = useState(null)
   const [isUpdating, setIsUpdating] = useState(false)
-  const [hoverInfo, setHoverInfo] = useState({ id: null, side: 'right' })
+  const [hoverInfo, setHoverInfo] = useState({ id: null, placement: 'right' })
 
   const handleEditClick = (item) => {
     setEditingItem({
@@ -360,14 +360,26 @@ export default function MentorProfilePage() {
               mentor.contentByType[activeTab].map((item) => (
                 <div
                   key={item.id}
-                  className="relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-hidden group shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+                  className="relative bg-gray-50 dark:bg-gray-800 rounded-lg overflow-visible group shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 hover:z-50"
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect()
-                    const side =
-                      window.innerWidth - rect.right > 320 ? 'right' : 'left'
-                    setHoverInfo({ id: item.id, side })
+                    const tooltipWidth = 320 // px
+                    const tooltipHeight = 180 // px (approx)
+                    let placement = 'right'
+                    if (window.innerWidth - rect.right > tooltipWidth) {
+                      placement = 'right'
+                    } else if (rect.left > tooltipWidth) {
+                      placement = 'left'
+                    } else if (rect.top > tooltipHeight) {
+                      placement = 'top'
+                    } else {
+                      placement = 'bottom'
+                    }
+                    setHoverInfo({ id: item.id, placement })
                   }}
-                  onMouseLeave={() => setHoverInfo({ id: null, side: 'right' })}
+                  onMouseLeave={() =>
+                    setHoverInfo({ id: null, placement: 'right' })
+                  }
                 >
                   <div className="absolute top-2 right-2 z-30 flex items-center space-x-2">
                     <button
@@ -411,22 +423,39 @@ export default function MentorProfilePage() {
                   </div>
                   {hoverInfo.id === item.id && (
                     <div
-                      className={`absolute z-40 top-0 ${
-                        hoverInfo.side === 'right'
-                          ? 'left-full ml-2'
-                          : 'right-full mr-2'
-                      } w-72 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl rounded-lg p-4`}
+                      className={`absolute z-[9999] w-72 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 shadow-xl rounded-lg p-4 transition-opacity duration-200 max-h-60 overflow-y-auto
+                        ${
+                          hoverInfo.placement === 'right'
+                            ? 'top-0 left-full ml-2'
+                            : ''
+                        }
+                        ${
+                          hoverInfo.placement === 'left'
+                            ? 'top-0 right-full mr-2'
+                            : ''
+                        }
+                        ${
+                          hoverInfo.placement === 'top'
+                            ? 'bottom-full mb-2 left-1/2 -translate-x-1/2'
+                            : ''
+                        }
+                        ${
+                          hoverInfo.placement === 'bottom'
+                            ? 'top-full mt-2 left-1/2 -translate-x-1/2'
+                            : ''
+                        }
+                      `}
                     >
-                      <h3 className="font-semibold text-lg mb-1">
+                      <h3 className="font-semibold text-base mb-1 line-clamp-2">
                         {item.title}
                       </h3>
                       {item.description && (
-                        <p className="text-sm mb-2 line-clamp-5">
+                        <p className="text-xs mb-1 whitespace-pre-line text-gray-700 dark:text-gray-300">
                           {item.description}
                         </p>
                       )}
                       {item.metaDescription && (
-                        <p className="text-xs text-gray-500 mb-2 line-clamp-5">
+                        <p className="text-xs mb-2 whitespace-pre-line text-gray-500 dark:text-gray-400">
                           {item.metaDescription}
                         </p>
                       )}
@@ -436,7 +465,7 @@ export default function MentorProfilePage() {
                             {item.hashtags.map((tag, idx) => (
                               <span
                                 key={idx}
-                                className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-full text-xs text-gray-700 dark:text-gray-300"
+                                className="px-2 py-0.5 bg-gray-200 dark:bg-gray-700 rounded-full text-[10px] text-gray-700 dark:text-gray-300"
                               >
                                 #{tag}
                               </span>
