@@ -6,33 +6,6 @@ import { useEffect, useState } from 'react'
 const LOCAL_STORIES_KEY = 'feed_stories_cache'
 
 export default function Stories({ onStoryClick, activeModal, closeModal }) {
-  const [stories, setStories] = useState([])
-  const [groups, setGroups] = useState([])
-  const [viewerIndex, setViewerIndex] = useState(0)
-  const [storyStart, setStoryStart] = useState(0)
-
-  // Fetch stories with caching
-  useEffect(() => {
-    const cachedRaw = JSON.parse(
-      localStorage.getItem(LOCAL_STORIES_KEY) || '[]'
-    )
-    if (cachedRaw.length > 0) {
-      setStories(cachedRaw)
-      setGroups(groupByMentor(cachedRaw))
-    }
-
-    fetch('/api/stories?limit=15')
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.success) {
-          setStories(data.data)
-          setGroups(groupByMentor(data.data))
-          localStorage.setItem(LOCAL_STORIES_KEY, JSON.stringify(data.data))
-        }
-      })
-      .catch(console.error)
-  }, [])
-
   // Helper to group highlights per mentor
   const groupByMentor = (items) => {
     const map = new Map()
@@ -55,6 +28,42 @@ export default function Stories({ onStoryClick, activeModal, closeModal }) {
       isWatched: g.stories.every((s) => s.isWatched),
     }))
   }
+
+  // Preload cached stories before first paint to avoid flicker
+  const initialStories =
+    typeof window !== 'undefined'
+      ? (() => {
+          try {
+            return JSON.parse(localStorage.getItem(LOCAL_STORIES_KEY) || '[]')
+          } catch {
+            return []
+          }
+        })()
+      : []
+
+  const [stories, setStories] = useState(initialStories)
+  const [groups, setGroups] = useState(() => groupByMentor(initialStories))
+  const [viewerIndex, setViewerIndex] = useState(0)
+  const [storyStart, setStoryStart] = useState(0)
+
+  // Fetch latest stories (cache thereafter)
+  useEffect(() => {
+    fetch('/api/stories?limit=15')
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.success) {
+          setStories(data.data)
+          setGroups(groupByMentor(data.data))
+          localStorage.setItem(LOCAL_STORIES_KEY, JSON.stringify(data.data))
+        }
+      })
+      .catch(console.error)
+  }, [])
+
+  // Keep groups in sync if stories change from other interactions
+  useEffect(() => {
+    setGroups(groupByMentor(stories))
+  }, [stories])
 
   const handleStoryClick = (story) => {
     const idx = groups.findIndex(

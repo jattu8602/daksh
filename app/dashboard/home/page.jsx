@@ -18,6 +18,52 @@ const LOCAL_POSTS_KEY = 'feed_last_chunk'
 const LOCAL_SCROLL_KEY = 'feed_scroll_position'
 const POSTS_PER_PAGE = 6
 
+// Helper to synchronously pull cached feed data before first render
+function getInitialFeedData() {
+  if (typeof window === 'undefined') {
+    return { posts: [], page: 1, scroll: 0 }
+  }
+
+  try {
+    // 1️⃣ Same-session restore
+    const sessionPosts = JSON.parse(
+      sessionStorage.getItem('feed_session_posts') || '[]'
+    )
+    const sessionScroll = Number(
+      sessionStorage.getItem('feed_session_scroll') || 0
+    )
+    if (sessionPosts.length) {
+      return {
+        posts: sessionPosts,
+        page: Math.floor(sessionPosts.length / POSTS_PER_PAGE) + 1,
+        scroll: sessionScroll,
+      }
+    }
+
+    // 2️⃣ Cached last chunk from previous sessions
+    const savedPosts = JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY) || '[]')
+    const savedScroll = Number(localStorage.getItem(LOCAL_SCROLL_KEY) || 0)
+
+    return {
+      posts: savedPosts,
+      page: savedPosts.length > 0 ? 2 : 1,
+      scroll: savedScroll,
+    }
+  } catch (e) {
+    console.error('Error parsing cached feed data', e)
+    return { posts: [], page: 1, scroll: 0 }
+  }
+}
+
+function getInitialStories() {
+  if (typeof window === 'undefined') return []
+  try {
+    return JSON.parse(localStorage.getItem('feed_stories_cache') || '[]')
+  } catch {
+    return []
+  }
+}
+
 // Skeleton components for loading states
 const StoriesSkeleton = () => (
   <div className="flex space-x-3 p-4 overflow-x-auto">
@@ -46,7 +92,7 @@ const PostsSkeleton = () => (
 )
 
 export default function FeedScreen() {
-  const [stories, setStories] = useState([])
+  const [stories, setStories] = useState(getInitialStories())
   const [followedUsers, setFollowedUsers] = useState([])
   const [likedPosts, setLikedPosts] = useState([])
   const [savedPosts, setSavedPosts] = useState([])
@@ -54,12 +100,13 @@ export default function FeedScreen() {
   const [activeModal, setActiveModal] = useState({ type: null, postId: null })
 
   // Feed state (previously from Redux)
-  const [posts, setPosts] = useState([])
-  const [page, setPage] = useState(1)
+  const initialFeed = getInitialFeedData()
+  const [posts, setPosts] = useState(initialFeed.posts)
+  const [page, setPage] = useState(initialFeed.page)
   const [hasMore, setHasMore] = useState(true)
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [scrollPosition, setScrollPos] = useState(0)
+  const [scrollPosition, setScrollPos] = useState(initialFeed.scroll)
 
   // Centralized history management for modals
   useEffect(() => {
@@ -133,34 +180,9 @@ export default function FeedScreen() {
     }
   }, [isLoading, hasMore, page, posts])
 
-  // On mount: try restoring from sessionStorage first. If not present, use localStorage chunk, otherwise fetch.
+  // On mount: if we already have cached posts, skip fetching; otherwise fetch first batch.
   useEffect(() => {
-    // 1️⃣ Same-session restore (navigate back)
-    const sessionPosts = JSON.parse(
-      sessionStorage.getItem('feed_session_posts') || '[]'
-    )
-    const sessionScroll = Number(
-      sessionStorage.getItem('feed_session_scroll') || 0
-    )
-
-    if (sessionPosts.length > 0) {
-      setPosts(sessionPosts)
-      setPage(Math.floor(sessionPosts.length / POSTS_PER_PAGE) + 1)
-      setHasMore(true)
-      setScrollPos(sessionScroll)
-      return
-    }
-
-    // 2️⃣ First visit in new session – show cached last chunk if any
-    const savedPosts = JSON.parse(localStorage.getItem(LOCAL_POSTS_KEY) || '[]')
-    const savedScroll = Number(localStorage.getItem(LOCAL_SCROLL_KEY) || 0)
-
-    if (savedPosts.length > 0) {
-      setPosts(savedPosts)
-      setPage(2) // next API page when user scrolls
-      setScrollPos(savedScroll)
-    } else {
-      // 3️⃣ Absolutely fresh – fetch first batch
+    if (posts.length === 0) {
       fetchPosts()
     }
   }, [])
