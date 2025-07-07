@@ -138,7 +138,7 @@ export default function PostsContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3">
+    <div className="grid grid-cols-3 gap-1">
       {postImages.map((image, index) => (
         <div
           key={index}

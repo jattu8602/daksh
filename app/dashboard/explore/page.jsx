@@ -105,7 +105,7 @@ export default function AllContent() {
   ]
 
   return (
-    <div className="grid grid-cols-3 auto-rows-[130px]">
+    <div className="grid grid-cols-3 auto-rows-[130px] gap-1">
       {content.map((item, index) => (
         <div
           key={index}
