@@ -110,6 +110,8 @@ export default function MentorProfilePage() {
   const handleEditClick = (item) => {
     setEditingItem({
       ...item,
+      description: item.description || '',
+      metaDescription: item.metaDescription || '',
       hashtags: Array.isArray(item.hashtags) ? item.hashtags.join(', ') : '',
     })
   }
@@ -125,6 +127,7 @@ export default function MentorProfilePage() {
           videoId: editingItem.id,
           title: editingItem.title,
           metaDescription: editingItem.metaDescription,
+          description: editingItem.description,
           hashtags: editingItem.hashtags
             .split(',')
             .map((t) => t.trim())
@@ -460,7 +463,6 @@ export default function MentorProfilePage() {
                         Your browser does not support the video tag.
                       </video>
                     )}
-                   
                   </div>
                   <div className="p-4">
                     <h3 className="font-semibold text-gray-800 dark:text-white mb-2 line-clamp-2">
@@ -553,6 +555,25 @@ export default function MentorProfilePage() {
                   </label>
                   <Textarea
                     id="description"
+                    value={editingItem.description || ''}
+                    onChange={(e) =>
+                      setEditingItem({
+                        ...editingItem,
+                        description: e.target.value,
+                      })
+                    }
+                    className="col-span-3 min-h-[100px]"
+                  />
+                </div>
+                <div className="grid grid-cols-4 items-start gap-4">
+                  <label
+                    htmlFor="metaDescription"
+                    className="text-right text-sm font-medium pt-2"
+                  >
+                    Meta Description
+                  </label>
+                  <Textarea
+                    id="metaDescription"
                     value={editingItem.metaDescription || ''}
                     onChange={(e) =>
                       setEditingItem({

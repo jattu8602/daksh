@@ -3,7 +3,8 @@ import prisma from '@/lib/prisma'
 
 export async function POST(request) {
   try {
-    const { videoId, title, metaDescription, hashtags } = await request.json()
+    const { videoId, title, description, metaDescription, hashtags } =
+      await request.json()
 
     if (!videoId) {
       return NextResponse.json(
@@ -20,6 +21,7 @@ export async function POST(request) {
           where: { id: videoId },
           data: {
             title: title !== undefined ? title : undefined,
+            description: description !== undefined ? description : undefined,
             metaDescription:
               metaDescription !== undefined ? metaDescription : undefined,
           },
