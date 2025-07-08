@@ -185,6 +185,7 @@ export default function AdminLayout({ children }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false) // Changed to false for mobile-first
   const [isMobile, setIsMobile] = useState(false)
   const [adminUser, setAdminUser] = useState(null)
+  const [showSignOutModal, setShowSignOutModal] = useState(false)
 
   const navItems = [
     { href: '/admin/dashboard', label: 'Dashboard', icon: '📊' },
@@ -260,14 +261,22 @@ export default function AdminLayout({ children }) {
     }
   }, [router, isLoginPage])
 
-  // Sign out function
+  // Show sign out confirmation modal
   const handleSignOut = () => {
+    setShowSignOutModal(true)
+  }
+
+  // Actually perform sign out
+  const confirmSignOut = () => {
     // Clear session storage
     sessionStorage.removeItem('user')
 
     // Clear the auth cookie
     document.cookie =
       'admin_auth_token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT;'
+
+    // Close modal
+    setShowSignOutModal(false)
 
     // Redirect to login page
     router.push('/admin/login')
@@ -407,6 +416,49 @@ export default function AdminLayout({ children }) {
 
         <div className="flex-1 overflow-auto p-4 lg:p-6">{children}</div>
       </main>
+
+      {/* Sign Out Confirmation Modal */}
+      {showSignOutModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-gray-900">
+                Confirm Sign Out
+              </h2>
+              <button
+                onClick={() => setShowSignOutModal(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="text-gray-700">
+                Do you want to really sign out? You will need to log in again to
+                access the admin panel.
+              </p>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setShowSignOutModal(false)}
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                No, Stay Logged In
+              </button>
+              <button
+                type="button"
+                onClick={confirmSignOut}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              >
+                Yes, Sign Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

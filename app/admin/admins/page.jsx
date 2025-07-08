@@ -1,91 +1,91 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import Link from "next/link";
+import { useState, useEffect } from 'react'
+import Link from 'next/link'
 
 export default function AdminsPage() {
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [admins, setAdmins] = useState([]);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
+  const [admins, setAdmins] = useState([])
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   // Form state
   const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-  });
+    name: '',
+    email: '',
+    phone: '',
+  })
 
   // New admin created info (to show credentials)
-  const [newAdmin, setNewAdmin] = useState(null);
+  const [newAdmin, setNewAdmin] = useState(null)
 
   // Get current user from sessionStorage
-  const [currentUser, setCurrentUser] = useState(null);
+  const [currentUser, setCurrentUser] = useState(null)
   useEffect(() => {
-    const userData = sessionStorage.getItem("user");
+    const userData = sessionStorage.getItem('user')
     if (userData) {
       try {
-        setCurrentUser(JSON.parse(userData));
+        setCurrentUser(JSON.parse(userData))
       } catch {}
     }
-  }, []);
+  }, [])
 
   // Fetch admins on component mount
   useEffect(() => {
     async function fetchAdmins() {
-      setIsLoading(true);
+      setIsLoading(true)
       try {
-        const response = await fetch("/api/admin/list");
-        const data = await response.json();
+        const response = await fetch('/api/admin/list')
+        const data = await response.json()
         if (response.ok) {
-          setAdmins(data.admins);
+          setAdmins(data.admins)
         } else {
-          setErrorMessage(data.error || "Failed to fetch admins");
+          setErrorMessage(data.error || 'Failed to fetch admins')
         }
       } catch (error) {
-        setErrorMessage(error.message || "Failed to fetch admins");
+        setErrorMessage(error.message || 'Failed to fetch admins')
       } finally {
-        setIsLoading(false);
+        setIsLoading(false)
       }
     }
-    fetchAdmins();
-  }, []);
+    fetchAdmins()
+  }, [])
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
+    const { name, value } = e.target
     setFormData({
       ...formData,
       [name]: value,
-    });
-  };
+    })
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
 
     try {
       // Get current user from session (would be implemented with proper auth)
-      const createdBy = "current-admin-id";
+      const createdBy = 'current-admin-id'
 
-      const response = await fetch("/api/admin/create", {
-        method: "POST",
+      const response = await fetch('/api/admin/create', {
+        method: 'POST',
         headers: {
-          "Content-Type": "application/json",
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           ...formData,
           createdBy,
         }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.message || "Failed to create admin");
+        throw new Error(data.message || 'Failed to create admin')
       }
 
       // Show the new admin credentials
@@ -93,7 +93,7 @@ export default function AdminsPage() {
         name: data.admin.name,
         username: data.admin.username,
         password: data.password,
-      });
+      })
 
       // Add the new admin to the list
       setAdmins([
@@ -105,108 +105,129 @@ export default function AdminsPage() {
           role: data.admin.role,
         },
         ...admins,
-      ]);
+      ])
 
-      setSuccessMessage("Admin created successfully");
+      setSuccessMessage('Admin created successfully')
 
       // Reset form
       setFormData({
-        name: "",
-        email: "",
-        phone: "",
-      });
+        name: '',
+        email: '',
+        phone: '',
+      })
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong");
+      setErrorMessage(error.message || 'Something went wrong')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
+
+  // Delete confirmation modal state
+  const [deleteAdmin, setDeleteAdmin] = useState(null)
+  const [deleteLoading, setDeleteLoading] = useState(false)
 
   // Delete admin handler
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this admin?")) return;
-    setIsLoading(true);
-    setErrorMessage("");
+  const handleDeleteConfirm = async () => {
+    if (!deleteAdmin) return
+    setDeleteLoading(true)
+    setErrorMessage('')
     try {
-      const response = await fetch("/api/admin/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ id }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to delete admin");
-      setAdmins((prev) => prev.filter((a) => a.id !== id));
-      setSuccessMessage("Admin deleted successfully");
+      const response = await fetch('/api/admin/delete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: deleteAdmin.id }),
+      })
+      const data = await response.json()
+      if (!response.ok)
+        throw new Error(data.message || 'Failed to delete admin')
+      setAdmins((prev) => prev.filter((a) => a.id !== deleteAdmin.id))
+      setSuccessMessage('Admin deleted successfully')
+      setDeleteAdmin(null)
     } catch (error) {
-      setErrorMessage(error.message || "Failed to delete admin");
+      setErrorMessage(error.message || 'Failed to delete admin')
     } finally {
-      setIsLoading(false);
+      setDeleteLoading(false)
     }
-  };
+  }
 
   const filteredAdmins = admins.filter(
     (admin) =>
       admin.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       admin.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       admin.username.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  )
 
   // Edit admin modal state
-  const [editAdmin, setEditAdmin] = useState(null);
-  const [editForm, setEditForm] = useState({ name: '', email: '', username: '' });
-  const [editError, setEditError] = useState("");
-  const [editLoading, setEditLoading] = useState(false);
+  const [editAdmin, setEditAdmin] = useState(null)
+  const [editForm, setEditForm] = useState({
+    name: '',
+    email: '',
+    username: '',
+  })
+  const [editError, setEditError] = useState('')
+  const [editLoading, setEditLoading] = useState(false)
 
   const openEditModal = (admin) => {
-    setEditAdmin(admin);
-    setEditForm({ name: admin.name, email: admin.email, username: admin.username });
-    setEditError("");
-  };
+    setEditAdmin(admin)
+    setEditForm({
+      name: admin.name,
+      email: admin.email,
+      username: admin.username,
+    })
+    setEditError('')
+  }
   const closeEditModal = () => {
-    setEditAdmin(null);
-    setEditForm({ name: '', email: '', username: '' });
-    setEditError("");
-  };
+    setEditAdmin(null)
+    setEditForm({ name: '', email: '', username: '' })
+    setEditError('')
+  }
   const handleEditChange = (e) => {
-    setEditForm({ ...editForm, [e.target.name]: e.target.value });
-  };
+    setEditForm({ ...editForm, [e.target.name]: e.target.value })
+  }
   const handleEditSubmit = async (e) => {
-    e.preventDefault();
-    setEditLoading(true);
-    setEditError("");
+    e.preventDefault()
+    setEditLoading(true)
+    setEditError('')
     try {
-      const response = await fetch("/api/admin/edit", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const response = await fetch('/api/admin/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           id: editAdmin.id,
           name: editForm.name,
           email: editForm.email,
           username: editForm.username,
         }),
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.message || "Failed to update admin");
-      setAdmins((prev) => prev.map((a) => a.id === editAdmin.id ? {
-        ...a,
-        name: editForm.name,
-        email: editForm.email,
-        username: editForm.username,
-      } : a));
-      setSuccessMessage("Admin updated successfully");
-      closeEditModal();
+      })
+      const data = await response.json()
+      if (!response.ok)
+        throw new Error(data.message || 'Failed to update admin')
+      setAdmins((prev) =>
+        prev.map((a) =>
+          a.id === editAdmin.id
+            ? {
+                ...a,
+                name: editForm.name,
+                email: editForm.email,
+                username: editForm.username,
+              }
+            : a
+        )
+      )
+      setSuccessMessage('Admin updated successfully')
+      closeEditModal()
     } catch (error) {
-      setEditError(error.message || "Failed to update admin");
+      setEditError(error.message || 'Failed to update admin')
     } finally {
-      setEditLoading(false);
+      setEditLoading(false)
     }
-  };
+  }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-bold">Admins</h1>
-        {currentUser?.role === "SUPER_ADMIN" && (
+        {currentUser?.role === 'SUPER_ADMIN' && (
           <button
             onClick={() => setIsAddModalOpen(true)}
             className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
@@ -253,10 +274,20 @@ export default function AdminsPage() {
                     <td className="px-4 py-3">{admin.username}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center space-x-2">
-                        {currentUser?.role === "SUPER_ADMIN" ? (
+                        {currentUser?.role === 'SUPER_ADMIN' ? (
                           <>
-                            <button className="text-blue-600 hover:underline" onClick={() => openEditModal(admin)}>Edit</button>
-                            <button className="text-red-600 hover:underline" onClick={() => handleDelete(admin.id)}>Delete</button>
+                            <button
+                              className="text-blue-600 hover:underline"
+                              onClick={() => openEditModal(admin)}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              className="text-red-600 hover:underline"
+                              onClick={() => setDeleteAdmin(admin)}
+                            >
+                              Delete
+                            </button>
                           </>
                         ) : (
                           <span className="text-gray-400">View Only</span>
@@ -267,7 +298,10 @@ export default function AdminsPage() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan="4" className="px-4 py-3 text-center text-gray-500">
+                  <td
+                    colSpan="4"
+                    className="px-4 py-3 text-center text-gray-500"
+                  >
                     No admins found.
                   </td>
                 </tr>
@@ -278,8 +312,8 @@ export default function AdminsPage() {
 
         <div className="flex items-center justify-between p-4">
           <p className="text-sm text-gray-500">
-            Showing <span className="font-medium">{filteredAdmins.length}</span> of{" "}
-            <span className="font-medium">{admins.length}</span> admins
+            Showing <span className="font-medium">{filteredAdmins.length}</span>{' '}
+            of <span className="font-medium">{admins.length}</span> admins
           </p>
         </div>
       </div>
@@ -291,10 +325,10 @@ export default function AdminsPage() {
               <h2 className="text-xl font-bold">Add New Admin</h2>
               <button
                 onClick={() => {
-                  setIsAddModalOpen(false);
-                  setNewAdmin(null);
-                  setErrorMessage("");
-                  setSuccessMessage("");
+                  setIsAddModalOpen(false)
+                  setNewAdmin(null)
+                  setErrorMessage('')
+                  setSuccessMessage('')
                 }}
                 className="text-gray-400 hover:text-gray-600"
               >
@@ -317,15 +351,28 @@ export default function AdminsPage() {
             {newAdmin ? (
               <div className="mb-6 rounded-lg bg-blue-50 p-4 text-sm">
                 <h3 className="mb-2 font-semibold">New Admin Credentials</h3>
-                <p><span className="font-medium">Name:</span> {newAdmin.name}</p>
-                <p><span className="font-medium">Username:</span> {newAdmin.username}</p>
-                <p><span className="font-medium">Password:</span> {newAdmin.password}</p>
-                <p className="mt-2 text-xs text-gray-600">Please save these credentials securely. The password cannot be recovered later.</p>
+                <p>
+                  <span className="font-medium">Name:</span> {newAdmin.name}
+                </p>
+                <p>
+                  <span className="font-medium">Username:</span>{' '}
+                  {newAdmin.username}
+                </p>
+                <p>
+                  <span className="font-medium">Password:</span>{' '}
+                  {newAdmin.password}
+                </p>
+                <p className="mt-2 text-xs text-gray-600">
+                  Please save these credentials securely. The password cannot be
+                  recovered later.
+                </p>
               </div>
             ) : (
               <form onSubmit={handleSubmit}>
                 <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">Full Name</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Full Name
+                  </label>
                   <input
                     type="text"
                     name="name"
@@ -337,7 +384,9 @@ export default function AdminsPage() {
                   />
                 </div>
                 <div className="mb-4">
-                  <label className="mb-1 block text-sm font-medium">Email</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Email
+                  </label>
                   <input
                     type="email"
                     name="email"
@@ -349,7 +398,9 @@ export default function AdminsPage() {
                   />
                 </div>
                 <div className="mb-6">
-                  <label className="mb-1 block text-sm font-medium">Phone (Optional)</label>
+                  <label className="mb-1 block text-sm font-medium">
+                    Phone (Optional)
+                  </label>
                   <input
                     type="tel"
                     name="phone"
@@ -373,7 +424,7 @@ export default function AdminsPage() {
                     className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
                     disabled={isLoading}
                   >
-                    {isLoading ? "Creating..." : "Add Admin"}
+                    {isLoading ? 'Creating...' : 'Add Admin'}
                   </button>
                 </div>
               </form>
@@ -396,11 +447,15 @@ export default function AdminsPage() {
               </button>
             </div>
             {editError && (
-              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">{editError}</div>
+              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
+                {editError}
+              </div>
             )}
             <form onSubmit={handleEditSubmit}>
               <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Full Name</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Full Name
+                </label>
                 <input
                   type="text"
                   name="name"
@@ -422,7 +477,9 @@ export default function AdminsPage() {
                 />
               </div>
               <div className="mb-6">
-                <label className="mb-1 block text-sm font-medium">Username</label>
+                <label className="mb-1 block text-sm font-medium">
+                  Username
+                </label>
                 <input
                   type="text"
                   name="username"
@@ -446,13 +503,73 @@ export default function AdminsPage() {
                   className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
                   disabled={editLoading}
                 >
-                  {editLoading ? "Saving..." : "Save Changes"}
+                  {editLoading ? 'Saving...' : 'Save Changes'}
                 </button>
               </div>
             </form>
           </div>
         </div>
       )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteAdmin && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-xl font-bold text-red-600">Confirm Delete</h2>
+              <button
+                onClick={() => setDeleteAdmin(null)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-6">
+              <p className="mb-4 text-gray-700">
+                Are you sure you want to delete this admin? This action cannot
+                be undone.
+              </p>
+
+              <div className="rounded-lg bg-red-50 p-4 text-sm">
+                <h3 className="mb-2 font-semibold text-red-800">
+                  Admin Details:
+                </h3>
+                <p className="mb-1">
+                  <span className="font-medium">Name:</span> {deleteAdmin.name}
+                </p>
+                <p className="mb-1">
+                  <span className="font-medium">Email:</span>{' '}
+                  {deleteAdmin.email}
+                </p>
+                <p>
+                  <span className="font-medium">Username:</span>{' '}
+                  {deleteAdmin.username}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => setDeleteAdmin(null)}
+                className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                disabled={deleteLoading}
+              >
+                No, Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleDeleteConfirm}
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                disabled={deleteLoading}
+              >
+                {deleteLoading ? 'Deleting...' : 'Yes, Delete Admin'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
-  );
+  )
 }
