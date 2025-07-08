@@ -40,13 +40,16 @@ model User {
 }
 
 model Admin {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId    String   @unique @db.ObjectId
-  email     String?  @unique
-  phone     String?
-  createdBy String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId         String    @unique @db.ObjectId
+  email          String?   @unique
+  phone          String?
+  emailVerified  Boolean   @default(false)
+  lastActiveAt   DateTime? @default(now())
+  isOnline       Boolean   @default(false)
+  createdBy      String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   // Child side declares fields+references
   user User @relation("AdminToUser", fields: [userId], references: [id])
@@ -287,4 +290,19 @@ model HighlightStat {
   @@index([videoAssignId])
   @@index([studentId])
   @@index([createdAt])
+}
+
+model EmailVerification {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  email     String
+  otp       String
+  userId    String   @db.ObjectId
+  expiresAt DateTime
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([userId])
+  @@index([expiresAt])
 }

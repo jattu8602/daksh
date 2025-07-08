@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { useState, useEffect, useRef } from 'react'
 import { Bell } from 'lucide-react'
+import { Toaster } from 'react-hot-toast'
+import AdminActivityTracker from '../components/admin/AdminActivityTracker'
 
 // Search Bar Component with Animated Text
 function AdminSearchBar() {
@@ -288,6 +290,8 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-gray-100">
+      <Toaster position="top-right" />
+      <AdminActivityTracker />
       {/* Mobile Overlay - Removed to keep background visible */}
 
       {/* Sidebar */}
