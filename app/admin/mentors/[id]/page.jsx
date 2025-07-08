@@ -1,6 +1,6 @@
 'use client'
 import { useEffect, useState } from 'react'
-import { useParams } from 'next/navigation'
+import { useParams, useSearchParams, useRouter } from 'next/navigation'
 import Image from 'next/image'
 import {
   Dialog,
@@ -98,6 +98,8 @@ const StatCard = ({ icon, label, value }) => (
 
 export default function MentorProfilePage() {
   const { id } = useParams()
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [mentor, setMentor] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -106,6 +108,24 @@ export default function MentorProfilePage() {
   const [itemToDelete, setItemToDelete] = useState(null)
   const [isUpdating, setIsUpdating] = useState(false)
   const [hoverInfo, setHoverInfo] = useState({ id: null, placement: 'right' })
+
+  // Get return parameters from URL
+  const returnPage = searchParams.get('returnPage') || '1'
+  const returnSearch = searchParams.get('returnSearch') || ''
+
+  // Handle back navigation
+  const handleBack = () => {
+    const params = new URLSearchParams()
+    if (returnPage && returnPage !== '1') {
+      params.set('page', returnPage)
+    }
+    if (returnSearch) {
+      params.set('search', returnSearch)
+    }
+    const queryString = params.toString()
+    const backURL = `/admin/mentors${queryString ? `?${queryString}` : ''}`
+    router.push(backURL)
+  }
 
   const handleEditClick = (item) => {
     setEditingItem({
@@ -247,8 +267,32 @@ export default function MentorProfilePage() {
   ]
 
   return (
-    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-6 lg:p-8">
+    <div className="min-h-screen bg-gray-100 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
       <div className="max-w-7xl mx-auto">
+        {/* Back Button */}
+        <div className="mb-4">
+          <button
+            onClick={handleBack}
+            className="flex items-center px-4 py-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100 transition-colors cursor-pointer"
+          >
+            <svg
+              className="w-5 h-5 mr-2"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
+            </svg>
+            Back to Mentors {returnSearch && `(searching: "${returnSearch}")`}{' '}
+            {returnPage !== '1' && `(page ${returnPage})`}
+          </button>
+        </div>
+
         <header className="bg-white dark:bg-gray-800/50 rounded-2xl shadow-lg p-6 md:p-8 mb-8 backdrop-blur-sm border border-gray-200 dark:border-gray-700/50">
           <div className="flex flex-col md:flex-row items-start gap-6 md:gap-8">
             <div className="relative h-36 w-36 rounded-full border-4 border-white dark:border-gray-700 shadow-md flex-shrink-0 mx-auto md:mx-0">

@@ -4,9 +4,13 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { debounce } from 'lodash'
+import { useRouter, useSearchParams } from 'next/navigation'
 import MentorCard from '@/app/components/admin/MentorCard'
 
 export default function MentorsPage() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+
   const [isAddingMentor, setIsAddingMentor] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
@@ -23,6 +27,14 @@ export default function MentorsPage() {
     total: 0,
     totalPages: 0,
   })
+
+  // Get current page from URL parameters
+  const getCurrentPageFromURL = () => {
+    const page = searchParams.get('page')
+    return page ? parseInt(page, 10) : 1
+  }
+
+  const [currentPage, setCurrentPage] = useState(getCurrentPageFromURL())
 
   const [usernameStatus, setUsernameStatus] = useState({
     checking: false,
@@ -49,11 +61,70 @@ export default function MentorsPage() {
   // New mentor created info (to show credentials)
   const [newMentor, setNewMentor] = useState(null)
 
+  // Update URL with current page
+  const updateURL = (page, search = searchTerm) => {
+    const params = new URLSearchParams()
+    if (page && page !== 1) {
+      params.set('page', page.toString())
+    }
+    if (search) {
+      params.set('search', search)
+    }
+    const newURL = params.toString()
+      ? `?${params.toString()}`
+      : '/admin/mentors'
+    router.replace(newURL, { scroll: false })
+  }
+
   // Fetch mentors
-  const fetchMentors = async (page = 1) => {
+  const fetchMentors = async (page) => {
+    const pageToFetch = page || currentPage
     try {
       const response = await fetch(
-        `/api/mentor/list?page=${page}&limit=${pagination.limit}&search=${searchTerm}`
+        `/api/mentor/list?page=${pageToFetch}&limit=${pagination.limit}&search=${searchTerm}`
+      )
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Failed to fetch mentors')
+      }
+
+      setMentors(data.mentors)
+      setPagination(data.pagination)
+      setCurrentPage(pageToFetch)
+
+      // Update URL with current page
+      updateURL(pageToFetch, searchTerm)
+    } catch (error) {
+      setErrorMessage(error.message || 'Failed to fetch mentors')
+    }
+  }
+
+  // Initialize from URL parameters on component mount
+  useEffect(() => {
+    const urlPage = getCurrentPageFromURL()
+    const urlSearch = searchParams.get('search') || ''
+
+    setCurrentPage(urlPage)
+    setSearchTerm(urlSearch)
+
+    // Fetch with URL parameters
+    fetchMentorsWithParams(urlPage, urlSearch)
+  }, [])
+
+  // Fetch mentors when search term changes (but not on initial load)
+  useEffect(() => {
+    const currentURLSearch = searchParams.get('search') || ''
+    if (searchTerm !== currentURLSearch) {
+      fetchMentors(1) // Reset to page 1 when searching
+    }
+  }, [searchTerm])
+
+  // Helper function to fetch with specific parameters
+  const fetchMentorsWithParams = async (page, search) => {
+    try {
+      const response = await fetch(
+        `/api/mentor/list?page=${page}&limit=${pagination.limit}&search=${search}`
       )
       const data = await response.json()
 
@@ -67,11 +138,6 @@ export default function MentorsPage() {
       setErrorMessage(error.message || 'Failed to fetch mentors')
     }
   }
-
-  // Fetch mentors on component mount and when search term changes
-  useEffect(() => {
-    fetchMentors(1)
-  }, [searchTerm])
 
   // Add debounced username check
   const checkUsername = debounce(async (username) => {
@@ -292,7 +358,7 @@ export default function MentorsPage() {
         }
         setSuccessMessage('Mentor updated successfully')
         setIsAddingMentor(false)
-        fetchMentors(1)
+        fetchMentors(currentPage)
       } else {
         // Creating new mentor
         response = await fetch('/api/mentor/create', {
@@ -315,7 +381,7 @@ export default function MentorsPage() {
           password: data.password,
           isOrganic: data.mentor.isOrganic,
         })
-        fetchMentors(1)
+        fetchMentors(1) // Go to page 1 for new mentors since they'll appear at the top
         setSuccessMessage('Mentor created successfully')
       }
       // Reset form
@@ -383,7 +449,14 @@ export default function MentorsPage() {
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.message || 'Failed to delete mentor')
-      fetchMentors(1)
+
+      // If this was the last item on the current page and we're not on page 1, go back one page
+      const remainingItems = mentors.length - 1
+      if (remainingItems === 0 && currentPage > 1) {
+        fetchMentors(currentPage - 1)
+      } else {
+        fetchMentors(currentPage)
+      }
       setSuccessMessage('Mentor deleted successfully')
     } catch (err) {
       setErrorMessage(err.message || 'Failed to delete mentor')
@@ -419,7 +492,10 @@ export default function MentorsPage() {
               type="text"
               placeholder="Search mentors..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                updateURL(1, e.target.value) // Update URL immediately for search
+              }}
               className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
@@ -447,27 +523,60 @@ export default function MentorsPage() {
                 onEdit={handleEdit}
                 onDelete={handleDelete}
                 onResetPassword={handleResetPassword}
+                currentPage={currentPage}
+                searchTerm={searchTerm}
               />
             ))}
           </div>
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
-            <div className="flex justify-center space-x-2 mt-6">
+            <div className="flex justify-center items-center space-x-2 mt-6">
               <button
-                onClick={() => fetchMentors(pagination.page - 1)}
-                disabled={pagination.page === 1}
-                className="px-3 py-1 rounded border disabled:opacity-50"
+                onClick={() => fetchMentors(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="px-3 py-2 rounded border disabled:opacity-50 hover:bg-gray-50 disabled:cursor-not-allowed"
               >
                 Previous
               </button>
-              <span className="px-3 py-1">
-                Page {pagination.page} of {pagination.totalPages}
-              </span>
+
+              {/* Page numbers */}
+              <div className="flex space-x-1">
+                {Array.from(
+                  { length: Math.min(5, pagination.totalPages) },
+                  (_, i) => {
+                    let pageNum
+                    if (pagination.totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= pagination.totalPages - 2) {
+                      pageNum = pagination.totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => fetchMentors(pageNum)}
+                        className={`px-3 py-2 rounded border text-sm ${
+                          currentPage === pageNum
+                            ? 'bg-black text-white border-black'
+                            : 'hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  }
+                )}
+              </div>
+
               <button
-                onClick={() => fetchMentors(pagination.page + 1)}
-                disabled={pagination.page === pagination.totalPages}
-                className="px-3 py-1 rounded border disabled:opacity-50"
+                onClick={() => fetchMentors(currentPage + 1)}
+                disabled={currentPage === pagination.totalPages}
+                className="px-3 py-2 rounded border disabled:opacity-50 hover:bg-gray-50 disabled:cursor-not-allowed"
               >
                 Next
               </button>

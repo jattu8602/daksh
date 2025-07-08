@@ -13,13 +13,30 @@ import {
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
 
-const MentorCard = ({ mentor, onEdit, onDelete, onResetPassword }) => {
+const MentorCard = ({
+  mentor,
+  onEdit,
+  onDelete,
+  onResetPassword,
+  currentPage = 1,
+  searchTerm = '',
+}) => {
+  // Construct the href with return parameters
+  const getHref = () => {
+    const params = new URLSearchParams()
+    if (currentPage && currentPage !== 1) {
+      params.set('returnPage', currentPage.toString())
+    }
+    if (searchTerm) {
+      params.set('returnSearch', searchTerm)
+    }
+    const queryString = params.toString()
+    return `/admin/mentors/${mentor.id}${queryString ? `?${queryString}` : ''}`
+  }
+
   return (
     <div className="bg-white rounded-xl shadow-lg overflow-hidden transform hover:scale-105 transition-transform duration-300 ease-in-out flex flex-col h-full">
-      <Link
-        href={`/admin/mentors/${mentor.id}`}
-        className="block p-6 flex-grow"
-      >
+      <Link href={getHref()} className="block p-6 flex-grow">
         <div className="flex items-center gap-4">
           <div className="flex-shrink-0">
             <Image
