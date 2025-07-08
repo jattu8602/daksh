@@ -79,46 +79,6 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="rounded-lg border bg-white shadow">
-        <div className="flex items-center justify-between p-4 border-b">
-          <h2 className="font-semibold">Recent Exports</h2>
-          <button className="text-sm text-blue-600 hover:underline">View All</button>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-                <th className="px-4 py-3">File Name</th>
-                <th className="px-4 py-3">Type</th>
-                <th className="px-4 py-3">Date</th>
-                <th className="px-4 py-3">Size</th>
-                <th className="px-4 py-3">Exported By</th>
-                <th className="px-4 py-3">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="text-sm">
-              {[
-                { name: "Springfield_High_Students.xlsx", type: "Excel", date: "2023-06-15", size: "2.4 MB", by: "Admin Sarah" },
-                { name: "Riverside_Academy_Classes.xlsx", type: "Excel", date: "2023-06-12", size: "1.8 MB", by: "Admin Mike" },
-                { name: "Oakwood_Elementary_Students.csv", type: "CSV", date: "2023-06-10", size: "1.2 MB", by: "Super Admin" },
-                { name: "Valley_School_Summary.pdf", type: "PDF", date: "2023-06-05", size: "3.6 MB", by: "Admin Sarah" },
-                { name: "All_Schools_Report.xlsx", type: "Excel", date: "2023-06-01", size: "5.2 MB", by: "Super Admin" },
-              ].map((file, index) => (
-                <tr key={index} className="border-b">
-                  <td className="px-4 py-3 font-medium">{file.name}</td>
-                  <td className="px-4 py-3">{file.type}</td>
-                  <td className="px-4 py-3">{file.date}</td>
-                  <td className="px-4 py-3">{file.size}</td>
-                  <td className="px-4 py-3">{file.by}</td>
-                  <td className="px-4 py-3">
-                    <button className="mr-2 text-blue-600 hover:underline">Download</button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
     </div>
   );
 }
