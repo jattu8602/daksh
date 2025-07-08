@@ -335,133 +335,260 @@ export default function AdminSettings() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto space-y-8">
+    <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <Shield className="h-8 w-8 text-blue-600" />
         <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
       </div>
 
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <User className="h-5 w-5" />
-            Profile Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Profile Image */}
-          <div className="flex items-center gap-6">
-            <Avatar className="h-24 w-24">
-              <AvatarImage src={profileFormData.profileImage} />
-              <AvatarFallback className="text-lg">
-                {profile.name?.charAt(0)?.toUpperCase()}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <Button
-                variant="outline"
-                onClick={() => fileInputRef.current?.click()}
-                className="flex items-center gap-2"
-              >
-                <Upload className="h-4 w-4" />
-                Upload Photo
-              </Button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                className="hidden"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0]
-                  if (file) handleImageUpload(file)
-                }}
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                JPG, PNG or GIF. Max size 5MB.
-              </p>
+      {/* Profile and Password Section */}
+      <div className="flex flex-col lg:flex-row gap-6">
+        {/* Profile Section - 70% on large screens */}
+        <Card className="flex-1 lg:w-[70%]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Profile Settings
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* Profile Image */}
+            <div className="flex items-center gap-6">
+              <Avatar className="h-24 w-24">
+                <AvatarImage src={profileFormData.profileImage} />
+                <AvatarFallback className="text-lg">
+                  {profile.name?.charAt(0)?.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+              <div>
+                <Button
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Upload Photo
+                </Button>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0]
+                    if (file) handleImageUpload(file)
+                  }}
+                />
+                <p className="text-sm text-gray-500 mt-1">
+                  JPG, PNG or GIF. Max size 5MB.
+                </p>
+              </div>
             </div>
-          </div>
 
-          {/* Profile Form */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="name">Full Name</Label>
-              <Input
-                id="name"
-                value={profileFormData.name}
-                onChange={(e) =>
-                  setProfileFormData((prev) => ({
-                    ...prev,
-                    name: e.target.value,
-                  }))
-                }
-                placeholder="Enter your full name"
-              />
+            {/* Profile Form */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  value={profileFormData.name}
+                  onChange={(e) =>
+                    setProfileFormData((prev) => ({
+                      ...prev,
+                      name: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter your full name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="username">Username</Label>
+                <Input
+                  id="username"
+                  value={profileFormData.username}
+                  onChange={(e) =>
+                    setProfileFormData((prev) => ({
+                      ...prev,
+                      username: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter username"
+                />
+              </div>
+              <div>
+                <Label htmlFor="email" className="flex items-center gap-2">
+                  Email Address
+                  {profile.emailVerified && (
+                    <CheckCircle className="h-4 w-4 text-green-500" />
+                  )}
+                  {!profile.emailVerified && profile.email && (
+                    <X className="h-4 w-4 text-red-500" />
+                  )}
+                </Label>
+                <Input
+                  id="email"
+                  type="email"
+                  value={profileFormData.email}
+                  onChange={(e) =>
+                    setProfileFormData((prev) => ({
+                      ...prev,
+                      email: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter email address"
+                />
+              </div>
+              <div>
+                <Label htmlFor="phone">Mobile Number</Label>
+                <Input
+                  id="phone"
+                  value={profileFormData.phone}
+                  onChange={(e) =>
+                    setProfileFormData((prev) => ({
+                      ...prev,
+                      phone: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter mobile number"
+                />
+              </div>
             </div>
-            <div>
-              <Label htmlFor="username">Username</Label>
-              <Input
-                id="username"
-                value={profileFormData.username}
-                onChange={(e) =>
-                  setProfileFormData((prev) => ({
-                    ...prev,
-                    username: e.target.value,
-                  }))
-                }
-                placeholder="Enter username"
-              />
-            </div>
-            <div>
-              <Label htmlFor="email" className="flex items-center gap-2">
-                Email Address
-                {profile.emailVerified && (
-                  <CheckCircle className="h-4 w-4 text-green-500" />
-                )}
-                {!profile.emailVerified && profile.email && (
-                  <X className="h-4 w-4 text-red-500" />
-                )}
-              </Label>
-              <Input
-                id="email"
-                type="email"
-                value={profileFormData.email}
-                onChange={(e) =>
-                  setProfileFormData((prev) => ({
-                    ...prev,
-                    email: e.target.value,
-                  }))
-                }
-                placeholder="Enter email address"
-              />
-            </div>
-            <div>
-              <Label htmlFor="phone">Mobile Number</Label>
-              <Input
-                id="phone"
-                value={profileFormData.phone}
-                onChange={(e) =>
-                  setProfileFormData((prev) => ({
-                    ...prev,
-                    phone: e.target.value,
-                  }))
-                }
-                placeholder="Enter mobile number"
-              />
-            </div>
-          </div>
 
-          <Button
-            onClick={handleProfileUpdate}
-            disabled={isUpdatingProfile}
-            className="w-full md:w-auto"
-          >
-            {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
-          </Button>
-        </CardContent>
-      </Card>
+            <Button
+              onClick={handleProfileUpdate}
+              disabled={isUpdatingProfile}
+              className="w-full md:w-auto"
+            >
+              {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Password Change Section - 30% on large screens */}
+        <Card className="lg:w-[30%]">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Lock className="h-5 w-5" />
+              Change Password
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div>
+              <Label htmlFor="currentPassword">Current Password</Label>
+              <div className="relative">
+                <Input
+                  id="currentPassword"
+                  type={showPasswords.current ? 'text' : 'password'}
+                  value={passwordData.currentPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      currentPassword: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter current password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() =>
+                    setShowPasswords((prev) => ({
+                      ...prev,
+                      current: !prev.current,
+                    }))
+                  }
+                >
+                  {showPasswords.current ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="newPassword">New Password</Label>
+              <div className="relative">
+                <Input
+                  id="newPassword"
+                  type={showPasswords.new ? 'text' : 'password'}
+                  value={passwordData.newPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      newPassword: e.target.value,
+                    }))
+                  }
+                  placeholder="Enter new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() =>
+                    setShowPasswords((prev) => ({ ...prev, new: !prev.new }))
+                  }
+                >
+                  {showPasswords.new ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <div className="relative">
+                <Input
+                  id="confirmPassword"
+                  type={showPasswords.confirm ? 'text' : 'password'}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordData((prev) => ({
+                      ...prev,
+                      confirmPassword: e.target.value,
+                    }))
+                  }
+                  placeholder="Confirm new password"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  onClick={() =>
+                    setShowPasswords((prev) => ({
+                      ...prev,
+                      confirm: !prev.confirm,
+                    }))
+                  }
+                >
+                  {showPasswords.confirm ? (
+                    <EyeOff className="h-4 w-4" />
+                  ) : (
+                    <Eye className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
+
+            <Button
+              onClick={handlePasswordChange}
+              disabled={isChangingPassword}
+              className="w-full"
+            >
+              {isChangingPassword ? 'Changing Password...' : 'Change Password'}
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
 
       {/* Email Verification Section */}
       {profile.email && !profile.emailVerified && (
@@ -530,130 +657,6 @@ export default function AdminSettings() {
           </CardContent>
         </Card>
       )}
-
-      {/* Password Change Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Lock className="h-5 w-5" />
-            Change Password
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label htmlFor="currentPassword">Current Password</Label>
-            <div className="relative">
-              <Input
-                id="currentPassword"
-                type={showPasswords.current ? 'text' : 'password'}
-                value={passwordData.currentPassword}
-                onChange={(e) =>
-                  setPasswordData((prev) => ({
-                    ...prev,
-                    currentPassword: e.target.value,
-                  }))
-                }
-                placeholder="Enter current password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() =>
-                  setShowPasswords((prev) => ({
-                    ...prev,
-                    current: !prev.current,
-                  }))
-                }
-              >
-                {showPasswords.current ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="newPassword">New Password</Label>
-            <div className="relative">
-              <Input
-                id="newPassword"
-                type={showPasswords.new ? 'text' : 'password'}
-                value={passwordData.newPassword}
-                onChange={(e) =>
-                  setPasswordData((prev) => ({
-                    ...prev,
-                    newPassword: e.target.value,
-                  }))
-                }
-                placeholder="Enter new password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() =>
-                  setShowPasswords((prev) => ({ ...prev, new: !prev.new }))
-                }
-              >
-                {showPasswords.new ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <div>
-            <Label htmlFor="confirmPassword">Confirm New Password</Label>
-            <div className="relative">
-              <Input
-                id="confirmPassword"
-                type={showPasswords.confirm ? 'text' : 'password'}
-                value={passwordData.confirmPassword}
-                onChange={(e) =>
-                  setPasswordData((prev) => ({
-                    ...prev,
-                    confirmPassword: e.target.value,
-                  }))
-                }
-                placeholder="Confirm new password"
-              />
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
-                onClick={() =>
-                  setShowPasswords((prev) => ({
-                    ...prev,
-                    confirm: !prev.confirm,
-                  }))
-                }
-              >
-                {showPasswords.confirm ? (
-                  <EyeOff className="h-4 w-4" />
-                ) : (
-                  <Eye className="h-4 w-4" />
-                )}
-              </Button>
-            </div>
-          </div>
-
-          <Button
-            onClick={handlePasswordChange}
-            disabled={isChangingPassword}
-            className="w-full md:w-auto"
-          >
-            {isChangingPassword ? 'Changing Password...' : 'Change Password'}
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* All Admins Section */}
       <Card>
