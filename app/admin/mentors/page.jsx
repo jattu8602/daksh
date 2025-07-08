@@ -14,6 +14,7 @@ export default function MentorsPage() {
   const [isAddingMentor, setIsAddingMentor] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isSearching, setIsSearching] = useState(false)
   const [mentors, setMentors] = useState([])
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
@@ -79,15 +80,24 @@ export default function MentorsPage() {
   // Fetch mentors
   const fetchMentors = async (page) => {
     const pageToFetch = page || currentPage
+    const apiUrl = `/api/mentor/list?page=${pageToFetch}&limit=${
+      pagination.limit
+    }&search=${encodeURIComponent(searchTerm)}`
+
+    console.log('Fetching mentors with URL:', apiUrl) // Debug log
+
+    setIsSearching(true)
+    setErrorMessage('') // Clear any previous errors
+
     try {
-      const response = await fetch(
-        `/api/mentor/list?page=${pageToFetch}&limit=${pagination.limit}&search=${searchTerm}`
-      )
+      const response = await fetch(apiUrl)
       const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch mentors')
       }
+
+      console.log('Fetched mentors:', data.mentors.length, 'results') // Debug log
 
       setMentors(data.mentors)
       setPagination(data.pagination)
@@ -96,9 +106,15 @@ export default function MentorsPage() {
       // Update URL with current page
       updateURL(pageToFetch, searchTerm)
     } catch (error) {
+      console.error('Fetch error:', error) // Debug log
       setErrorMessage(error.message || 'Failed to fetch mentors')
+    } finally {
+      setIsSearching(false)
     }
   }
+
+  // Track if this is the initial load
+  const [isInitialLoad, setIsInitialLoad] = useState(true)
 
   // Initialize from URL parameters on component mount
   useEffect(() => {
@@ -110,32 +126,53 @@ export default function MentorsPage() {
 
     // Fetch with URL parameters
     fetchMentorsWithParams(urlPage, urlSearch)
+    setIsInitialLoad(false)
   }, [])
 
-  // Fetch mentors when search term changes (but not on initial load)
+  // Debounced search effect
   useEffect(() => {
-    const currentURLSearch = searchParams.get('search') || ''
-    if (searchTerm !== currentURLSearch) {
-      fetchMentors(1) // Reset to page 1 when searching
+    if (!isInitialLoad) {
+      const timeoutId = setTimeout(() => {
+        console.log('Searching for:', searchTerm) // Debug log
+        fetchMentors(1) // Reset to page 1 when searching
+      }, 500) // 500ms debounce
+
+      return () => clearTimeout(timeoutId)
     }
-  }, [searchTerm])
+  }, [searchTerm, isInitialLoad])
 
   // Helper function to fetch with specific parameters
   const fetchMentorsWithParams = async (page, search) => {
+    const apiUrl = `/api/mentor/list?page=${page}&limit=${
+      pagination.limit
+    }&search=${encodeURIComponent(search)}`
+
+    console.log('Fetching mentors with params:', { page, search, apiUrl }) // Debug log
+
+    setIsSearching(true)
+    setErrorMessage('')
+
     try {
-      const response = await fetch(
-        `/api/mentor/list?page=${page}&limit=${pagination.limit}&search=${search}`
-      )
+      const response = await fetch(apiUrl)
       const data = await response.json()
 
       if (!response.ok) {
         throw new Error(data.message || 'Failed to fetch mentors')
       }
 
+      console.log(
+        'Fetched mentors with params:',
+        data.mentors.length,
+        'results'
+      ) // Debug log
+
       setMentors(data.mentors)
       setPagination(data.pagination)
     } catch (error) {
+      console.error('Fetch with params error:', error) // Debug log
       setErrorMessage(error.message || 'Failed to fetch mentors')
+    } finally {
+      setIsSearching(false)
     }
   }
 
@@ -473,10 +510,10 @@ export default function MentorsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen">
       {!isAddingMentor ? (
         // List View
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
             <h1 className="text-2xl font-bold text-gray-900">Mentors</h1>
             <button
@@ -493,14 +530,59 @@ export default function MentorsPage() {
               placeholder="Search mentors..."
               value={searchTerm}
               onChange={(e) => {
-                setSearchTerm(e.target.value)
-                updateURL(1, e.target.value) // Update URL immediately for search
+                const newSearchTerm = e.target.value
+                console.log('Search input changed to:', newSearchTerm) // Debug log
+                setSearchTerm(newSearchTerm)
+                updateURL(1, newSearchTerm) // Update URL immediately for search
               }}
-              className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
-              <span className="text-gray-400">🔍</span>
+              {searchTerm ? (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    updateURL(1, '')
+                  }}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              ) : (
+                <span className="text-gray-400">🔍</span>
+              )}
             </div>
+
+            {/* Search status indicator */}
+            {searchTerm && (
+              <div className="text-sm text-gray-500 mt-1 flex items-center">
+                {isSearching && (
+                  <svg
+                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                    ></path>
+                  </svg>
+                )}
+                {isSearching
+                  ? 'Searching...'
+                  : `Searching for: "${searchTerm}"`}
+              </div>
+            )}
           </div>
 
           {errorMessage && (
@@ -515,19 +597,56 @@ export default function MentorsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {mentors.map((mentor) => (
-              <MentorCard
-                key={mentor.id}
-                mentor={mentor}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
-                onResetPassword={handleResetPassword}
-                currentPage={currentPage}
-                searchTerm={searchTerm}
-              />
-            ))}
-          </div>
+          {mentors.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {mentors.map((mentor) => (
+                <MentorCard
+                  key={mentor.id}
+                  mentor={mentor}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onResetPassword={handleResetPassword}
+                  currentPage={currentPage}
+                  searchTerm={searchTerm}
+                />
+              ))}
+            </div>
+          ) : !isSearching ? (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-lg mb-2">
+                {searchTerm ? '🔍' : '👥'}
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                {searchTerm ? 'No mentors found' : 'No mentors available'}
+              </h3>
+              <p className="text-gray-500">
+                {searchTerm
+                  ? `No mentors match "${searchTerm}". Try a different search term.`
+                  : 'There are no mentors in the system yet.'}
+              </p>
+              {searchTerm && (
+                <button
+                  onClick={() => {
+                    setSearchTerm('')
+                    updateURL(1, '')
+                  }}
+                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                >
+                  Clear Search
+                </button>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-12">
+              <div className="text-gray-400 text-lg mb-2">⏳</div>
+              <h3 className="text-lg font-medium text-gray-900 mb-2">
+                Searching...
+              </h3>
+              <p className="text-gray-500">
+                Please wait while we search for mentors.
+              </p>
+            </div>
+          )}
 
           {/* Pagination */}
           {pagination.totalPages > 1 && (
