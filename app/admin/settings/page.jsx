@@ -25,6 +25,28 @@ import {
 } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 
+// Utility function to format last activity time
+const formatLastActivity = (lastActiveAt) => {
+  if (!lastActiveAt) return 'Never'
+
+  const now = new Date()
+  const lastActive = new Date(lastActiveAt)
+  const diffInSeconds = Math.floor((now - lastActive) / 1000)
+
+  if (diffInSeconds < 60) {
+    return 'Just now'
+  } else if (diffInSeconds < 3600) {
+    const minutes = Math.floor(diffInSeconds / 60)
+    return `${minutes} ${minutes === 1 ? 'minute' : 'minutes'} ago`
+  } else if (diffInSeconds < 86400) {
+    const hours = Math.floor(diffInSeconds / 3600)
+    return `${hours} ${hours === 1 ? 'hour' : 'hours'} ago`
+  } else {
+    const days = Math.floor(diffInSeconds / 86400)
+    return `${days} ${days === 1 ? 'day' : 'days'} ago`
+  }
+}
+
 export default function AdminSettings() {
   // Profile state
   const [profile, setProfile] = useState(null)
@@ -65,6 +87,187 @@ export default function AdminSettings() {
 
   // File upload ref
   const fileInputRef = useRef(null)
+
+  // Online status tracking
+  const [isOnline, setIsOnline] = useState(navigator.onLine)
+  const heartbeatRef = useRef(null)
+  const lastActivityRef = useRef(Date.now())
+
+  // Update last activity time
+  const updateLastActivity = () => {
+    lastActivityRef.current = Date.now()
+  }
+
+  // Send heartbeat to maintain online status
+  const sendHeartbeat = async () => {
+    try {
+      await fetch('/api/admin/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          lastActivity: new Date(lastActivityRef.current).toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error('Heartbeat failed:', error)
+    }
+  }
+
+  // Mark admin as offline
+  const markOffline = async () => {
+    try {
+      await fetch('/api/admin/status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          isOnline: false,
+          lastActivity: new Date(lastActivityRef.current).toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to mark offline:', error)
+    }
+  }
+
+  // Mark admin as online
+  const markOnline = async () => {
+    try {
+      await fetch('/api/admin/status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          isOnline: true,
+          lastActivity: new Date().toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to mark online:', error)
+    }
+  }
+
+  // Handle online/offline detection
+  useEffect(() => {
+    const handleOnline = () => {
+      setIsOnline(true)
+      markOnline()
+    }
+
+    const handleOffline = () => {
+      setIsOnline(false)
+      markOffline()
+    }
+
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Handle page visibility changes (when user switches tabs or minimizes window)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        // User switched away from the page
+        updateLastActivity()
+        markOffline()
+      } else {
+        // User came back to the page
+        updateLastActivity()
+        if (navigator.onLine) {
+          markOnline()
+        }
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
+  }, [])
+
+  // Handle beforeunload (when user closes browser or navigates away)
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      // Use sendBeacon for reliable delivery when page is unloading
+      const data = JSON.stringify({
+        isOnline: false,
+        lastActivity: new Date(lastActivityRef.current).toISOString(),
+      })
+
+      navigator.sendBeacon(
+        '/api/admin/status',
+        new Blob([data], {
+          type: 'application/json',
+        })
+      )
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+    }
+  }, [])
+
+  // Activity tracking - update last activity on user interactions
+  useEffect(() => {
+    const events = [
+      'mousedown',
+      'mousemove',
+      'keypress',
+      'scroll',
+      'touchstart',
+      'click',
+    ]
+
+    const handleActivity = () => {
+      updateLastActivity()
+    }
+
+    events.forEach((event) => {
+      document.addEventListener(event, handleActivity, true)
+    })
+
+    return () => {
+      events.forEach((event) => {
+        document.removeEventListener(event, handleActivity, true)
+      })
+    }
+  }, [])
+
+  // Heartbeat system - send periodic updates when online
+  useEffect(() => {
+    if (isOnline && navigator.onLine) {
+      // Send initial online status
+      markOnline()
+
+      // Set up heartbeat every 30 seconds
+      heartbeatRef.current = setInterval(() => {
+        if (!document.hidden && navigator.onLine) {
+          sendHeartbeat()
+        }
+      }, 30 * 1000)
+    } else {
+      // Clear heartbeat when offline
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current)
+        heartbeatRef.current = null
+      }
+    }
+
+    return () => {
+      if (heartbeatRef.current) {
+        clearInterval(heartbeatRef.current)
+      }
+    }
+  }, [isOnline])
 
   // Real-time admin list updates
   useEffect(() => {
@@ -108,6 +311,13 @@ export default function AdminSettings() {
   const fetchAllAdmins = async () => {
     setIsLoadingAdmins(true)
     try {
+      // First cleanup inactive admins
+      await fetch('/api/admin/cleanup-offline', {
+        method: 'POST',
+        credentials: 'include',
+      }).catch((error) => console.warn('Cleanup failed:', error))
+
+      // Then fetch updated admin list
       const response = await fetch('/api/admin/all-admins', {
         credentials: 'include',
       })
@@ -337,9 +547,28 @@ export default function AdminSettings() {
   return (
     <div className="max-w-7xl mx-auto space-y-8">
       {/* Header */}
-      <div className="flex items-center gap-3 mb-8">
-        <Shield className="h-8 w-8 text-blue-600" />
-        <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
+      <div className="flex items-center justify-between gap-3 mb-8">
+        <div className="flex items-center gap-3">
+          <Shield className="h-8 w-8 text-blue-600" />
+          <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
+        </div>
+
+        {/* Connection Status Indicator */}
+        <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100">
+            <div
+              className={`w-2 h-2 rounded-full ${isOnline && navigator.onLine ? 'bg-green-500' : 'bg-red-500'}`}
+            />
+            <span className="text-sm font-medium">
+              {isOnline && navigator.onLine ? 'Connected' : 'Disconnected'}
+            </span>
+          </div>
+          {!navigator.onLine && (
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+              <span className="text-xs">No Internet</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Profile and Password Section */}
@@ -740,8 +969,13 @@ export default function AdminSettings() {
                       </span>
                     </div>
                     <p className="text-xs text-gray-500">
-                      Last active: {admin.lastActive}
+                      Last active: {formatLastActivity(admin.lastActiveAt)}
                     </p>
+                    {!admin.isOnline && admin.lastActiveAt && (
+                      <p className="text-xs text-red-400 mt-1">
+                        Connection lost
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}

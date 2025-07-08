@@ -269,7 +269,23 @@ export default function AdminLayout({ children }) {
   }
 
   // Actually perform sign out
-  const confirmSignOut = () => {
+  const confirmSignOut = async () => {
+    try {
+      // Mark admin as offline before signing out
+      await fetch('/api/admin/status', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({
+          isOnline: false,
+          lastActivity: new Date().toISOString(),
+        }),
+      })
+    } catch (error) {
+      console.error('Failed to mark admin offline:', error)
+      // Continue with sign out even if the API call fails
+    }
+
     // Clear session storage
     sessionStorage.removeItem('user')
 

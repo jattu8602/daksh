@@ -39,6 +39,15 @@ export async function POST(request) {
       )
     }
 
+    // Mark admin as online upon successful login
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: {
+        isOnline: true,
+        lastActiveAt: new Date(),
+      },
+    })
+
     // Admin is authenticated, return success response
     console.log('Login successful for:', admin.user.name)
     return NextResponse.json({
