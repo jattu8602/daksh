@@ -206,8 +206,8 @@ export default function AdminSettings() {
 
   // Handle email verification
   const handleSendOTP = async () => {
-    if (!emailVerification.newEmail) {
-      toast.error('Please enter an email address')
+    if (!profile.email) {
+      toast.error('No email address found in your profile')
       return
     }
 
@@ -217,7 +217,7 @@ export default function AdminSettings() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body: JSON.stringify({ email: emailVerification.newEmail }),
+        body: JSON.stringify({ email: profile.email }),
       })
 
       const data = await response.json()
@@ -253,7 +253,7 @@ export default function AdminSettings() {
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
         body: JSON.stringify({
-          email: emailVerification.newEmail,
+          email: profile.email,
           otp: emailVerification.otp,
         }),
       })
@@ -481,56 +481,52 @@ export default function AdminSettings() {
               </span>
             </div>
 
-            {!emailVerification.otpSent ? (
-              <div className="flex gap-3">
-                <Input
-                  placeholder="Enter email to verify"
-                  value={emailVerification.newEmail}
-                  onChange={(e) =>
-                    setEmailVerification((prev) => ({
-                      ...prev,
-                      newEmail: e.target.value,
-                    }))
-                  }
-                  className="flex-1"
-                />
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-600 mb-1">Email to verify:</p>
+                <p className="font-medium">{profile.email}</p>
+              </div>
+
+              {!emailVerification.otpSent ? (
                 <Button
                   onClick={handleSendOTP}
                   disabled={emailVerification.isVerifying}
+                  className="w-full"
                 >
-                  {emailVerification.isVerifying ? 'Sending...' : 'Send OTP'}
+                  {emailVerification.isVerifying
+                    ? 'Sending OTP...'
+                    : 'Send OTP to Email'}
                 </Button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                <p className="text-sm text-gray-600">
-                  OTP sent to {emailVerification.newEmail}. Please check your
-                  email.
-                </p>
-                <div className="flex gap-3">
-                  <Input
-                    placeholder="Enter 6-digit OTP"
-                    value={emailVerification.otp}
-                    onChange={(e) =>
-                      setEmailVerification((prev) => ({
-                        ...prev,
-                        otp: e.target.value,
-                      }))
-                    }
-                    maxLength={6}
-                    className="flex-1"
-                  />
-                  <Button
-                    onClick={handleVerifyOTP}
-                    disabled={emailVerification.isVerifyingOtp}
-                  >
-                    {emailVerification.isVerifyingOtp
-                      ? 'Verifying...'
-                      : 'Verify'}
-                  </Button>
+              ) : (
+                <div className="space-y-3">
+                  <p className="text-sm text-gray-600">
+                    OTP sent to {profile.email}. Please check your email.
+                  </p>
+                  <div className="flex gap-3">
+                    <Input
+                      placeholder="Enter 6-digit OTP"
+                      value={emailVerification.otp}
+                      onChange={(e) =>
+                        setEmailVerification((prev) => ({
+                          ...prev,
+                          otp: e.target.value,
+                        }))
+                      }
+                      maxLength={6}
+                      className="flex-1"
+                    />
+                    <Button
+                      onClick={handleVerifyOTP}
+                      disabled={emailVerification.isVerifyingOtp}
+                    >
+                      {emailVerification.isVerifyingOtp
+                        ? 'Verifying...'
+                        : 'Verify'}
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

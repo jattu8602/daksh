@@ -1,8 +1,17 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
-import { Resend } from 'resend'
+import nodemailer from 'nodemailer'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// Create Gmail transporter
+const createTransporter = () => {
+  return nodemailer.createTransporter({
+    service: 'gmail',
+    auth: {
+      user: process.env.GMAIL_USER, // Your Gmail address
+      pass: process.env.GMAIL_APP_PASSWORD, // Your Gmail App Password
+    },
+  })
+}
 
 // Generate random 6-digit OTP
 function generateOTP() {
@@ -48,44 +57,76 @@ export async function POST(request) {
       },
     })
 
-    // Send email using Resend
+    // Send email using Nodemailer
     try {
-      console.log('Attempting to send email to:', email)
-      console.log('Resend API Key exists:', !!process.env.RESEND_API_KEY)
+      console.log('Attempting to send email via Gmail to:', email)
+      console.log('Gmail credentials configured:', {
+        user: !!process.env.GMAIL_USER,
+        pass: !!process.env.GMAIL_APP_PASSWORD,
+      })
 
-      const result = await resend.emails.send({
-        from: 'Daksh Admin <onboarding@resend.dev>', // Using Resend's default domain for testing
+      const transporter = createTransporter()
+
+      const mailOptions = {
+        from: `"Daksh Admin Panel" <${process.env.GMAIL_USER}>`,
         to: email,
         subject: 'Email Verification - Daksh Admin Panel',
         html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #333;">Email Verification</h2>
-            <p>Hello ${admin.user.name},</p>
-            <p>Your email verification code is:</p>
-            <div style="background: #f0f0f0; padding: 20px; text-align: center; font-size: 24px; font-weight: bold; letter-spacing: 3px; margin: 20px 0;">
-              ${otp}
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+            <div style="background: white; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              <div style="text-align: center; margin-bottom: 30px;">
+                <h1 style="color: #333; margin: 0; font-size: 28px;">🛡️ Daksh Admin</h1>
+                <p style="color: #666; margin: 10px 0 0 0;">Email Verification</p>
+              </div>
+
+              <h2 style="color: #333; margin-bottom: 20px;">Hello ${admin.user.name}!</h2>
+
+              <p style="color: #555; line-height: 1.6; margin-bottom: 30px;">
+                You requested to verify your email address for your Daksh Admin account.
+                Please use the verification code below:
+              </p>
+
+              <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 25px; text-align: center; border-radius: 10px; margin: 30px 0;">
+                <div style="color: white; font-size: 32px; font-weight: bold; letter-spacing: 8px; font-family: monospace;">
+                  ${otp}
+                </div>
+              </div>
+
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; border-radius: 5px; padding: 15px; margin: 20px 0;">
+                <p style="margin: 0; color: #856404; font-size: 14px;">
+                  ⏰ This code will expire in <strong>10 minutes</strong>
+                </p>
+              </div>
+
+              <p style="color: #555; line-height: 1.6; margin-bottom: 20px;">
+                If you didn't request this verification, please ignore this email or contact support if you're concerned about your account security.
+              </p>
+
+              <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+
+              <div style="text-align: center;">
+                <p style="color: #888; font-size: 12px; margin: 0;">
+                  This email was sent from Daksh Admin Panel<br>
+                  Please do not reply to this email
+                </p>
+              </div>
             </div>
-            <p>This code will expire in 10 minutes.</p>
-            <p>If you didn't request this verification, please ignore this email.</p>
-            <hr style="margin: 30px 0;">
-            <p style="color: #666; font-size: 12px;">
-              This email was sent from Daksh Admin Panel. Please do not reply to this email.
-            </p>
           </div>
         `,
-      })
+      }
 
-      console.log('Email sent successfully:', result)
+      const result = await transporter.sendMail(mailOptions)
+      console.log('Email sent successfully via Gmail:', result.messageId)
 
       return NextResponse.json({
         success: true,
         message: 'OTP sent successfully to your email',
       })
     } catch (emailError) {
-      console.error('Detailed email error:', {
+      console.error('Detailed Gmail error:', {
         message: emailError.message,
+        code: emailError.code,
         stack: emailError.stack,
-        response: emailError.response?.data || emailError.response,
       })
 
       return NextResponse.json(
@@ -102,7 +143,7 @@ export async function POST(request) {
   }
 }
 
-// Verify OTP
+// Verify OTP (same as the original)
 export async function PUT(request) {
   try {
     const adminAuthToken = request.cookies.get('admin_auth_token')?.value
