@@ -655,8 +655,153 @@ export default function AdminSettings() {
 
   if (!profile) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="max-w-7xl mx-auto space-y-8 animate-pulse">
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-between gap-3 mb-8">
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-8 bg-gray-200 rounded-md"></div>
+            <div className="h-8 w-64 bg-gray-200 rounded-md"></div>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="h-8 w-32 bg-gray-200 rounded-full"></div>
+          </div>
+        </div>
+
+        {/* Profile and Password Section Skeleton */}
+        <div className="flex flex-col lg:flex-row gap-6">
+          {/* Profile Card Skeleton */}
+          <Card className="flex-1 lg:w-[70%]">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 bg-gray-200 rounded"></div>
+                <div className="h-6 w-32 bg-gray-200 rounded"></div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Profile Image Skeleton */}
+              <div className="flex items-center gap-6">
+                <div className="h-24 w-24 bg-gray-200 rounded-full"></div>
+                <div className="space-y-2">
+                  <div className="h-10 w-32 bg-gray-200 rounded-md"></div>
+                  <div className="h-4 w-48 bg-gray-100 rounded"></div>
+                </div>
+              </div>
+
+              {/* Form Fields Skeleton */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {[1, 2, 3, 4].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <div className="h-4 w-20 bg-gray-200 rounded"></div>
+                    <div className="h-10 w-full bg-gray-100 rounded-md"></div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="h-10 w-32 bg-gray-200 rounded-md"></div>
+            </CardContent>
+          </Card>
+
+          {/* Password Card Skeleton */}
+          <Card className="lg:w-[30%]">
+            <CardHeader>
+              <div className="flex items-center gap-2">
+                <div className="h-5 w-5 bg-gray-200 rounded"></div>
+                <div className="h-6 w-32 bg-gray-200 rounded"></div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="space-y-2">
+                  <div className="h-4 w-24 bg-gray-200 rounded"></div>
+                  <div className="h-10 w-full bg-gray-100 rounded-md"></div>
+                </div>
+              ))}
+              <div className="h-10 w-full bg-gray-200 rounded-md"></div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Email Verification Card Skeleton */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 bg-gray-200 rounded"></div>
+              <div className="h-6 w-36 bg-gray-200 rounded"></div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <div className="h-4 w-4 bg-yellow-200 rounded"></div>
+              <div className="h-4 w-80 bg-yellow-200 rounded"></div>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
+                <div className="h-4 w-32 bg-gray-200 rounded"></div>
+                <div className="h-5 w-48 bg-gray-200 rounded"></div>
+              </div>
+              <div className="h-10 w-full bg-gray-200 rounded-md"></div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* All Admins Card Skeleton */}
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="h-5 w-5 bg-gray-200 rounded"></div>
+              <div className="h-6 w-24 bg-gray-200 rounded"></div>
+            </div>
+            <div className="h-9 w-24 bg-gray-200 rounded-md"></div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between p-4 border rounded-lg"
+                  style={{
+                    animationDelay: `${i * 0.1}s`,
+                    animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                  }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="relative">
+                      <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-300 rounded-full border-2 border-white"></div>
+                    </div>
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2">
+                        <div className="h-5 w-32 bg-gray-200 rounded"></div>
+                        <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
+                        <div className="h-4 w-4 bg-gray-200 rounded-full"></div>
+                      </div>
+                      <div className="h-4 w-24 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-40 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-28 bg-gray-100 rounded"></div>
+                    </div>
+                  </div>
+                  <div className="text-right space-y-1">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
+                      <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                    </div>
+                    <div className="h-3 w-20 bg-gray-100 rounded"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Loading indicator */}
+        <div className="flex items-center justify-center py-8">
+          <div className="flex items-center gap-3">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+            <span className="text-sm text-gray-600 font-medium">
+              Loading admin settings...
+            </span>
+          </div>
+        </div>
       </div>
     )
   }
