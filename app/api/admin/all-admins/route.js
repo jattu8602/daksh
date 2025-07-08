@@ -20,16 +20,25 @@ function formatLastActive(lastActiveAt) {
   return new Date(lastActiveAt).toLocaleDateString()
 }
 
-// Determine if admin is online based on last activity
-function isAdminOnline(lastActiveAt) {
-  if (!lastActiveAt) return false
+// Cleanup inactive admins before fetching list
+async function cleanupInactiveAdmins() {
+  try {
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
 
-  const now = new Date()
-  const diffInMs = now - new Date(lastActiveAt)
-  const diffInMinutes = Math.floor(diffInMs / (1000 * 60))
-
-  // Consider online if active within last 5 minutes
-  return diffInMinutes < 5
+    await prisma.admin.updateMany({
+      where: {
+        isOnline: true,
+        lastActiveAt: {
+          lt: twoMinutesAgo,
+        },
+      },
+      data: {
+        isOnline: false,
+      },
+    })
+  } catch (error) {
+    console.warn('Cleanup failed:', error)
+  }
 }
 
 export async function GET(request) {
@@ -39,6 +48,9 @@ export async function GET(request) {
     if (!adminAuthToken) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
+
+    // First cleanup inactive admins to ensure accurate status
+    await cleanupInactiveAdmins()
 
     // Get all admins with their user information
     const admins = await prisma.admin.findMany({
@@ -54,13 +66,15 @@ export async function GET(request) {
           },
         },
       },
-      orderBy: [{ lastActiveAt: 'desc' }, { createdAt: 'desc' }],
+      orderBy: [
+        { isOnline: 'desc' },
+        { lastActiveAt: 'desc' },
+        { createdAt: 'desc' },
+      ],
     })
 
-    // Format admin data with online status
+    // Format admin data using database isOnline field
     const formattedAdmins = admins.map((admin) => {
-      const isOnline = isAdminOnline(admin.lastActiveAt)
-
       return {
         id: admin.id,
         userId: admin.userId,
@@ -71,25 +85,12 @@ export async function GET(request) {
         profileImage: admin.user.profileImage,
         role: admin.user.role,
         emailVerified: admin.emailVerified,
-        isOnline,
+        isOnline: admin.isOnline, // Use database field directly
         lastActive: formatLastActive(admin.lastActiveAt),
         lastActiveAt: admin.lastActiveAt,
         createdAt: admin.createdAt,
       }
     })
-
-    // Update online status in database for all admins
-    await Promise.all(
-      admins.map(async (admin) => {
-        const isOnline = isAdminOnline(admin.lastActiveAt)
-        if (admin.isOnline !== isOnline) {
-          await prisma.admin.update({
-            where: { id: admin.id },
-            data: { isOnline },
-          })
-        }
-      })
-    )
 
     return NextResponse.json({
       success: true,

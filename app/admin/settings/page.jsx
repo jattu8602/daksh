@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback, useMemo, memo } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -47,7 +47,72 @@ const formatLastActivity = (lastActiveAt) => {
   }
 }
 
+// Memoized Admin Card Component to prevent unnecessary re-renders
+const AdminCard = memo(({ admin, formatLastActivity }) => {
+  return (
+    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+      <div className="flex items-center gap-4">
+        <div className="relative">
+          <Avatar className="h-12 w-12">
+            <AvatarImage src={admin.profileImage} />
+            <AvatarFallback>
+              {admin.name?.charAt(0)?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div
+            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+              admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+          />
+        </div>
+
+        <div>
+          <div className="flex items-center gap-2">
+            <h4 className="font-semibold">{admin.name}</h4>
+            <Badge
+              variant={
+                admin.role === 'SUPER_ADMIN' ? 'destructive' : 'secondary'
+              }
+            >
+              {admin.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
+            </Badge>
+            {admin.emailVerified && (
+              <CheckCircle className="h-4 w-4 text-green-500" />
+            )}
+          </div>
+          <p className="text-sm text-gray-600">@{admin.username}</p>
+          <p className="text-sm text-gray-500">{admin.email}</p>
+          {admin.phone !== 'Not provided' && (
+            <p className="text-sm text-gray-500">{admin.phone}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="text-right flex flex-col items-end">
+        <div className="flex items-center gap-2 mb-1">
+          <div
+            className={`w-2 h-2 rounded-full ${
+              admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
+            }`}
+          />
+          <span className="text-sm font-medium">
+            {admin.isOnline ? 'Online' : 'Offline'}
+          </span>
+        </div>
+        <p className="text-xs text-gray-500">
+          Last active: {formatLastActivity(admin.lastActiveAt)}
+        </p>
+      </div>
+    </div>
+  )
+})
+
+AdminCard.displayName = 'AdminCard'
+
 export default function AdminSettings() {
+  // Memoized format function to prevent unnecessary re-renders
+  const memoizedFormatLastActivity = useMemo(() => formatLastActivity, [])
+
   // Profile state
   const [profile, setProfile] = useState(null)
   const [profileFormData, setProfileFormData] = useState({
@@ -84,6 +149,7 @@ export default function AdminSettings() {
   // All admins state
   const [allAdmins, setAllAdmins] = useState([])
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false)
+  const [isBackgroundUpdating, setIsBackgroundUpdating] = useState(false)
 
   // File upload ref
   const fileInputRef = useRef(null)
@@ -269,23 +335,74 @@ export default function AdminSettings() {
     }
   }, [isOnline])
 
-  // Real-time admin list updates
+  // Silent status update function - doesn't trigger full UI re-render
+  const silentStatusUpdate = useCallback(async () => {
+    setIsBackgroundUpdating(true)
+    try {
+      // Just trigger cleanup and get minimal status data
+      const response = await fetch('/api/admin/status-check', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.admins) {
+        // Only update state if there are actual changes
+        setAllAdmins((prevAdmins) => {
+          const hasChanges = prevAdmins.some((prevAdmin) => {
+            const updatedAdmin = data.admins.find(
+              (admin) => admin.id === prevAdmin.id
+            )
+            return (
+              updatedAdmin &&
+              (updatedAdmin.isOnline !== prevAdmin.isOnline ||
+                new Date(updatedAdmin.lastActiveAt).getTime() !==
+                  new Date(prevAdmin.lastActiveAt).getTime())
+            )
+          })
+
+          // Only update if there are actual changes
+          return hasChanges ? data.admins : prevAdmins
+        })
+      }
+    } catch (error) {
+      // Silently fail - don't show errors for background updates
+      console.warn('Silent status update failed:', error)
+    } finally {
+      setIsBackgroundUpdating(false)
+    }
+  }, [])
+
+  // Real-time status updates (silent) - runs every 30 seconds
   useEffect(() => {
-    // Refresh admin list every 30 seconds for real-time updates
     const interval = setInterval(() => {
-      fetchAllAdmins()
+      silentStatusUpdate()
     }, 30 * 1000)
 
     return () => clearInterval(interval)
-  }, [])
+  }, [silentStatusUpdate])
 
-  // Fetch profile data
+  // Additional cleanup every 2 minutes for more thorough cleanup
   useEffect(() => {
-    fetchProfile()
-    fetchAllAdmins()
-  }, [])
+    const cleanupInterval = setInterval(async () => {
+      try {
+        await fetch('/api/admin/cleanup-offline', {
+          method: 'POST',
+          credentials: 'include',
+        })
+        // Trigger a silent update after cleanup
+        silentStatusUpdate()
+      } catch (error) {
+        console.warn('Background cleanup failed:', error)
+      }
+    }, 120 * 1000) // Run every 2 minutes
 
-  const fetchProfile = async () => {
+    return () => clearInterval(cleanupInterval)
+  }, [silentStatusUpdate])
+
+  const fetchProfile = useCallback(async () => {
     try {
       const response = await fetch('/api/admin/profile', {
         credentials: 'include',
@@ -306,18 +423,12 @@ export default function AdminSettings() {
       console.error('Error fetching profile:', error)
       toast.error('Failed to load profile')
     }
-  }
+  }, [])
 
-  const fetchAllAdmins = async () => {
+  const fetchAllAdmins = useCallback(async () => {
     setIsLoadingAdmins(true)
     try {
-      // First cleanup inactive admins
-      await fetch('/api/admin/cleanup-offline', {
-        method: 'POST',
-        credentials: 'include',
-      }).catch((error) => console.warn('Cleanup failed:', error))
-
-      // Then fetch updated admin list
+      // Fetch admin list (cleanup is now handled automatically by the API)
       const response = await fetch('/api/admin/all-admins', {
         credentials: 'include',
       })
@@ -332,7 +443,13 @@ export default function AdminSettings() {
     } finally {
       setIsLoadingAdmins(false)
     }
-  }
+  }, [])
+
+  // Initial data fetch on component mount
+  useEffect(() => {
+    fetchProfile()
+    fetchAllAdmins()
+  }, []) // Empty dependency array - only run once on mount
 
   // Handle profile image upload
   const handleImageUpload = async (file) => {
@@ -893,6 +1010,12 @@ export default function AdminSettings() {
           <CardTitle className="flex items-center gap-2">
             <Users className="h-5 w-5" />
             All Admins
+            {isBackgroundUpdating && (
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-800">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <span className="text-xs">Updating...</span>
+              </div>
+            )}
           </CardTitle>
           <Button
             variant="outline"
@@ -912,72 +1035,11 @@ export default function AdminSettings() {
           ) : (
             <div className="space-y-4">
               {allAdmins.map((admin) => (
-                <div
+                <AdminCard
                   key={admin.id}
-                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="relative">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src={admin.profileImage} />
-                        <AvatarFallback>
-                          {admin.name?.charAt(0)?.toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div
-                        className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
-                          admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
-                        }`}
-                      />
-                    </div>
-
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{admin.name}</h4>
-                        <Badge
-                          variant={
-                            admin.role === 'SUPER_ADMIN'
-                              ? 'destructive'
-                              : 'secondary'
-                          }
-                        >
-                          {admin.role === 'SUPER_ADMIN'
-                            ? 'Super Admin'
-                            : 'Admin'}
-                        </Badge>
-                        {admin.emailVerified && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        )}
-                      </div>
-                      <p className="text-sm text-gray-600">@{admin.username}</p>
-                      <p className="text-sm text-gray-500">{admin.email}</p>
-                      {admin.phone !== 'Not provided' && (
-                        <p className="text-sm text-gray-500">{admin.phone}</p>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div
-                        className={`w-2 h-2 rounded-full ${
-                          admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
-                        }`}
-                      />
-                      <span className="text-sm font-medium">
-                        {admin.isOnline ? 'Online' : 'Offline'}
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-500">
-                      Last active: {formatLastActivity(admin.lastActiveAt)}
-                    </p>
-                    {!admin.isOnline && admin.lastActiveAt && (
-                      <p className="text-xs text-red-400 mt-1">
-                        Connection lost
-                      </p>
-                    )}
-                  </div>
-                </div>
+                  admin={admin}
+                  formatLastActivity={memoizedFormatLastActivity}
+                />
               ))}
 
               {allAdmins.length === 0 && (

@@ -1,18 +1,18 @@
 import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
-// Cleanup inactive admins - mark as offline if no activity for 5 minutes
+// Cleanup inactive admins - mark as offline if no activity for 2 minutes
 export async function POST(request) {
   try {
-    // Calculate time threshold (5 minutes ago)
-    const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000)
+    // Calculate time threshold (2 minutes ago)
+    const twoMinutesAgo = new Date(Date.now() - 2 * 60 * 1000)
 
     // Find admins who are marked as online but haven't been active recently
     const inactiveAdmins = await prisma.admin.findMany({
       where: {
         isOnline: true,
         lastActiveAt: {
-          lt: fiveMinutesAgo,
+          lt: twoMinutesAgo,
         },
       },
     })
