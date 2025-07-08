@@ -94,7 +94,7 @@ const ContentPage = () => {
         <h1 className="text-xl sm:text-2xl font-bold">Content Library</h1>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <Link href="/admin/content/youtube" className="flex-1 sm:flex-none">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base cursor-pointer">
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 viewBox="0 0 24 24"
@@ -107,7 +107,7 @@ const ContentPage = () => {
             </button>
           </Link>
           <Link href="/admin/content/instagram" className="flex-1 sm:flex-none">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm sm:text-base">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 via-pink-500 to-orange-500 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:opacity-90 transition-opacity text-sm sm:text-base cursor-pointer">
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 viewBox="0 0 24 24"
@@ -120,7 +120,7 @@ const ContentPage = () => {
             </button>
           </Link>
           <Link href="/admin/content/manual" className="flex-1 sm:flex-none">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-blue-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base cursor-pointer">
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 viewBox="0 0 24 24"
@@ -133,7 +133,7 @@ const ContentPage = () => {
             </button>
           </Link>
           <Link href="/admin/content/pinterest" className="flex-1 sm:flex-none">
-            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-400 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-500 transition-colors text-sm sm:text-base">
+            <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-400 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-500 transition-colors text-sm sm:text-base cursor-pointer">
               <svg
                 className="w-4 h-4 sm:w-5 sm:h-5"
                 viewBox="0 0 24 24"
@@ -158,28 +158,7 @@ const ContentPage = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 sm:p-3 rounded-lg w-full text-sm sm:text-base"
           />
-          <div className="flex gap-2">
-            <button
-              onClick={() => setActiveTab('videos')}
-              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                activeTab === 'videos'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Videos
-            </button>
-            <button
-              onClick={() => setActiveTab('reels')}
-              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg transition-colors text-sm sm:text-base ${
-                activeTab === 'reels'
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              Reels
-            </button>
-          </div>
+          
         </div>
 
         {/* Bulk Actions */}
