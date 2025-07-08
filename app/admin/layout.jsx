@@ -357,7 +357,7 @@ export default function AdminLayout({ children }) {
           </div>
           <button
             onClick={handleSignOut}
-            className="mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors"
+            className="mt-4 w-full rounded-md bg-red-50 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-100 transition-colors cursor-pointer"
           >
             Sign Out
           </button>
@@ -402,7 +402,7 @@ export default function AdminLayout({ children }) {
             {/* Right side - Action buttons */}
             <div className="flex items-center gap-2 cursor-pointer">
               <Link href="/admin/notifications">
-                <button className="relative inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-sm hover:bg-gray-100 transition">
+                <button className="relative inline-flex items-center justify-center h-8 w-8 rounded-full bg-white shadow-sm hover:bg-gray-100 transition cursor-pointer">
                   <Bell className="w-5 h-5 text-gray-700" />
                   {/* Notification badge */}
                   <span className="absolute -top-1.5 -right-1.5 h-4 w-4 bg-red-500 rounded-full text-xs text-white font-bold flex items-center justify-center shadow">
@@ -427,7 +427,7 @@ export default function AdminLayout({ children }) {
               </h2>
               <button
                 onClick={() => setShowSignOutModal(false)}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 cursor-pointer"
               >
                 ✕
               </button>
@@ -444,14 +444,14 @@ export default function AdminLayout({ children }) {
               <button
                 type="button"
                 onClick={() => setShowSignOutModal(false)}
-                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                className="rounded-md border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
               >
                 No, Stay Logged In
               </button>
               <button
                 type="button"
                 onClick={confirmSignOut}
-                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+                className="rounded-md bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 cursor-pointer"
               >
                 Yes, Sign Out
               </button>
