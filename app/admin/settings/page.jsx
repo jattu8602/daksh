@@ -131,6 +131,7 @@ export default function AdminSettings() {
     isVerifying: false,
     otpSent: false,
     isVerifyingOtp: false,
+    countdown: 0,
   })
 
   // Password change state
@@ -555,14 +556,64 @@ export default function AdminSettings() {
           otpSent: true,
           isVerifying: false,
         }))
-        toast.success('OTP sent to your email')
+
+        // Show success message with debug info in development
+        let successMessage = 'OTP sent to your email! Check your inbox.'
+        if (data.debug?.otp && process.env.NODE_ENV === 'development') {
+          successMessage += ` [Dev: ${data.debug.otp}]`
+        }
+        toast.success(successMessage, { duration: 6000 })
+
+        // Log debug info for development
+        if (data.debug) {
+          console.log('=== EMAIL DEBUG INFO ===')
+          console.log('OTP:', data.debug.otp)
+          console.log('Email ID:', data.debug.resendId)
+        }
       } else {
-        toast.error(data.error || 'Failed to send OTP')
+        // Handle rate limiting specifically
+        if (response.status === 429) {
+          toast.error(`${data.error}. ${data.details}`, { duration: 5000 })
+
+          // Set countdown timer
+          if (data.waitTime) {
+            setEmailVerification((prev) => ({
+              ...prev,
+              countdown: data.waitTime,
+              isVerifying: false,
+            }))
+
+            // Start countdown
+            const countdownInterval = setInterval(() => {
+              setEmailVerification((prev) => {
+                if (prev.countdown <= 1) {
+                  clearInterval(countdownInterval)
+                  toast('You can now request a new OTP', {
+                    icon: '⏰',
+                    duration: 3000,
+                  })
+                  return { ...prev, countdown: 0 }
+                }
+                return { ...prev, countdown: prev.countdown - 1 }
+              })
+            }, 1000)
+          }
+        } else {
+          toast.error(data.error || 'Failed to send OTP', { duration: 4000 })
+
+          // Show more details in development
+          if (data.details && process.env.NODE_ENV === 'development') {
+            console.error('Email Error Details:', data.details)
+            if (data.debug) {
+              console.error('Debug Info:', data.debug)
+            }
+          }
+        }
         setEmailVerification((prev) => ({ ...prev, isVerifying: false }))
       }
     } catch (error) {
       console.error('Error sending OTP:', error)
-      toast.error('Failed to send OTP')
+      toast.error('Network error. Please check your connection and try again.')
       setEmailVerification((prev) => ({ ...prev, isVerifying: false }))
     }
   }
@@ -1108,18 +1159,42 @@ export default function AdminSettings() {
               {!emailVerification.otpSent ? (
                 <Button
                   onClick={handleSendOTP}
-                  disabled={emailVerification.isVerifying}
+                  disabled={
+                    emailVerification.isVerifying ||
+                    emailVerification.countdown > 0
+                  }
                   className="w-full"
                 >
                   {emailVerification.isVerifying
                     ? 'Sending OTP...'
-                    : 'Send OTP to Email'}
+                    : emailVerification.countdown > 0
+                      ? `Wait ${emailVerification.countdown}s before resending`
+                      : 'Send OTP to Email'}
                 </Button>
               ) : (
                 <div className="space-y-3">
-                  <p className="text-sm text-gray-600">
-                    OTP sent to {profile.email}. Please check your email.
-                  </p>
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-gray-600">
+                      OTP sent to {profile.email}. Please check your email.
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setEmailVerification((prev) => ({
+                          ...prev,
+                          otpSent: false,
+                          otp: '',
+                        }))
+                      }}
+                      disabled={emailVerification.countdown > 0}
+                      className="text-xs"
+                    >
+                      {emailVerification.countdown > 0
+                        ? `Resend in ${emailVerification.countdown}s`
+                        : 'Resend OTP'}
+                    </Button>
+                  </div>
                   <div className="flex gap-3">
                     <Input
                       placeholder="Enter 6-digit OTP"
