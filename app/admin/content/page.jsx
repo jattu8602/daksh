@@ -88,7 +88,7 @@ const ContentPage = () => {
   }
 
   return (
-    <div className="content-page  md:p-6 max-w-7xl mx-auto">
+    <div className="content-page max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col space-y-4 mb-6">
         <h1 className="text-xl sm:text-2xl font-bold">Content Library</h1>
@@ -158,7 +158,7 @@ const ContentPage = () => {
             onChange={(e) => setSearch(e.target.value)}
             className="border p-2 sm:p-3 rounded-lg w-full text-sm sm:text-base"
           />
-          
+
         </div>
 
         {/* Bulk Actions */}
