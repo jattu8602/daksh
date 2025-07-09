@@ -28,6 +28,7 @@ import { ScrollArea } from '@/components/ui/scroll-area'
 // --- START: localStorage Caching ---
 const REELS_CACHE_KEY = 'daksh_reels_cache'
 const MAX_CACHED_REELS = 5 // Keep up to 20 most recent reels in cache
+const STACK_SIZE = 6 // Number of videos per stack
 
 const getCachedReels = () => {
   if (typeof window === 'undefined') return []
@@ -188,6 +189,8 @@ export default function InstagramReels() {
   const [showDoubleTapHeart, setShowDoubleTapHeart] = useState(false)
   const [windowHeight, setWindowHeight] = useState(0)
   const [videoErrors, setVideoErrors] = useState({})
+  const [loadedStacks, setLoadedStacks] = useState(new Set([0])) // Track which stacks have been loaded
+  const [loadingStacks, setLoadingStacks] = useState(new Set()) // Track which stacks are currently loading
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
@@ -201,6 +204,11 @@ export default function InstagramReels() {
   // Motion values for smooth scrolling
   const y = useMotionValue(0)
   const isDragging = useRef(false)
+
+  // Stack helper functions
+  const getCurrentStack = (reelIndex) => Math.floor(reelIndex / STACK_SIZE)
+  const getStackStartIndex = (stackNumber) => stackNumber * STACK_SIZE
+  const isFirstVideoOfStack = (reelIndex) => reelIndex % STACK_SIZE === 0
 
   // --- START: Cache reels whenever the list is updated ---
   useEffect(() => {
@@ -232,6 +240,53 @@ export default function InstagramReels() {
       }
     })
   }, [])
+
+  // Load a specific stack of videos
+  const loadStack = useCallback(
+    async (stackNumber) => {
+      if (loadedStacks.has(stackNumber) || loadingStacks.has(stackNumber)) {
+        return // Stack already loaded or loading
+      }
+
+      console.log(
+        `Loading stack ${stackNumber} (videos ${getStackStartIndex(stackNumber)} to ${getStackStartIndex(stackNumber) + STACK_SIZE - 1})`
+      )
+
+      setLoadingStacks((prev) => new Set(prev).add(stackNumber))
+
+      try {
+        const response = await fetch(
+          `/api/reels/shots?limit=${STACK_SIZE}&t=${Date.now()}`
+        )
+        const data = await response.json()
+
+        if (data.success && data.data.length > 0) {
+          const newReels = data.data.filter(
+            (newReel) =>
+              !reels.some((existingReel) => existingReel.id === newReel.id)
+          )
+
+          if (newReels.length > 0) {
+            setReels((prev) => [...prev, ...newReels])
+            setLoadedStacks((prev) => new Set(prev).add(stackNumber))
+            preloadVideos(newReels)
+            console.log(
+              `Successfully loaded stack ${stackNumber} with ${newReels.length} videos`
+            )
+          }
+        }
+      } catch (err) {
+        console.error(`Error loading stack ${stackNumber}:`, err)
+      } finally {
+        setLoadingStacks((prev) => {
+          const newSet = new Set(prev)
+          newSet.delete(stackNumber)
+          return newSet
+        })
+      }
+    },
+    [reels, loadedStacks, loadingStacks, preloadVideos]
+  )
 
   // Fetch mentor shots from API with better error handling
   const fetchMentorShots = useCallback(
@@ -332,8 +387,14 @@ export default function InstagramReels() {
   const refreshReels = useCallback(() => {
     isInitialLoad.current = true
     preloadCache.current.clear()
-    fetchMentorShots(1, true)
-  }, [fetchMentorShots])
+    setLoadedStacks(new Set([0]))
+    setLoadingStacks(new Set())
+    setReels([])
+    loadStack(0).then(() => {
+      setCurrentReel(0)
+      setLoading(false)
+    })
+  }, [loadStack])
 
   // Initialize window height on client side
   useEffect(() => {
@@ -354,18 +415,21 @@ export default function InstagramReels() {
       console.log('Loaded reels from cache:', cachedReels.length)
       setReels(cachedReels)
       setLoading(false)
+
+      // Mark appropriate stacks as loaded based on cached reels
+      const stacksFromCache = Math.ceil(cachedReels.length / STACK_SIZE)
+      const stackNumbers = Array.from({ length: stacksFromCache }, (_, i) => i)
+      setLoadedStacks(new Set(stackNumbers))
     } else {
-      fetchMentorShots(1) // Load 1 initial reel for better experience
+      // Load first stack
+      loadStack(0).then(() => {
+        setLoading(false)
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Aggressive preloading when user is near the end
-  useEffect(() => {
-    if (reels.length > 0 && currentReel >= reels.length - 2) {
-      loadMoreReels()
-    }
-  }, [currentReel, reels.length, loadMoreReels])
+  // Note: Removed old loadMoreReels useEffect - now using smart stack loading system
 
   // Preload videos when currentReel changes
   useEffect(() => {
@@ -376,6 +440,29 @@ export default function InstagramReels() {
       preloadVideos(reelsToPreload)
     }
   }, [currentReel, reels, preloadVideos])
+
+  // Smart stack loading based on current video position
+  useEffect(() => {
+    if (reels.length === 0) return
+
+    const currentStack = getCurrentStack(currentReel)
+    const nextStack = currentStack + 1
+
+    // If we're at the first video of a stack, start loading the next stack
+    if (isFirstVideoOfStack(currentReel)) {
+      console.log(
+        `User reached first video of stack ${currentStack}, loading next stack ${nextStack}`
+      )
+      loadStack(nextStack)
+    }
+
+    // Also load next stack if we're approaching the end of current stack
+    const videosRemainingInStack = STACK_SIZE - (currentReel % STACK_SIZE)
+    if (videosRemainingInStack <= 2) {
+      // When 2 or fewer videos left in current stack
+      loadStack(nextStack)
+    }
+  }, [currentReel, reels.length, loadStack])
 
   const toggleLike = () => {
     setReels((prev) =>
@@ -593,6 +680,20 @@ export default function InstagramReels() {
         </Button>
       </div>
 
+      {/* Stack debug info (development mode) */}
+      {/* {process.env.NODE_ENV === 'development' && (
+        <div className="absolute top-4 right-4 z-50 text-white/70 text-xs bg-black/20 backdrop-blur-sm px-2 py-1 rounded">
+          <div>
+            Video: {currentReel + 1}/{reels.length}
+          </div>
+          <div>Stack: {getCurrentStack(currentReel) + 1}</div>
+          <div>Loaded: {Array.from(loadedStacks).join(', ')}</div>
+          {loadingStacks.size > 0 && (
+            <div>Loading: {Array.from(loadingStacks).join(', ')}</div>
+          )}
+        </div>
+      )} */}
+
       <div
         ref={containerRef}
         className="h-full w-full overflow-hidden overscroll-none"
@@ -729,11 +830,14 @@ export default function InstagramReels() {
                 </div>
               </div>
 
-              {/* Loading indicator for preloading */}
-              {isPreloading && idx === reels.length - 1 && (
+              {/* Loading indicator for stack loading */}
+              {loadingStacks.size > 0 && idx === reels.length - 1 && (
                 <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-black/20 backdrop-blur-sm rounded-full p-2">
                     <Loader2 className="w-4 h-4 text-white animate-spin" />
+                  </div>
+                  <div className="absolute top-12 left-1/2 transform -translate-x-1/2 text-white/70 text-xs">
+                    Loading stack {Math.max(...loadingStacks)}
                   </div>
                 </div>
               )}
