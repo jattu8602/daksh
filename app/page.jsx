@@ -87,6 +87,10 @@ export default function StudentLogin() {
       // Update Redux state with user data
       dispatch(loginSuccess(data.user))
 
+      if (data.user?.student?.id) {
+        localStorage.setItem('studentId', data.user.student.id)
+      }
+
       // Redirect to dashboard
       router.replace('/dashboard/home')
     } catch (error) {
@@ -122,6 +126,10 @@ export default function StudentLogin() {
       if (data.success && data.user) {
         // Update Redux state with user data
         dispatch(loginSuccess(data.user))
+
+        if (data.user?.student?.id) {
+          localStorage.setItem('studentId', data.user.student.id)
+        }
 
         // Redirect to dashboard
         router.replace('/dashboard/home')

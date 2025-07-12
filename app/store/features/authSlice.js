@@ -32,6 +32,9 @@ const authSlice = createSlice({
       state.error = null
       if (typeof window !== 'undefined') {
         localStorage.setItem('user', JSON.stringify(state.user))
+        if (state.user?.student?.id) {
+          localStorage.setItem('studentId', state.user.student.id)
+        }
       }
     },
     loginFailure: (state, action) => {

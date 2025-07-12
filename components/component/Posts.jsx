@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button' // Make sure this import is corr
 import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
 import Comments from '../comments'
 import ShareModal from '../share-modal'
+// import { useSession } from 'next-auth/react'
 
 const AVATAR_CACHE_KEY = 'mentor_avatar_cache'
 
@@ -81,6 +82,66 @@ export default function Posts({
   scrollPosition,
   storageKey = 'feed_scroll_position',
 }) {
+  // const { data: session } = useSession();
+  const [likeStates, setLikeStates] = useState({}); // { [postId]: { liked: bool, count: number } }
+
+  // Get studentId from localStorage or fallback
+  const getStudentId = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('studentId') || 'demo-student';
+    }
+    return 'demo-student';
+  };
+
+  useEffect(() => {
+    // Initialize like states from posts, fetching like status for current user
+    const fetchLikeStates = async () => {
+      const studentId = getStudentId();
+      const initial = {};
+      await Promise.all(posts.map(async (post) => {
+        try {
+          const res = await fetch(`/api/video-assignment/${post.id}/highlight-stats?studentId=${studentId}`);
+          if (res.ok) {
+            const data = await res.json();
+            initial[post.id] = { liked: data.liked, count: data.likes };
+          } else {
+            // fallback to post.likes if API fails
+            initial[post.id] = { liked: false, count: post.likes };
+          }
+        } catch {
+          initial[post.id] = { liked: false, count: post.likes };
+        }
+      }));
+      setLikeStates(initial);
+    };
+    fetchLikeStates();
+  }, [posts]);
+
+  const handleLike = async (post) => {
+    const studentId = getStudentId();
+    const prev = likeStates[post.id] || { liked: false, count: post.likes };
+    const newLiked = !prev.liked;
+    setLikeStates((s) => ({
+      ...s,
+      [post.id]: {
+        liked: newLiked,
+        count: prev.count + (newLiked ? 1 : -1),
+      },
+    }));
+    // Call backend
+    if (newLiked) {
+      await fetch(`/api/video-assignment/${post.id}/highlight-stats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, like: true }),
+      });
+    } else {
+      await fetch(`/api/video-assignment/${post.id}/highlight-stats?studentId=${studentId}`, {
+        method: 'DELETE',
+      });
+    }
+  };
+
   const scrollRef = useRef(null)
   const scrolledRef = useRef(false)
 
@@ -151,13 +212,14 @@ export default function Posts({
           isLast={index === posts.length - 1}
           fetchMorePosts={fetchMorePosts}
           hasMore={hasMore}
-          toggleLike={toggleLike}
+          toggleLike={() => handleLike(post)}
           toggleSave={toggleSave}
-          likedPosts={likedPosts}
+          likedPosts={likeStates[post.id]?.liked ? [post.id] : []}
           savedPosts={savedPosts}
           followedUsers={followedUsers}
           onCommentClick={() => openModal('comments', post.id)}
           onShareClick={() => openModal('share', post.id)}
+          likeCount={likeStates[post.id]?.count ?? post.likes}
         />
       ))}
 
@@ -220,6 +282,7 @@ function PostItem({
   followedUsers,
   onCommentClick,
   onShareClick,
+  likeCount,
 }) {
   const { ref, inView } = useInView({
     threshold: 0.5,
@@ -375,7 +438,7 @@ Keep w-full but apply max-h-[some-limit] if needed. */}
       {/* Actions */}
       <div className="flex justify-between items-center px-4 pt-4">
         <div className="flex space-x-4">
-          <button onClick={() => toggleLike(post.id)}>
+          <button onClick={toggleLike}>
             <Heart
               size={24}
               fill={likedPosts.includes(post.id) ? 'red' : 'none'}
@@ -410,7 +473,7 @@ Keep w-full but apply max-h-[some-limit] if needed. */}
 
       {/* Post Info */}
       <div className="px-4 pt-2">
-        <p className="font-medium">{post.likes} Likes</p>
+        <p className="font-medium">{likeCount} Likes</p>
         <p className="font-medium mt-1">{post.title}</p>
         <p className="text-sm">
           {isExpanded
