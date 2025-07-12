@@ -1,103 +1,11 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { X, Send, Smile, Heart } from 'lucide-react'
 import { emojiLibrary } from '@/constants/emojis'
 
-const initialMessages = [
-  {
-    id: 1,
-    text: 'Books are the best friends. You can open them anytime, anywhere. 📚❤️',
-    sender: 'other',
-    time: '2h',
-    likes: 1000000,
-    liked: false,
-    name: 'ranveer.singh_9',
-  },
-  {
-    id: 2,
-    text: 'That’s so true! Reading clears my mind every time. 🤯📖',
-    sender: 'me',
-    time: '1h',
-    likes: 500,
-    liked: true,
-    name: 'me',
-  },
-  {
-    id: 3,
-    text: 'Just finished "Atomic Habits"—mind-blowing stuff! 💥🔥',
-    sender: 'other',
-    time: '55m',
-    likes: 12500,
-    liked: false,
-    name: 'ankur.kumar_12',
-  },
-  {
-    id: 4,
-    text: 'Need to start that one soon. Everyone’s recommending it!',
-    sender: 'me',
-    time: '53m',
-    likes: 200,
-    liked: false,
-    name: 'me',
-  },
-  {
-    id: 5,
-    text: 'Do you guys read fiction or non-fiction more?',
-    sender: 'other',
-    time: '50m',
-    likes: 320,
-    liked: false,
-    name: 'megha.patil_21',
-  },
-  {
-    id: 6,
-    text: 'Non-fiction mostly. But I do enjoy thrillers sometimes 😄',
-    sender: 'me',
-    time: '48m',
-    likes: 135,
-    liked: true,
-    name: 'me',
-  },
-  {
-    id: 7,
-    text: 'Same here. Fiction gives a break from the routine. 🚀',
-    sender: 'other',
-    time: '45m',
-    likes: 845,
-    liked: false,
-    name: 'rahul.verma_44',
-  },
-  {
-    id: 8,
-    text: 'Guys, have you tried audiobooks? Total game changer! 🎧',
-    sender: 'other',
-    time: '43m',
-    likes: 1100,
-    liked: false,
-    name: 'neha.kaur_16',
-  },
-  {
-    id: 9,
-    text: 'Yes! Perfect for while jogging or doing chores. 🔁🏃‍♂️',
-    sender: 'me',
-    time: '41m',
-    likes: 420,
-    liked: false,
-    name: 'me',
-  },
-  {
-    id: 10,
-    text: 'Okay brb, ordering my next read 😄📦',
-    sender: 'other',
-    time: '39m',
-    likes: 90,
-    liked: false,
-    name: 'ranveer.singh_9',
-  },
-]
-
+// Remove initialMessages and only use real comments
 
 const reactions = ['👍', '🔥', '🎯', '😎', '⭐', '🙌', '👑', '💪']
 
@@ -108,40 +16,131 @@ const formatLikes = (likes) => {
   return likes.toString()
 }
 
-export default function Comments({ onClose }) {
-  const [newMessage, setNewMessage] = useState('')
-  const [messages, setMessages] = useState(initialMessages)
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+// Add helper to get studentId
+const getStudentId = () => {
+  if (typeof window !== 'undefined') {
+    // Try localStorage
+    let id = localStorage.getItem('studentId');
+    // Fallback: try window.session or window.user if available
+    if (!id && window.session?.user?.studentId) id = window.session.user.studentId;
+    if (!id && window.user?.studentId) id = window.user.studentId;
+    return id || '';
+  }
+  return '';
+};
 
-  const handleSend = () => {
-    if (newMessage.trim()) {
-      const newMsg = {
-        id: Date.now(),
-        text: newMessage,
-        sender: 'user',
-        time: 'now',
-        likes: 0,
-        liked: false,
-        name: 'sumit.singh_22',
+const isValidObjectId = (id) => typeof id === 'string' && id.length === 24 && /^[a-fA-F0-9]+$/.test(id);
+
+export default function Comments({ post, onClose }) {
+  const [newMessage, setNewMessage] = useState('')
+  const [messages, setMessages] = useState([])
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
+  const [error, setError] = useState(null)
+  const [loading, setLoading] = useState(true)
+
+  // Fetch comments from backend
+  useEffect(() => {
+    if (!post?.id) return;
+    setLoading(true);
+    setError(null);
+    fetch(`/api/video-assignment/${post.id}/highlight-stats?type=comments`)
+      .then((res) => res.json())
+      .then(async (data) => {
+        if (data.success) {
+          const studentId = getStudentId();
+          const commentsWithLikes = await Promise.all(
+            data.comments.map(async (c) => {
+              const likeRes = await fetch(`/api/video-assignment/${post.id}/highlight-stats/comment-like?commentId=${c.id}&studentId=${studentId}`);
+              const likeData = await likeRes.json();
+              return {
+                id: c.id,
+                text: c.comment,
+                sender: c.student?.user?.username || 'user',
+                time: new Date(c.createdAt).toLocaleTimeString(),
+                likes: likeData.count || 0,
+                liked: likeData.liked || false,
+                name: c.student?.user?.username || 'user',
+              };
+            })
+          );
+          setMessages(commentsWithLikes);
+        } else {
+          setError(data.error || 'Failed to fetch comments');
+        }
+        setLoading(false);
+      })
+      .catch((err) => {
+        setError('Failed to fetch comments');
+        setLoading(false);
+      });
+  }, [post?.id])
+
+  const handleSend = async () => {
+    if (newMessage.trim() && post?.id) {
+      const studentId = getStudentId();
+      console.log('studentId used for comment:', studentId);
+      if (!isValidObjectId(studentId)) {
+        setError(`You must be logged in as a real student to comment. (studentId: ${studentId || 'not set'})`);
+        return;
       }
-      setMessages([newMsg, ...messages])
-      setNewMessage('')
+      setError(null);
+      const res = await fetch(`/api/video-assignment/${post.id}/highlight-stats`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ studentId, comment: newMessage }),
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setMessages([
+          {
+            id: data.highlightStat.id,
+            text: data.highlightStat.comment,
+            sender: data.highlightStat.student?.user?.username || 'user',
+            time: new Date(data.highlightStat.createdAt).toLocaleTimeString(),
+            likes: 0,
+            liked: false,
+            name: data.highlightStat.student?.user?.username || 'user',
+          },
+          ...messages,
+        ])
+        setNewMessage('')
+      } else {
+        const errData = await res.json();
+        setError(errData.error || 'Failed to post comment.');
+      }
     }
   }
 
-  const handleLike = (id) => {
-    setMessages((msgs) =>
-      msgs.map((msg) =>
-        msg.id === id
-          ? {
-              ...msg,
-              liked: !msg.liked,
-              likes: msg.liked ? msg.likes - 1 : msg.likes + 1,
-            }
-          : msg
-      )
-    )
-  }
+  // Like/unlike a comment
+  const handleLike = async (commentId) => {
+    const studentId = getStudentId();
+    const msgIdx = messages.findIndex((msg) => msg.id === commentId);
+    if (msgIdx === -1) return;
+    const msg = messages[msgIdx];
+    if (!msg.liked) {
+      // Like
+      await fetch(`/api/video-assignment/${post.id}/highlight-stats/comment-like`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ commentId, studentId }),
+      });
+      setMessages((msgs) =>
+        msgs.map((m) =>
+          m.id === commentId ? { ...m, liked: true, likes: m.likes + 1 } : m
+        )
+      );
+    } else {
+      // Unlike
+      await fetch(`/api/video-assignment/${post.id}/highlight-stats/comment-like?commentId=${commentId}&studentId=${studentId}`, {
+        method: 'DELETE',
+      });
+      setMessages((msgs) =>
+        msgs.map((m) =>
+          m.id === commentId ? { ...m, liked: false, likes: Math.max(0, m.likes - 1) } : m
+        )
+      );
+    }
+  };
 
   const handleReactionClick = (reaction) => {
     setNewMessage((prev) => prev + reaction)
@@ -176,7 +175,12 @@ export default function Comments({ onClose }) {
 
         {/* Messages */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {messages.map((msg) => (
+          {loading && <div className="text-center text-gray-400">Loading comments...</div>}
+          {error && <div className="text-center text-red-500">{error}</div>}
+          {!loading && !error && messages.length === 0 && (
+            <div className="text-center text-gray-400">No comments yet.</div>
+          )}
+          {!loading && !error && messages.map((msg) => (
             <div key={msg.id} className="flex items-start gap-3 group">
               <div className="w-8 h-8 rounded-full bg-gradient-to-r from-green-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
                 {msg.sender === 'user' ? 'S' : 'Y'}

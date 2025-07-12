@@ -74,18 +74,29 @@ export async function GET(request) {
     }
 
     // Transform the data for the frontend
-    const postsData = videoAssignments.map((assignment) => {
+    const postsData = await Promise.all(videoAssignments.map(async (assignment) => {
       const { video, mentor } = assignment
       const hashtags = video.videoHashtags.map((vh) => vh.hashtag.tag)
 
+      // Fetch real like and comment counts from HighlightStat
+      const [likeCount, commentCount] = await Promise.all([
+        prisma.highlightStat.count({
+          where: { videoAssignId: assignment.id, liked: true },
+        }),
+        prisma.highlightStat.count({
+          where: { videoAssignId: assignment.id, comment: { not: null } },
+        }),
+      ])
+
       return {
-        id: video.id,
+        id: assignment.id, // Use assignment.id as the unique post id
+        videoId: video.id,
         images: [video.url],
         mediaType: video.mediaType,
         title: video.title,
         caption: video.description || video.title || 'Check out this post!',
-        likes: Math.floor(Math.random() * 1000) + 50,
-        comments: Math.floor(Math.random() * 100) + 5,
+        likes: likeCount,
+        comments: commentCount,
         time: `${formatDistanceToNow(new Date(video.createdAt), {
           addSuffix: true,
         })}`,
@@ -93,7 +104,7 @@ export async function GET(request) {
         avatar: mentor.profilePhoto || '/placeholder.png',
         hashtags: hashtags,
       }
-    })
+    }))
 
     return NextResponse.json({
       success: true,
