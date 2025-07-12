@@ -1015,7 +1015,7 @@ export default function AdminSettings() {
               Change Password
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6">
             <div>
               <Label htmlFor="currentPassword">Current Password</Label>
               <div className="relative">
