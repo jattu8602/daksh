@@ -94,7 +94,11 @@ export default function ExploreLayout({ children }) {
     { id: 'posts', name: 'Posts', href: '/dashboard/explore/posts' },
     { id: 'shots', name: 'Shots', href: '/dashboard/explore/shots' },
     { id: 'videos', name: 'Videos', href: '/dashboard/explore/videos' },
-    { id: 'playlists', name: 'Playlists', href: '/dashboard/explore/playlists' },
+    {
+      id: 'playlists',
+      name: 'Playlists',
+      href: '/dashboard/explore/playlists',
+    },
     { id: 'ncert', name: 'NCERT', href: '/dashboard/explore/ncert' },
     { id: 'docs', name: 'Docs', href: '/dashboard/explore/docs' },
   ]
@@ -108,7 +112,13 @@ export default function ExploreLayout({ children }) {
   }, [pathname, tabs])
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto ">
+    <div
+      className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto "
+      style={{
+        overscrollBehavior: 'contain',
+        touchAction: 'pan-x pan-y',
+      }}
+    >
       <div className="sticky top-0 z-[9999] bg-white dark:bg-black pt-2 pb-2">
         {/* Search Bar */}
         <motion.div
