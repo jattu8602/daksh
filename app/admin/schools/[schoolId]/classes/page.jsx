@@ -202,83 +202,18 @@ export default function ClassesPage() {
                 ✕
               </button>
             </div>
-
-            {errorMessage && (
-              <div className="mb-4 rounded bg-red-50 p-3 text-sm text-red-600">
-                {errorMessage}
-              </div>
-            )}
-
-            {successMessage && (
-              <div className="mb-4 rounded bg-green-50 p-3 text-sm text-green-600">
-                {successMessage}
-              </div>
-            )}
-
-            <form onSubmit={handleSubmit}>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Class Name</label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  placeholder="Enter class name"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Total Students</label>
-                <input
-                  type="number"
-                  name="totalStudents"
-                  value={formData.totalStudents}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Boys</label>
-                <input
-                  type="number"
-                  name="boys"
-                  value={formData.boys}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="mb-4">
-                <label className="mb-1 block text-sm font-medium">Girls</label>
-                <input
-                  type="number"
-                  name="girls"
-                  value={formData.girls}
-                  onChange={handleInputChange}
-                  className="w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
-                  required
-                />
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
-                  disabled={isLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="rounded-md bg-black px-3 py-2 text-sm font-medium text-white hover:bg-gray-800"
-                  disabled={isLoading}
-                >
-                  {isLoading ? "Creating..." : "Add Class"}
-                </button>
-              </div>
-            </form>
+            <div className="mb-4 rounded bg-blue-50 p-3 text-sm text-blue-600">
+              To add a new class to this school, please use the main school detail page where you can select from existing common classes and assign sections. Direct creation of classes here is disabled to prevent duplicate or incorrect entries.
+            </div>
+            <div className="flex justify-end">
+              <button
+                type="button"
+                onClick={() => setIsAddModalOpen(false)}
+                className="rounded-md border px-3 py-2 text-sm font-medium hover:bg-gray-50"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

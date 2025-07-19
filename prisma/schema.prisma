@@ -40,16 +40,16 @@ model User {
 }
 
 model Admin {
-  id             String    @id @default(auto()) @map("_id") @db.ObjectId
-  userId         String    @unique @db.ObjectId
-  email          String?   @unique
-  phone          String?
-  emailVerified  Boolean   @default(false)
-  lastActiveAt   DateTime? @default(now())
-  isOnline       Boolean   @default(false)
-  createdBy      String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  id            String    @id @default(auto()) @map("_id") @db.ObjectId
+  userId        String    @unique @db.ObjectId
+  email         String?   @unique
+  phone         String?
+  emailVerified Boolean   @default(false)
+  lastActiveAt  DateTime? @default(now())
+  isOnline      Boolean   @default(false)
+  createdBy     String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Child side declares fields+references
   user User @relation("AdminToUser", fields: [userId], references: [id])
@@ -59,12 +59,13 @@ model School {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String
   code      String   @unique
-  email     String?  @unique
+  email     String?
   phone     String?
   createdAt DateTime @default(now())
   updatedAt DateTime @default(now())
 
-  classes Class[]
+  classes       Class[]       @relation("SchoolToClass")
+  schoolClasses SchoolClass[] @relation("SchoolToSchoolClass")
 
   // keep an index on name only
   @@index([name])
@@ -73,31 +74,50 @@ model School {
 model Class {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
-  schoolId        String?  @db.ObjectId
-  isCommon        Boolean  @default(false)
-  totalStudents   Int      @default(0)
-  boys            Int      @default(0)
-  girls           Int      @default(0)
   startRollNumber Int      @default(1)
-  section         String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  school   School?   @relation(fields: [schoolId], references: [id])
-  students Student[]
-  messages Message[]
+  schoolId      String?       @db.ObjectId
+  school        School?       @relation("SchoolToClass", fields: [schoolId], references: [id])
+  schoolClasses SchoolClass[] @relation("ClassToSchoolClass")
+  students      Student[]     @relation("StudentToClass")
+  messages      Message[]     @relation("MessageToClass")
+
+  @@index([createdAt])
+  @@index([name])
+}
+
+model SchoolClass {
+  id              String        @id @default(auto()) @map("_id") @db.ObjectId
+  name            String
+  schoolId        String        @db.ObjectId
+  commonClassId   String        @db.ObjectId
+  totalStudents   Int           @default(0)
+  boys            Int           @default(0)
+  girls           Int           @default(0)
+  startRollNumber Int           @default(1)
+  section         String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  school      School      @relation("SchoolToSchoolClass", fields: [schoolId], references: [id])
+  commonClass Class       @relation("ClassToSchoolClass", fields: [commonClassId], references: [id])
+  students    Student[]   @relation("StudentToSchoolClass")
+  messages    Message[]   @relation("MessageToSchoolClass")
 
   @@index([schoolId])
+  @@index([commonClassId])
   @@index([createdAt])
-  @@index([totalStudents])
-  @@index([isCommon])
+  @@index([name])
 }
 
 model Student {
   id             String          @id @default(auto()) @map("_id") @db.ObjectId
   userId         String          @unique @db.ObjectId
   rollNo         Int
-  classId        String          @db.ObjectId
+  classId        String?         @db.ObjectId
+  schoolClassId  String?         @db.ObjectId
   name           String
   gender         String
   username       String
@@ -111,11 +131,13 @@ model Student {
   commentLikes   CommentLike[]   @relation("StudentToCommentLike")
 
   // Child side declares fields+references
-  user     User      @relation("StudentToUser", fields: [userId], references: [id])
-  class    Class     @relation(fields: [classId], references: [id])
-  messages Message[] @relation("StudentMessages")
+  user        User         @relation("StudentToUser", fields: [userId], references: [id])
+  class       Class?       @relation("StudentToClass", fields: [classId], references: [id])
+  schoolClass SchoolClass? @relation("StudentToSchoolClass", fields: [schoolClassId], references: [id])
+  messages    Message[]    @relation("StudentMessages")
 
   @@index([classId])
+  @@index([schoolClassId])
   @@index([rollNo])
   @@index([username])
   @@index([createdAt])
@@ -227,16 +249,19 @@ model VideoJob {
 }
 
 model Message {
-  id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  classId   String   @db.ObjectId
-  senderId  String   @db.ObjectId
-  text      String
-  createdAt DateTime @default(now())
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  classId       String?  @db.ObjectId
+  schoolClassId String?  @db.ObjectId
+  senderId      String   @db.ObjectId
+  text          String
+  createdAt     DateTime @default(now())
 
-  class  Class   @relation(fields: [classId], references: [id])
-  sender Student @relation("StudentMessages", fields: [senderId], references: [id])
+  class       Class?       @relation("MessageToClass", fields: [classId], references: [id])
+  schoolClass SchoolClass? @relation("MessageToSchoolClass", fields: [schoolClassId], references: [id])
+  sender      Student      @relation("StudentMessages", fields: [senderId], references: [id])
 
   @@index([classId])
+  @@index([schoolClassId])
   @@index([senderId])
   @@index([createdAt])
 }
@@ -276,23 +301,23 @@ model Review {
 }
 
 model HighlightStat {
-  id            String   @id @default(auto()) @map("_id") @db.ObjectId
-  videoAssignId String   @db.ObjectId
-  studentId     String   @db.ObjectId
-  watched       Boolean  @default(false)
-  liked         Boolean  @default(false)
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  videoAssignId String        @db.ObjectId
+  studentId     String        @db.ObjectId
+  watched       Boolean       @default(false)
+  liked         Boolean       @default(false)
   comment       String?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
   commentLikes  CommentLike[] @relation("CommentToLike")
 
   videoAssign VideoAssignment @relation(fields: [videoAssignId], references: [id])
   student     Student         @relation(fields: [studentId], references: [id])
 
+  @@unique([videoAssignId, studentId])
   @@index([videoAssignId])
   @@index([studentId])
   @@index([createdAt])
-  @@unique([videoAssignId, studentId])
 }
 
 model EmailVerification {
@@ -311,13 +336,13 @@ model EmailVerification {
 }
 
 model CommentLike {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  commentId   String   @db.ObjectId // references HighlightStat (the comment)
-  studentId   String   @db.ObjectId // references Student
-  createdAt   DateTime @default(now())
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  commentId String   @db.ObjectId // references HighlightStat (the comment)
+  studentId String   @db.ObjectId // references Student
+  createdAt DateTime @default(now())
 
-  comment     HighlightStat @relation("CommentToLike", fields: [commentId], references: [id])
-  student     Student       @relation("StudentToCommentLike", fields: [studentId], references: [id])
+  comment HighlightStat @relation("CommentToLike", fields: [commentId], references: [id])
+  student Student       @relation("StudentToCommentLike", fields: [studentId], references: [id])
 
   @@unique([commentId, studentId])
   @@index([commentId])

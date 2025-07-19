@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
-  const { schoolId } = params;
+  const { schoolId } = await params;
 
   const url = new URL(request.url);
   const noCache = url.searchParams.get('no-cache') === 'true';
@@ -16,7 +16,7 @@ export async function GET(request, { params }) {
   }
 
   try {
-    const classes = await prisma.class.findMany({
+    const schoolClasses = await prisma.schoolClass.findMany({
       where: {
         schoolId: schoolId
       },
@@ -40,7 +40,7 @@ export async function GET(request, { params }) {
     });
 
     // Transform the response to include student count
-    const transformedClasses = classes.map(cls => ({
+    const transformedClasses = schoolClasses.map(cls => ({
       ...cls,
       studentCount: cls._count?.students || 0,
       _count: undefined

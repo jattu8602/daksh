@@ -5,9 +5,6 @@ import prisma from "@/lib/prisma";
 export async function GET() {
   try {
     const classes = await prisma.class.findMany({
-      where: {
-        isCommon: true,
-      },
       orderBy: {
         createdAt: "desc",
       }
@@ -16,18 +13,21 @@ export async function GET() {
     // Get the count of schools and sum of students for each common class
     const classStats = await Promise.all(
       classes.map(async (cls) => {
-        const schoolClasses = await prisma.class.findMany({
+        const schoolClasses = await prisma.schoolClass.findMany({
           where: {
-            name: cls.name,
-            isCommon: false,
+            commonClassId: cls.id,
           },
           select: {
-            totalStudents: true,
             schoolId: true,
+            _count: {
+              select: {
+                students: true
+              }
+            }
           }
         });
 
-        const totalStudents = schoolClasses.reduce((sum, schoolClass) => sum + (schoolClass.totalStudents || 0), 0);
+        const totalStudents = schoolClasses.reduce((sum, schoolClass) => sum + (schoolClass._count?.students || 0), 0);
 
         // Count unique schoolIds
         const uniqueSchoolIds = new Set(schoolClasses.map(sc => sc.schoolId));
@@ -93,7 +93,6 @@ export async function POST(request) {
     const existingClass = await prisma.class.findFirst({
       where: {
         name: name.trim(),
-        isCommon: true,
       },
     });
 
@@ -111,8 +110,7 @@ export async function POST(request) {
     const newClass = await prisma.class.create({
       data: {
         name: name.trim(),
-        isCommon: true,
-        startRollNumber: 1, // Default for common classes?
+        startRollNumber: 1, // Default for common classes
       },
       include: {
         _count: {
@@ -124,12 +122,17 @@ export async function POST(request) {
     });
 
     // Get the count of schools using this common class
-    const schoolCount = await prisma.class.count({
-      where: {
-        name: newClass.name,
-        isCommon: false,
-      }
-    });
+    let schoolCount = 0;
+    try {
+      schoolCount = await prisma.schoolClass.count({
+        where: {
+          commonClassId: newClass.id,
+        }
+      });
+    } catch (error) {
+      console.log('SchoolClass model not available yet, using fallback count');
+      schoolCount = 0;
+    }
 
     // Transform the response to match the frontend format (for the new class card)
     const transformedClass = {

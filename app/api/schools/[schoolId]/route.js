@@ -3,7 +3,7 @@ import prisma from "@/lib/prisma";
 
 export async function GET(request, { params }) {
   // Ensure params is awaited
-  const { schoolId } = params;
+  const { schoolId } = await params;
 
   // Parse URL for cache control options
   const url = new URL(request.url);
@@ -28,7 +28,7 @@ export async function GET(request, { params }) {
         code: true,
         email: true,
         phone: true,
-        classes: {
+        schoolClasses: {
           orderBy: {
             name: 'asc',
           },
@@ -38,7 +38,8 @@ export async function GET(request, { params }) {
             totalStudents: true,
             boys: true,
             girls: true,
-            startRollNumber: true
+            startRollNumber: true,
+            section: true
           }
         },
       }
@@ -46,7 +47,7 @@ export async function GET(request, { params }) {
 
     // Include student counts if detailed info requested
     if (includeClassDetails) {
-      queryOptions.select.classes.select._count = {
+      queryOptions.select.schoolClasses.select._count = {
         select: {
           students: true
         }
@@ -65,7 +66,7 @@ export async function GET(request, { params }) {
 
     // Transform classes if we have detailed info
     if (includeClassDetails) {
-      school.classes = school.classes.map(cls => ({
+      school.schoolClasses = school.schoolClasses.map(cls => ({
         ...cls,
         studentCount: cls._count?.students || 0,
         _count: undefined
@@ -73,13 +74,16 @@ export async function GET(request, { params }) {
     }
 
     return NextResponse.json({
-      school,
       success: true,
+      school,
     }, { headers });
   } catch (error) {
     console.error("Error fetching school:", error);
     return NextResponse.json(
-      { error: "Something went wrong", message: error.message },
+      {
+        success: false,
+        error: "Failed to fetch school",
+      },
       { status: 500 }
     );
   }
@@ -88,7 +92,7 @@ export async function GET(request, { params }) {
 // DELETE /api/schools/[schoolId] - Delete a school
 export async function DELETE(request, { params }) {
   try {
-    const { schoolId } = params;
+    const { schoolId } = await params;
 
     if (!schoolId) {
       return NextResponse.json(
@@ -104,7 +108,7 @@ export async function DELETE(request, { params }) {
     const school = await prisma.school.findUnique({
       where: { id: schoolId },
       include: {
-        classes: {
+        schoolClasses: {
           include: {
             students: true,
           },
@@ -123,7 +127,7 @@ export async function DELETE(request, { params }) {
     }
 
     // Check if the school has any classes with students
-    const hasStudents = school.classes.some(cls => cls.students.length > 0);
+    const hasStudents = school.schoolClasses.some(cls => cls.students.length > 0);
     if (hasStudents) {
       return NextResponse.json(
         {
@@ -134,8 +138,8 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    // Delete all classes first (cascade delete will handle students)
-    await prisma.class.deleteMany({
+    // Delete all school classes first (cascade delete will handle students)
+    await prisma.schoolClass.deleteMany({
       where: { schoolId },
     });
 

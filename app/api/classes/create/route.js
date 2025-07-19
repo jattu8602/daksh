@@ -36,29 +36,28 @@ export async function POST(request) {
        );
      }
 
-    // Check if a class with the same name and section already exists in this school
-    const existingClassInSchool = await prisma.class.findFirst({
+    // Check if a school class with the same name and section already exists in this school
+    const existingSchoolClass = await prisma.schoolClass.findFirst({
       where: {
-        name: commonClass.name,
+        name: section ? `${commonClass.name} ${section}` : commonClass.name,
         schoolId,
-        section: section || null,
       },
     });
 
-    if (existingClassInSchool) {
+    if (existingSchoolClass) {
       return NextResponse.json(
-        { message: `Class "${commonClass.name}" already exists in this school` },
+        { message: `Class "${section ? `${commonClass.name} ${section}` : commonClass.name}" already exists in this school` },
         { status: 400 }
       );
     }
 
-    // Create a new school-specific class using the common class's name
-    const newClass = await prisma.class.create({
+    // Create a new school-specific class using the common class's name and section
+    const newSchoolClass = await prisma.schoolClass.create({
       data: {
-        name: commonClass.name,
+        name: section ? `${commonClass.name} ${section}` : commonClass.name,
         schoolId,
+        commonClassId: classId,
         startRollNumber: startRollNumber ? parseInt(startRollNumber) : 1,
-        isCommon: false, // This is a school-specific class
         section: section || null,
       },
       include: {
@@ -67,6 +66,12 @@ export async function POST(request) {
             id: true,
             name: true,
             code: true
+          }
+        },
+        commonClass: {
+          select: {
+            id: true,
+            name: true
           }
         }
       },
@@ -81,7 +86,7 @@ export async function POST(request) {
 
     return NextResponse.json({
       message: "Class created successfully",
-      class: newClass,
+      class: newSchoolClass,
       success: true,
     });
   } catch (error) {

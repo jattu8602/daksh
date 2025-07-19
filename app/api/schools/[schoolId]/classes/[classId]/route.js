@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export async function GET(request, { params }) {
-  const schoolId = params.schoolId
-  const classId = params.classId
+  const schoolId = await params.schoolId
+  const classId = await params.classId
 
   // Use URL to check for any cache-control settings
   const url = new URL(request.url)
@@ -22,8 +22,8 @@ export async function GET(request, { params }) {
   }
 
   try {
-    // Get class details with school and students in a single query
-    const classData = await prisma.class.findUnique({
+    // Get school class details with school and students in a single query
+    const classData = await prisma.schoolClass.findUnique({
       where: { id: classId },
       include: {
         school: {
