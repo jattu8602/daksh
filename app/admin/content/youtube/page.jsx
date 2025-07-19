@@ -10,7 +10,7 @@ const YoutubeContentPage = () => {
   const [search, setSearch] = useState('');
   const [url, setUrl] = useState('');
   const [channelUrl, setChannelUrl] = useState('');
-  const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'channel'
+  const [uploadMode, setUploadMode] = useState('single'); // 'single' or 'channel' or 'playlist'
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [metaDescription, setMetaDescription] = useState('');
@@ -28,6 +28,9 @@ const YoutubeContentPage = () => {
   const [thumbnailUrl, setThumbnailUrl] = useState('');
   const [channelVideos, setChannelVideos] = useState([]);
   const [channelFetching, setChannelFetching] = useState(false);
+  const [playlistUrl, setPlaylistUrl] = useState('');
+  const [playlistVideos, setPlaylistVideos] = useState([]);
+  const [playlistFetching, setPlaylistFetching] = useState(false);
 
   useEffect(() => {
     fetchVideos();
@@ -188,86 +191,156 @@ const YoutubeContentPage = () => {
     setChannelFetching(false);
   }
 
+  // Helper for concurrency-limited parallel processing
+  async function processWithConcurrencyLimit(items, handler, limit, setCurrentStage, setCurrentProgress) {
+    let index = 0;
+    let successCount = 0;
+    let failCount = 0;
+    let inFlight = 0;
+    let completed = 0;
+    return new Promise((resolve) => {
+      function next() {
+        if (index >= items.length && inFlight === 0) {
+          resolve({ successCount, failCount });
+          return;
+        }
+        while (inFlight < limit && index < items.length) {
+          const i = index++;
+          inFlight++;
+          setCurrentStage && setCurrentStage(`Processing video ${i + 1} of ${items.length}`);
+          setCurrentProgress && setCurrentProgress(Math.round((completed / items.length) * 100));
+          handler(items[i], i)
+            .then((success) => {
+              if (success) successCount++;
+              else failCount++;
+            })
+            .catch(() => { failCount++; })
+            .finally(() => {
+              completed++;
+              inFlight--;
+              setCurrentProgress && setCurrentProgress(Math.round((completed / items.length) * 100));
+              next();
+            });
+        }
+      }
+      next();
+    });
+  }
+
+  async function uploadSingleVideoWorkflow(video) {
+    try {
+      const res = await fetch('/api/admin/create/video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: video.url }),
+      });
+      const data = await res.json();
+      if (data.jobId) {
+        let jobComplete = false;
+        let attempts = 0;
+        while (!jobComplete && attempts < 60) {
+          const statusRes = await fetch(`/api/admin/job-status?id=${data.jobId}`);
+          const statusData = await statusRes.json();
+          if (statusData.status === 'success') {
+            const metaRes = await fetch('/api/ai/generate-meta', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: video.title,
+                originalDesc: video.description
+              }),
+            });
+            const metaData = await metaRes.json();
+            const uploadRes = await fetch('/api/admin/upload/video', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                title: video.title,
+                description: video.description,
+                metaDescription: metaData.description,
+                hashtags: metaData.hashtags,
+                jobId: data.jobId
+              }),
+            });
+            return uploadRes.ok;
+          } else if (statusData.status === 'error') {
+            return false;
+          }
+          await new Promise(r => setTimeout(r, 2000));
+          attempts++;
+        }
+      }
+    } catch (err) {
+      // ignore, count as fail
+    }
+    return false;
+  }
+
   async function handleChannelUpload() {
     if (channelVideos.length === 0) {
       setError('No videos to upload');
       return;
     }
-
     setUploading(true);
     setError('');
     setSuccess('');
     setCurrentProgress(0);
     setCurrentStage('starting');
+    const { successCount, failCount } = await processWithConcurrencyLimit(
+      channelVideos,
+      uploadSingleVideoWorkflow,
+      5,
+      setCurrentStage,
+      setCurrentProgress
+    );
+    setCurrentProgress(100);
+    setCurrentStage('completed');
+    setSuccess(`Upload complete. ${successCount} videos uploaded successfully, ${failCount} failed.`);
+    setUploading(false);
+    fetchVideos();
+  }
 
-    let successCount = 0;
-    let failCount = 0;
-
-    for (let i = 0; i < channelVideos.length; i++) {
-      const video = channelVideos[i];
-      setCurrentStage(`Processing video ${i + 1} of ${channelVideos.length}`);
-      setCurrentProgress((i / channelVideos.length) * 100);
-
-      try {
-        const res = await fetch('/api/admin/create/video', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url: video.url }),
-        });
-        const data = await res.json();
-
-        if (data.jobId) {
-          // Wait for the job to complete
-          let jobComplete = false;
-          let attempts = 0;
-          while (!jobComplete && attempts < 60) {
-            const statusRes = await fetch(`/api/admin/job-status?id=${data.jobId}`);
-            const statusData = await statusRes.json();
-
-            if (statusData.status === 'success') {
-              // Generate meta description and hashtags
-              const metaRes = await fetch('/api/ai/generate-meta', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: video.title,
-                  originalDesc: video.description
-                }),
-              });
-              const metaData = await metaRes.json();
-
-              // Upload the video
-              const uploadRes = await fetch('/api/admin/upload/video', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  title: video.title,
-                  description: video.description,
-                  metaDescription: metaData.description,
-                  hashtags: metaData.hashtags,
-                  jobId: data.jobId
-                }),
-              });
-
-              if (uploadRes.ok) {
-                successCount++;
-              } else {
-                failCount++;
-              }
-              jobComplete = true;
-            } else if (statusData.status === 'error') {
-              failCount++;
-              jobComplete = true;
-            }
-            await new Promise(r => setTimeout(r, 2000));
-            attempts++;
-          }
-        }
-      } catch (err) {
-        failCount++;
+  async function handlePlaylistFetch(e) {
+    e.preventDefault();
+    setPlaylistFetching(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await fetch('/api/admin/fetch-playlist-videos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ playlistUrl }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setPlaylistVideos(data.videos);
+        setSuccess(`Found ${data.videos.length} videos in the playlist`);
+      } else {
+        setError(data.error || 'Failed to fetch playlist videos');
       }
+    } catch (err) {
+      setError('Failed to fetch playlist videos');
     }
+    setPlaylistFetching(false);
+  }
 
+  async function handlePlaylistUpload() {
+    if (playlistVideos.length === 0) {
+      setError('No videos to upload');
+      return;
+    }
+    setUploading(true);
+    setError('');
+    setSuccess('');
+    setCurrentProgress(0);
+    setCurrentStage('starting');
+    const { successCount, failCount } = await processWithConcurrencyLimit(
+      playlistVideos,
+      uploadSingleVideoWorkflow,
+      5,
+      setCurrentStage,
+      setCurrentProgress
+    );
     setCurrentProgress(100);
     setCurrentStage('completed');
     setSuccess(`Upload complete. ${successCount} videos uploaded successfully, ${failCount} failed.`);
@@ -293,6 +366,12 @@ const YoutubeContentPage = () => {
             onClick={() => setUploadMode('channel')}
           >
             Channel Upload
+          </button>
+          <button
+            className={`px-4 py-2 rounded-lg ${uploadMode === 'playlist' ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+            onClick={() => setUploadMode('playlist')}
+          >
+            Playlist Upload
           </button>
         </div>
       </div>
@@ -375,7 +454,7 @@ const YoutubeContentPage = () => {
               </>
             )}
           </form>
-        ) : (
+        ) : uploadMode === 'channel' ? (
           <div className="space-y-4">
             <input
               type="text"
@@ -413,6 +492,50 @@ const YoutubeContentPage = () => {
                   type="button"
                   className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors w-full"
                   onClick={handleChannelUpload}
+                  disabled={uploading}
+                >
+                  {uploading ? 'Uploading...' : 'Upload All Videos'}
+                </button>
+              </div>
+            )}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <input
+              type="text"
+              placeholder="YouTube Playlist URL or ID"
+              value={playlistUrl}
+              onChange={e => setPlaylistUrl(e.target.value)}
+              className="border p-2 rounded-lg w-full"
+              required
+              disabled={playlistFetching}
+            />
+            <button
+              type="button"
+              className="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors w-full"
+              onClick={handlePlaylistFetch}
+              disabled={playlistFetching || !playlistUrl}
+            >
+              {playlistFetching ? 'Fetching Playlist...' : 'Fetch Playlist Videos'}
+            </button>
+            {playlistVideos.length > 0 && (
+              <div className="mt-4">
+                <h3 className="font-semibold mb-2">Found {playlistVideos.length} videos in the playlist</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-4">
+                  {playlistVideos.map((video, index) => (
+                    <div key={index} className="border rounded-lg p-4">
+                      <img src={video.thumbnail} alt={video.title} className="w-full h-32 object-cover rounded-lg mb-2" />
+                      <h4 className="font-medium text-sm line-clamp-2">{video.title}</h4>
+                      <p className="text-xs text-gray-500 mt-1">
+                        {new Date(video.publishedAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  type="button"
+                  className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600 transition-colors w-full"
+                  onClick={handlePlaylistUpload}
                   disabled={uploading}
                 >
                   {uploading ? 'Uploading...' : 'Upload All Videos'}
