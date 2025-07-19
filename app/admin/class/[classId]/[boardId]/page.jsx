@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import ImageUpload from '@/components/ui/image-upload'
 import {
   Dialog,
   DialogContent,
@@ -461,14 +462,11 @@ export default function BoardDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="subjectPhoto">
-                    Subject Photo URL (Optional)
-                  </Label>
-                  <Input
-                    id="subjectPhoto"
-                    placeholder="https://example.com/subject-image.jpg"
+                  <ImageUpload
                     value={subjectPhoto}
-                    onChange={(e) => setSubjectPhoto(e.target.value)}
+                    onChange={setSubjectPhoto}
+                    label="Subject Photo (Optional)"
+                    placeholder="Upload subject image"
                     disabled={isAddLoading}
                   />
                 </div>
@@ -667,14 +665,11 @@ export default function BoardDetailPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="beyondSubjectPhoto">
-                    Subject Photo URL (Optional)
-                  </Label>
-                  <Input
-                    id="beyondSubjectPhoto"
-                    placeholder="https://example.com/subject-image.jpg"
+                  <ImageUpload
                     value={beyondSubjectPhoto}
-                    onChange={(e) => setBeyondSubjectPhoto(e.target.value)}
+                    onChange={setBeyondSubjectPhoto}
+                    label="Subject Photo (Optional)"
+                    placeholder="Upload subject image"
                     disabled={isAddBeyondLoading}
                   />
                 </div>
@@ -862,14 +857,11 @@ export default function BoardDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="editSubjectPhoto">
-                Subject Photo URL (Optional)
-              </Label>
-              <Input
-                id="editSubjectPhoto"
-                placeholder="https://example.com/subject-image.jpg"
+              <ImageUpload
                 value={editSubjectPhoto}
-                onChange={(e) => setEditSubjectPhoto(e.target.value)}
+                onChange={setEditSubjectPhoto}
+                label="Subject Photo (Optional)"
+                placeholder="Upload subject image"
                 disabled={isEditLoading}
               />
             </div>
