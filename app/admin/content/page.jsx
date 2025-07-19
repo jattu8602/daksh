@@ -91,7 +91,9 @@ const ContentPage = () => {
     <div className="content-page max-w-7xl mx-auto">
       {/* Header */}
       <div className="flex flex-col space-y-4 mb-6">
-        <h1 className="text-xl sm:text-2xl font-bold">Content Library</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
+          Content Library
+        </h1>
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
           <Link href="/admin/content/youtube" className="flex-1 sm:flex-none">
             <button className="w-full sm:w-auto flex items-center justify-center gap-2 bg-red-600 text-white px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base cursor-pointer">
@@ -149,16 +151,15 @@ const ContentPage = () => {
       </div>
 
       {/* Search and Tabs */}
-      <div className="bg-white rounded-lg shadow p-3 sm:p-4 md:p-6 mb-6">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-3 sm:p-4 md:p-6 mb-6 border border-gray-200 dark:border-gray-700">
         <div className="flex flex-col gap-3 sm:gap-4 mb-4 sm:mb-6">
           <input
             type="text"
             placeholder="Search by title..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="border p-2 sm:p-3 rounded-lg w-full text-sm sm:text-base"
+            className="border border-gray-300 dark:border-gray-600 p-2 sm:p-3 rounded-lg w-full text-sm sm:text-base bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
           />
-
         </div>
 
         {/* Bulk Actions */}
@@ -189,14 +190,14 @@ const ContentPage = () => {
                     setSelectedVideos(new Set())
                   }
                 }}
-                className="w-4 h-4 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700"
               />
-              <span className="text-xs sm:text-sm font-medium">
+              <span className="text-xs sm:text-sm font-medium text-gray-900 dark:text-white">
                 {selectedVideos.size === 0
                   ? 'Select All'
                   : selectedVideos.size === filteredVideos.length
-                  ? 'Deselect All'
-                  : `${selectedVideos.size} of ${filteredVideos.length} selected`}
+                    ? 'Deselect All'
+                    : `${selectedVideos.size} of ${filteredVideos.length} selected`}
               </span>
             </div>
 
@@ -239,8 +240,8 @@ const ContentPage = () => {
 
           {/* Selection Status & Actions */}
           {selectedVideos.size > 0 && (
-            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center justify-between bg-blue-50 p-3 rounded-lg">
-              <span className="text-blue-700 font-medium text-sm">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center justify-between bg-blue-50 dark:bg-blue-900/20 p-3 rounded-lg">
+              <span className="text-blue-700 dark:text-blue-300 font-medium text-sm">
                 {selectedVideos.size} video
                 {selectedVideos.size !== 1 ? 's' : ''} selected
               </span>
@@ -257,10 +258,10 @@ const ContentPage = () => {
         {/* Video Grid */}
         {loading && page === 1 ? (
           <div className="flex justify-center items-center h-32">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
           </div>
         ) : filteredVideos.length === 0 ? (
-          <p className="text-center text-gray-500 py-8 text-sm sm:text-base">
+          <p className="text-center text-gray-500 dark:text-gray-400 py-8 text-sm sm:text-base">
             No {activeTab} found.
           </p>
         ) : (
@@ -270,7 +271,7 @@ const ContentPage = () => {
               {filteredVideos.map((video) => (
                 <div
                   key={video.id}
-                  className={`video-item bg-gray-50 rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${
+                  className={`video-item bg-gray-50 dark:bg-gray-700 rounded-lg overflow-hidden hover:shadow-lg transition-shadow ${
                     selectedVideos.has(video.id) ? 'ring-2 ring-blue-500' : ''
                   }`}
                 >
@@ -280,7 +281,7 @@ const ContentPage = () => {
                         type="checkbox"
                         checked={selectedVideos.has(video.id)}
                         onChange={() => toggleVideoSelection(video.id)}
-                        className="w-4 h-4 sm:w-5 sm:h-5 rounded border-gray-300 text-blue-500 focus:ring-blue-500"
+                        className="w-4 h-4 sm:w-5 sm:h-5 rounded border-gray-300 dark:border-gray-600 text-blue-500 focus:ring-blue-500 bg-white dark:bg-gray-700"
                       />
                     </div>
                     <div className="relative aspect-video">
@@ -313,16 +314,16 @@ const ContentPage = () => {
                     </div>
                   </div>
                   <div className="p-2 sm:p-3 md:p-4">
-                    <h3 className="font-semibold mb-1 sm:mb-2 line-clamp-2 text-xs sm:text-sm md:text-base">
+                    <h3 className="font-semibold mb-1 sm:mb-2 line-clamp-2 text-xs sm:text-sm md:text-base text-gray-900 dark:text-white">
                       {video.title}
                     </h3>
                     {video.metaDescription && (
-                      <p className="text-xs sm:text-sm text-gray-600 line-clamp-2 mb-1 sm:mb-2">
+                      <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 line-clamp-2 mb-1 sm:mb-2">
                         {video.metaDescription}
                       </p>
                     )}
                     {video.assignments && video.assignments.length > 0 && (
-                      <div className="text-xs text-gray-500">
+                      <div className="text-xs text-gray-500 dark:text-gray-400">
                         <span className="hidden sm:inline">Assigned to: </span>
                         <span className="sm:hidden">Assigned: </span>
                         {video.assignments

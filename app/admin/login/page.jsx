@@ -3,6 +3,8 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { ThemeProvider } from '@/components/theme-provider'
+import { ModeToggle } from '@/components/component/ModeToggle'
 
 export default function AdminLogin() {
   const router = useRouter()
@@ -51,84 +53,99 @@ export default function AdminLogin() {
   }
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 p-4">
-      <div className="w-full max-w-md space-y-8">
-        <div className="text-center">
-          <h1 className="text-4xl font-bold tracking-tight text-gray-900">
-            Daksh
-          </h1>
-          <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900">
-            Admin Login
-          </h2>
-          <p className="mt-2 text-sm text-gray-500">
-            Sign in to access the admin dashboard
-          </p>
-        </div>
+    <ThemeProvider
+      attribute="class"
+      defaultTheme="system"
+      enableSystem
+      disableTransitionOnChange
+    >
+      <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
+        <div className="w-full max-w-md space-y-8">
+          <div className="text-center">
+            <h1 className="text-4xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Daksh
+            </h1>
+            <h2 className="mt-6 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+              Admin Login
+            </h2>
+            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+              Sign in to access the admin dashboard
+            </p>
+          </div>
 
-        <div className="mt-8 bg-white p-6 shadow rounded-lg">
-          {error && (
-            <div className="mb-4 bg-red-50 p-4 rounded text-red-600 text-sm">
-              {error}
-            </div>
-          )}
+          <div className="mt-8 bg-white dark:bg-gray-800 p-6 shadow rounded-lg border border-gray-200 dark:border-gray-700">
+            {error && (
+              <div className="mb-4 bg-red-50 dark:bg-red-900/20 p-4 rounded text-red-600 dark:text-red-400 text-sm">
+                {error}
+              </div>
+            )}
 
-          <form className="space-y-6" onSubmit={handleLogin}>
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Email
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-              />
-            </div>
+            <form className="space-y-6" onSubmit={handleLogin}>
+              <div>
+                <label
+                  htmlFor="email"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Email
+                </label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                />
+              </div>
 
-            <div>
-              <label
-                htmlFor="password"
-                className="block text-sm font-medium text-gray-700"
-              >
-                Password
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500"
-              />
-            </div>
+              <div>
+                <label
+                  htmlFor="password"
+                  className="block text-sm font-medium text-gray-700 dark:text-gray-300"
+                >
+                  Password
+                </label>
+                <input
+                  id="password"
+                  name="password"
+                  type="password"
+                  autoComplete="current-password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="mt-1 block w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-indigo-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
+                />
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="flex w-full justify-center rounded-md border border-transparent bg-black py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-black focus:ring-offset-2"
-              >
-                {isLoading ? 'Signing in...' : 'Sign in as Admin'}
-              </button>
-            </div>
-          </form>
-        </div>
+              <div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex w-full justify-center rounded-md border border-transparent bg-black dark:bg-white py-2 px-4 text-sm font-medium text-white dark:text-black shadow-sm hover:bg-gray-800 dark:hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-black dark:focus:ring-white focus:ring-offset-2 dark:focus:ring-offset-gray-800"
+                >
+                  {isLoading ? 'Signing in...' : 'Sign in as Admin'}
+                </button>
+              </div>
+            </form>
+          </div>
 
-        <div className="mt-4 text-center text-sm">
-          <Link href="/" className="font-medium text-black hover:text-gray-800">
-            Back to student login
-          </Link>
+          <div className="mt-4 text-center text-sm">
+            <Link
+              href="/"
+              className="font-medium text-black dark:text-white hover:text-gray-800 dark:hover:text-gray-300"
+            >
+              Back to student login
+            </Link>
+          </div>
+
+          {/* Theme Toggle */}
+          <div className="flex justify-center">
+            <ModeToggle />
+          </div>
         </div>
       </div>
-    </div>
+    </ThemeProvider>
   )
 }

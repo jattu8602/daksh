@@ -515,10 +515,12 @@ function MentorsPageContent() {
         // List View
         <div className="max-w-7xl mx-auto">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between mb-8">
-            <h1 className="text-2xl font-bold text-gray-900">Mentors</h1>
+            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+              Mentors
+            </h1>
             <button
               onClick={() => setIsAddingMentor(true)}
-              className="inline-flex items-center justify-center rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 focus:outline-none"
+              className="inline-flex items-center justify-center rounded-md bg-black dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 focus:outline-none"
             >
               <span className="mr-2">+</span> Add Mentor
             </button>
@@ -535,7 +537,7 @@ function MentorsPageContent() {
                 setSearchTerm(newSearchTerm)
                 updateURL(1, newSearchTerm) // Update URL immediately for search
               }}
-              className="w-full rounded-md border border-gray-300 px-3 py-2 pr-10 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              className="w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 pr-10 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3">
               {searchTerm ? (
@@ -544,18 +546,18 @@ function MentorsPageContent() {
                     setSearchTerm('')
                     updateURL(1, '')
                   }}
-                  className="text-gray-400 hover:text-gray-600"
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100"
                 >
                   ✕
                 </button>
               ) : (
-                <span className="text-gray-400">🔍</span>
+                <span className="text-gray-400 dark:text-gray-500">🔍</span>
               )}
             </div>
 
             {/* Search status indicator */}
             {searchTerm && (
-              <div className="text-sm text-gray-500 mt-1 flex items-center">
+              <div className="text-sm text-gray-500 dark:text-gray-400 mt-1 flex items-center">
                 {isSearching && (
                   <svg
                     className="animate-spin -ml-1 mr-2 h-4 w-4 text-blue-500"
@@ -586,13 +588,13 @@ function MentorsPageContent() {
           </div>
 
           {errorMessage && (
-            <div className="mb-6 rounded bg-red-50 p-4 text-sm text-red-600">
+            <div className="mb-6 rounded bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-600 dark:text-red-400">
               {errorMessage}
             </div>
           )}
 
           {successMessage && (
-            <div className="mb-6 rounded bg-green-50 p-4 text-sm text-green-600">
+            <div className="mb-6 rounded bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-600 dark:text-green-400">
               {successMessage}
             </div>
           )}
@@ -613,13 +615,13 @@ function MentorsPageContent() {
             </div>
           ) : !isSearching ? (
             <div className="text-center py-12">
-              <div className="text-gray-400 text-lg mb-2">
+              <div className="text-gray-400 dark:text-gray-500 text-lg mb-2">
                 {searchTerm ? '🔍' : '👥'}
               </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 {searchTerm ? 'No mentors found' : 'No mentors available'}
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 {searchTerm
                   ? `No mentors match "${searchTerm}". Try a different search term.`
                   : 'There are no mentors in the system yet.'}
@@ -630,7 +632,7 @@ function MentorsPageContent() {
                     setSearchTerm('')
                     updateURL(1, '')
                   }}
-                  className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  className="mt-4 px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600"
                 >
                   Clear Search
                 </button>
@@ -638,11 +640,13 @@ function MentorsPageContent() {
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="text-gray-400 text-lg mb-2">⏳</div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">
+              <div className="text-gray-400 dark:text-gray-500 text-lg mb-2">
+                ⏳
+              </div>
+              <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">
                 Searching...
               </h3>
-              <p className="text-gray-500">
+              <p className="text-gray-500 dark:text-gray-400">
                 Please wait while we search for mentors.
               </p>
             </div>
@@ -654,7 +658,7 @@ function MentorsPageContent() {
               <button
                 onClick={() => fetchMentors(currentPage - 1)}
                 disabled={currentPage === 1}
-                className="px-3 py-2 rounded border disabled:opacity-50 hover:bg-gray-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Previous
               </button>
@@ -681,8 +685,8 @@ function MentorsPageContent() {
                         onClick={() => fetchMentors(pageNum)}
                         className={`px-3 py-2 rounded border text-sm ${
                           currentPage === pageNum
-                            ? 'bg-black text-white border-black'
-                            : 'hover:bg-gray-50'
+                            ? 'bg-black dark:bg-white text-white dark:text-black border-black dark:border-white'
+                            : 'hover:bg-gray-50 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300'
                         }`}
                       >
                         {pageNum}
@@ -695,7 +699,7 @@ function MentorsPageContent() {
               <button
                 onClick={() => fetchMentors(currentPage + 1)}
                 disabled={currentPage === pagination.totalPages}
-                className="px-3 py-2 rounded border disabled:opacity-50 hover:bg-gray-50 disabled:cursor-not-allowed"
+                className="px-3 py-2 rounded border border-gray-300 dark:border-gray-600 disabled:opacity-50 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:cursor-not-allowed text-gray-700 dark:text-gray-300"
               >
                 Next
               </button>
@@ -705,58 +709,58 @@ function MentorsPageContent() {
       ) : (
         // Add Mentor Form View
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-white rounded-lg shadow-lg p-6">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
                 {formData.id ? 'Edit Mentor' : 'Add New Mentor'}
               </h2>
               <button
                 onClick={handleCancel}
-                className="text-gray-400 hover:text-gray-600"
+                className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100"
               >
                 ✕
               </button>
             </div>
 
             {errorMessage && (
-              <div className="mb-6 rounded bg-red-50 p-4 text-sm text-red-600">
+              <div className="mb-6 rounded bg-red-50 dark:bg-red-900/20 p-4 text-sm text-red-600 dark:text-red-400">
                 {errorMessage}
               </div>
             )}
 
             {successMessage && (
-              <div className="mb-6 rounded bg-green-50 p-4 text-sm text-green-600">
+              <div className="mb-6 rounded bg-green-50 dark:bg-green-900/20 p-4 text-sm text-green-600 dark:text-green-400">
                 {successMessage}
               </div>
             )}
 
             {newMentor ? (
-              <div className="mb-6 rounded-lg bg-blue-50 p-6 text-sm">
-                <h3 className="mb-4 text-lg font-semibold">
+              <div className="mb-6 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-6 text-sm">
+                <h3 className="mb-4 text-lg font-semibold text-gray-900 dark:text-white">
                   New Mentor Credentials
                 </h3>
                 <div className="space-y-2">
-                  <p>
+                  <p className="text-gray-900 dark:text-white">
                     <span className="font-medium">Name:</span> {newMentor.name}
                   </p>
-                  <p>
+                  <p className="text-gray-900 dark:text-white">
                     <span className="font-medium">Username:</span>{' '}
                     {newMentor.username}
                   </p>
                   {newMentor.isOrganic && (
-                    <p>
+                    <p className="text-gray-900 dark:text-white">
                       <span className="font-medium">Password:</span>{' '}
                       {newMentor.password}
                     </p>
                   )}
                 </div>
-                <p className="mt-4 text-xs text-gray-600">
+                <p className="mt-4 text-xs text-gray-600 dark:text-gray-400">
                   Please save these credentials securely. The password cannot be
                   recovered later.
                 </p>
                 <button
                   onClick={() => setIsAddingMentor(false)}
-                  className="mt-4 rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800"
+                  className="mt-4 rounded-md bg-black dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
                 >
                   Back to Mentors
                 </button>
@@ -765,7 +769,7 @@ function MentorsPageContent() {
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Mentor Type
                     </label>
                     <div className="flex items-center space-x-4 mt-2">
@@ -780,9 +784,11 @@ function MentorsPageContent() {
                               isOrganic: true,
                             }))
                           }}
-                          className="form-radio h-4 w-4 text-black"
+                          className="form-radio h-4 w-4 text-black dark:text-white"
                         />
-                        <span className="ml-2">Organic</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          Organic
+                        </span>
                       </label>
                       <label className="inline-flex items-center">
                         <input
@@ -795,27 +801,29 @@ function MentorsPageContent() {
                               isOrganic: false,
                             }))
                           }}
-                          className="form-radio h-4 w-4 text-black"
+                          className="form-radio h-4 w-4 text-black dark:text-white"
                         />
-                        <span className="ml-2">Inorganic</span>
+                        <span className="ml-2 text-gray-900 dark:text-white">
+                          Inorganic
+                        </span>
                       </label>
                     </div>
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Profile Photo <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="file"
                       accept="image/*"
                       onChange={handleImageUpload}
-                      className="mt-2 w-full"
+                      className="mt-2 w-full text-gray-900 dark:text-white"
                       disabled={imageUploading}
                     />
 
                     {imageUploading && (
-                      <div className="mt-2 flex items-center text-blue-600 text-sm">
+                      <div className="mt-2 flex items-center text-blue-600 dark:text-blue-400 text-sm">
                         <svg
                           className="animate-spin -ml-1 mr-2 h-4 w-4"
                           xmlns="http://www.w3.org/2000/svg"
@@ -841,7 +849,7 @@ function MentorsPageContent() {
                     )}
 
                     {imageUploadError && (
-                      <div className="mt-2 text-red-600 text-sm">
+                      <div className="mt-2 text-red-600 dark:text-red-400 text-sm">
                         {imageUploadError}
                       </div>
                     )}
@@ -855,13 +863,13 @@ function MentorsPageContent() {
                           className="object-cover rounded"
                         />
                         <div className="absolute top-1 right-1">
-                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 dark:bg-green-900/20 text-green-800 dark:text-green-400">
                             ✓ Uploaded
                           </span>
                         </div>
                       </div>
                     )}
-                    <p className="mt-1 text-xs text-gray-500">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                       Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
                     </p>
                   </div>
@@ -869,7 +877,7 @@ function MentorsPageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -877,14 +885,14 @@ function MentorsPageContent() {
                       name="name"
                       value={formData.name}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Enter mentor's full name"
                       required
                     />
                   </div>
 
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Username <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -892,9 +900,9 @@ function MentorsPageContent() {
                       name="username"
                       value={formData.username}
                       onChange={handleInputChange}
-                      className={`mt-2 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 ${
+                      className={`mt-2 w-full rounded-md border px-3 py-2 focus:outline-none focus:ring-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 ${
                         usernameStatus.available === null
-                          ? 'border-gray-300 focus:border-blue-500 focus:ring-blue-500'
+                          ? 'border-gray-300 dark:border-gray-600 focus:border-blue-500 focus:ring-blue-500'
                           : usernameStatus.available
                             ? 'border-green-500 focus:border-green-500 focus:ring-green-500'
                             : 'border-red-500 focus:border-red-500 focus:ring-red-500'
@@ -906,10 +914,10 @@ function MentorsPageContent() {
                       <p
                         className={`mt-1 text-sm ${
                           usernameStatus.checking
-                            ? 'text-gray-500'
+                            ? 'text-gray-500 dark:text-gray-400'
                             : usernameStatus.available
-                              ? 'text-green-600'
-                              : 'text-red-600'
+                              ? 'text-green-600 dark:text-green-400'
+                              : 'text-red-600 dark:text-red-400'
                         }`}
                       >
                         {usernameStatus.message}
@@ -920,7 +928,7 @@ function MentorsPageContent() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Subject <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -928,13 +936,13 @@ function MentorsPageContent() {
                       name="subject"
                       value={formData.subject}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Enter subject (e.g. Physics, Math)"
                       required
                     />
                   </div>
                   <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                    <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                       Language <span className="text-red-500">*</span>
                     </label>
                     <input
@@ -942,7 +950,7 @@ function MentorsPageContent() {
                       name="language"
                       value={formData.language}
                       onChange={handleInputChange}
-                      className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                      className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                       placeholder="Enter language (e.g. English, Hindi)"
                       required
                     />
@@ -950,7 +958,7 @@ function MentorsPageContent() {
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Email (Optional)
                   </label>
                   <input
@@ -958,20 +966,20 @@ function MentorsPageContent() {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Enter email address"
                   />
                 </div>
 
                 <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
+                  <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                     Bio (Optional)
                   </label>
                   <textarea
                     name="bio"
                     value={formData.bio}
                     onChange={handleInputChange}
-                    className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                     placeholder="Enter mentor's bio"
                     rows="3"
                   />
@@ -980,7 +988,7 @@ function MentorsPageContent() {
                 {isOrganic && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Password <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -988,14 +996,14 @@ function MentorsPageContent() {
                         name="password"
                         value={formData.password}
                         onChange={handleInputChange}
-                        className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Enter password (min 6 characters)"
                         required
                         minLength="6"
                       />
                     </div>
                     <div>
-                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                      <label className="mb-1 block text-sm font-medium text-gray-700 dark:text-gray-300">
                         Confirm Password <span className="text-red-500">*</span>
                       </label>
                       <input
@@ -1003,7 +1011,7 @@ function MentorsPageContent() {
                         name="confirmPassword"
                         value={formData.confirmPassword}
                         onChange={handleInputChange}
-                        className="mt-2 w-full rounded-md border px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                        className="mt-2 w-full rounded-md border border-gray-300 dark:border-gray-600 px-3 py-2 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400"
                         placeholder="Confirm password"
                         required
                         minLength="6"
@@ -1012,18 +1020,18 @@ function MentorsPageContent() {
                   </div>
                 )}
 
-                <div className="flex justify-end space-x-3 pt-6 border-t">
+                <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-700">
                   <button
                     type="button"
                     onClick={handleCancel}
-                    className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-gray-50"
+                    className="rounded-md border border-gray-300 dark:border-gray-600 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     disabled={isLoading || imageUploading}
                   >
                     Cancel
                   </button>
                   <button
                     type="submit"
-                    className="rounded-md bg-black px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+                    className="rounded-md bg-black dark:bg-white px-4 py-2 text-sm font-medium text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100 disabled:opacity-50"
                     disabled={
                       isLoading ||
                       imageUploading ||

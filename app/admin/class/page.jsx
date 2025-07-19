@@ -201,10 +201,10 @@ export default function ClassesPage() {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-center mb-4">
+        <h1 className="text-4xl font-bold text-center mb-4 text-gray-900 dark:text-white">
           Global Class Templates
         </h1>
-        <p className="text-muted-foreground text-center max-w-2xl mx-auto">
+        <p className="text-muted-foreground text-center max-w-2xl mx-auto text-gray-600 dark:text-gray-400">
           Manage global class templates that will be used across all schools.
           Add subjects, mentors, and content here to make them available to all
           school instances.
@@ -215,33 +215,42 @@ export default function ClassesPage() {
       <div className="flex justify-center mb-8">
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
-            <Button size="lg" className="gap-2">
+            <Button
+              size="lg"
+              className="gap-2 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
+            >
               <Plus className="h-5 w-5" />
               Add New Class
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-md">
+          <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
+              <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
                 <Plus className="h-5 w-5" />
                 Create New Global Class Template
               </DialogTitle>
             </DialogHeader>
             <div className="space-y-6 py-4">
               <div className="space-y-2">
-                <Label htmlFor="className">Class Name</Label>
+                <Label
+                  htmlFor="className"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Class Name
+                </Label>
                 <Input
                   id="className"
                   placeholder="e.g., 11th Class, Pre-K, etc."
                   value={className}
                   onChange={(e) => setClassName(e.target.value)}
                   disabled={isLoading}
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <div className="flex gap-3">
                 <Button
                   onClick={handleAddClass}
-                  className="flex-1"
+                  className="flex-1 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
                   disabled={isLoading}
                 >
                   {isLoading ? 'Creating...' : 'Create Global Template'}
@@ -249,7 +258,7 @@ export default function ClassesPage() {
                 <Button
                   variant="outline"
                   onClick={() => setIsDialogOpen(false)}
-                  className="flex-1"
+                  className="flex-1 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                   disabled={isLoading}
                 >
                   Cancel
@@ -264,34 +273,42 @@ export default function ClassesPage() {
         {classes.map((classItem) => (
           <Card
             key={classItem.id}
-            className="hover:shadow-lg transition-shadow group"
+            className="hover:shadow-lg transition-shadow group bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
           >
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
                 <Link href={`/admin/class/${classItem.id}`} className="flex-1">
-                  <CardTitle className="text-xl group-hover:text-primary transition-colors cursor-pointer">
+                  <CardTitle className="text-xl group-hover:text-primary transition-colors cursor-pointer text-gray-900 dark:text-white">
                     {classItem.name}
                   </CardTitle>
                 </Link>
 
                 <div className="flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-muted-foreground" />
+                  <BookOpen className="h-5 w-5 text-muted-foreground dark:text-gray-400" />
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      >
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent
+                      align="end"
+                      className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700"
+                    >
                       <DropdownMenuItem
                         onClick={() => handleEditClass(classItem)}
+                        className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                       >
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => handleDeleteClass(classItem)}
-                        className="text-red-600"
+                        className="text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
                       >
                         <Trash2 className="h-4 w-4 mr-2" />
                         Delete
@@ -303,7 +320,7 @@ export default function ClassesPage() {
             </CardHeader>
             <CardContent className="space-y-4">
               {classItem.hasImage && (
-                <div className="relative h-32 w-full rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100">
+                <div className="relative h-32 w-full rounded-lg overflow-hidden bg-gradient-to-br from-blue-100 to-purple-100 dark:from-blue-900/20 dark:to-purple-900/20">
                   <Image
                     src={`/placeholder.svg?height=128&width=200&text=${classItem.id}`}
                     alt={`${classItem.name} illustration`}
@@ -316,24 +333,30 @@ export default function ClassesPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <BookOpen className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <BookOpen className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
+                    <span className="text-sm text-muted-foreground dark:text-gray-400">
                       Total Boards
                     </span>
                   </div>
-                  <Badge variant="secondary">
+                  <Badge
+                    variant="secondary"
+                    className="bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
+                  >
                     {classItem.totalBoards || classItem._count?.boards || 0}
                   </Badge>
                 </div>
 
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <School className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm text-muted-foreground">
+                    <School className="h-4 w-4 text-muted-foreground dark:text-gray-400" />
+                    <span className="text-sm text-muted-foreground dark:text-gray-400">
                       School Instances
                     </span>
                   </div>
-                  <Badge variant="outline">
+                  <Badge
+                    variant="outline"
+                    className="border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300"
+                  >
                     {classItem.totalSchools ||
                       classItem._count?.schoolClasses ||
                       0}
@@ -347,28 +370,34 @@ export default function ClassesPage() {
 
       {/* Edit Class Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-md bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
+            <DialogTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <Edit2 className="h-5 w-5" />
               Edit Class
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">
             <div className="space-y-2">
-              <Label htmlFor="editClassName">Class Name</Label>
+              <Label
+                htmlFor="editClassName"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Class Name
+              </Label>
               <Input
                 id="editClassName"
                 placeholder="e.g., 11th Class, Pre-K, etc."
                 value={editClassName}
                 onChange={(e) => setEditClassName(e.target.value)}
                 disabled={isEditLoading}
+                className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
               />
             </div>
             <div className="flex gap-3">
               <Button
                 onClick={handleUpdateClass}
-                className="flex-1"
+                className="flex-1 bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
                 disabled={isEditLoading}
               >
                 {isEditLoading ? 'Updating...' : 'Update Class'}
@@ -376,7 +405,7 @@ export default function ClassesPage() {
               <Button
                 variant="outline"
                 onClick={() => setIsEditDialogOpen(false)}
-                className="flex-1"
+                className="flex-1 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 disabled={isEditLoading}
               >
                 Cancel
@@ -391,21 +420,26 @@ export default function ClassesPage() {
         open={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle className="text-gray-900 dark:text-white">
+              Are you sure?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-gray-600 dark:text-gray-300">
               This will permanently delete the class "{deletingClass?.name}" and
               all its associated data. This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleteLoading}>
+            <AlertDialogCancel
+              disabled={isDeleteLoading}
+              className="text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
+            >
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleConfirmDelete}
-              className="bg-red-600 hover:bg-red-700"
+              className="bg-red-600 hover:bg-red-700 text-white"
               disabled={isDeleteLoading}
             >
               {isDeleteLoading ? 'Deleting...' : 'Delete'}

@@ -50,17 +50,17 @@ const formatLastActivity = (lastActiveAt) => {
 // Memoized Admin Card Component to prevent unnecessary re-renders
 const AdminCard = memo(({ admin, formatLastActivity }) => {
   return (
-    <div className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50">
+    <div className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 bg-white dark:bg-gray-800">
       <div className="flex items-center gap-4">
         <div className="relative">
           <Avatar className="h-12 w-12">
             <AvatarImage src={admin.profileImage} />
-            <AvatarFallback>
+            <AvatarFallback className="bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
               {admin.name?.charAt(0)?.toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div
-            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white ${
+            className={`absolute -bottom-1 -right-1 w-4 h-4 rounded-full border-2 border-white dark:border-gray-800 ${
               admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
             }`}
           />
@@ -68,10 +68,17 @@ const AdminCard = memo(({ admin, formatLastActivity }) => {
 
         <div>
           <div className="flex items-center gap-2">
-            <h4 className="font-semibold">{admin.name}</h4>
+            <h4 className="font-semibold text-gray-900 dark:text-white">
+              {admin.name}
+            </h4>
             <Badge
               variant={
                 admin.role === 'SUPER_ADMIN' ? 'destructive' : 'secondary'
+              }
+              className={
+                admin.role === 'SUPER_ADMIN'
+                  ? 'bg-red-100 dark:bg-red-900/20 text-red-800 dark:text-red-400'
+                  : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
               }
             >
               {admin.role === 'SUPER_ADMIN' ? 'Super Admin' : 'Admin'}
@@ -80,10 +87,16 @@ const AdminCard = memo(({ admin, formatLastActivity }) => {
               <CheckCircle className="h-4 w-4 text-green-500" />
             )}
           </div>
-          <p className="text-sm text-gray-600">@{admin.username}</p>
-          <p className="text-sm text-gray-500">{admin.email}</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400">
+            @{admin.username}
+          </p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
+            {admin.email}
+          </p>
           {admin.phone !== 'Not provided' && (
-            <p className="text-sm text-gray-500">{admin.phone}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">
+              {admin.phone}
+            </p>
           )}
         </div>
       </div>
@@ -95,11 +108,11 @@ const AdminCard = memo(({ admin, formatLastActivity }) => {
               admin.isOnline ? 'bg-green-500' : 'bg-gray-400'
             }`}
           />
-          <span className="text-sm font-medium">
+          <span className="text-sm font-medium text-gray-900 dark:text-white">
             {admin.isOnline ? 'Online' : 'Offline'}
           </span>
         </div>
-        <p className="text-xs text-gray-500">
+        <p className="text-xs text-gray-500 dark:text-gray-400">
           Last active: {formatLastActivity(admin.lastActiveAt)}
         </p>
       </div>
@@ -710,31 +723,31 @@ export default function AdminSettings() {
         {/* Header Skeleton */}
         <div className="flex items-center justify-between gap-3 mb-8">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 bg-gray-200 rounded-md"></div>
-            <div className="h-8 w-64 bg-gray-200 rounded-md"></div>
+            <div className="h-8 w-8 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+            <div className="h-8 w-64 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="h-8 w-32 bg-gray-200 rounded-full"></div>
+            <div className="h-8 w-32 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
           </div>
         </div>
 
         {/* Profile and Password Section Skeleton */}
         <div className="flex flex-col lg:flex-row gap-6">
           {/* Profile Card Skeleton */}
-          <Card className="flex-1 lg:w-[70%]">
+          <Card className="flex-1 lg:w-[70%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 bg-gray-200 rounded"></div>
-                <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Profile Image Skeleton */}
               <div className="flex items-center gap-6">
-                <div className="h-24 w-24 bg-gray-200 rounded-full"></div>
+                <div className="h-24 w-24 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                 <div className="space-y-2">
-                  <div className="h-10 w-32 bg-gray-200 rounded-md"></div>
-                  <div className="h-4 w-48 bg-gray-100 rounded"></div>
+                  <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
+                  <div className="h-4 w-48 bg-gray-100 dark:bg-gray-600 rounded"></div>
                 </div>
               </div>
 
@@ -742,74 +755,74 @@ export default function AdminSettings() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {[1, 2, 3, 4].map((i) => (
                   <div key={i} className="space-y-2">
-                    <div className="h-4 w-20 bg-gray-200 rounded"></div>
-                    <div className="h-10 w-full bg-gray-100 rounded-md"></div>
+                    <div className="h-4 w-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                    <div className="h-10 w-full bg-gray-100 dark:bg-gray-600 rounded-md"></div>
                   </div>
                 ))}
               </div>
 
-              <div className="h-10 w-32 bg-gray-200 rounded-md"></div>
+              <div className="h-10 w-32 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
             </CardContent>
           </Card>
 
           {/* Password Card Skeleton */}
-          <Card className="lg:w-[30%]">
+          <Card className="lg:w-[30%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
             <CardHeader>
               <div className="flex items-center gap-2">
-                <div className="h-5 w-5 bg-gray-200 rounded"></div>
-                <div className="h-6 w-32 bg-gray-200 rounded"></div>
+                <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div key={i} className="space-y-2">
-                  <div className="h-4 w-24 bg-gray-200 rounded"></div>
-                  <div className="h-10 w-full bg-gray-100 rounded-md"></div>
+                  <div className="h-4 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                  <div className="h-10 w-full bg-gray-100 dark:bg-gray-600 rounded-md"></div>
                 </div>
               ))}
-              <div className="h-10 w-full bg-gray-200 rounded-md"></div>
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-md"></div>
             </CardContent>
           </Card>
         </div>
 
         {/* Email Verification Card Skeleton */}
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <div className="h-5 w-5 bg-gray-200 rounded"></div>
-              <div className="h-6 w-36 bg-gray-200 rounded"></div>
+              <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-6 w-36 bg-gray-200 dark:bg-gray-700 rounded"></div>
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <div className="h-4 w-4 bg-yellow-200 rounded"></div>
-              <div className="h-4 w-80 bg-yellow-200 rounded"></div>
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <div className="h-4 w-4 bg-yellow-200 dark:bg-yellow-700 rounded"></div>
+              <div className="h-4 w-80 bg-yellow-200 dark:bg-yellow-700 rounded"></div>
             </div>
             <div className="space-y-3">
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-                <div className="h-4 w-32 bg-gray-200 rounded"></div>
-                <div className="h-5 w-48 bg-gray-200 rounded"></div>
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg space-y-2">
+                <div className="h-4 w-32 bg-gray-200 dark:bg-gray-600 rounded"></div>
+                <div className="h-5 w-48 bg-gray-200 dark:bg-gray-600 rounded"></div>
               </div>
-              <div className="h-10 w-full bg-gray-200 rounded-md"></div>
+              <div className="h-10 w-full bg-gray-200 dark:bg-gray-700 rounded-md"></div>
             </div>
           </CardContent>
         </Card>
 
         {/* All Admins Card Skeleton */}
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader className="flex flex-row items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-5 w-5 bg-gray-200 rounded"></div>
-              <div className="h-6 w-24 bg-gray-200 rounded"></div>
+              <div className="h-5 w-5 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-6 w-24 bg-gray-200 dark:bg-gray-700 rounded"></div>
             </div>
-            <div className="h-9 w-24 bg-gray-200 rounded-md"></div>
+            <div className="h-9 w-24 bg-gray-200 dark:bg-gray-700 rounded-md"></div>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
                 <div
                   key={i}
-                  className="flex items-center justify-between p-4 border rounded-lg"
+                  className="flex items-center justify-between p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800"
                   style={{
                     animationDelay: `${i * 0.1}s`,
                     animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
@@ -817,26 +830,26 @@ export default function AdminSettings() {
                 >
                   <div className="flex items-center gap-4">
                     <div className="relative">
-                      <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-300 rounded-full border-2 border-white"></div>
+                      <div className="h-12 w-12 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                      <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-gray-300 dark:bg-gray-600 rounded-full border-2 border-white dark:border-gray-800"></div>
                     </div>
                     <div className="space-y-2">
                       <div className="flex items-center gap-2">
-                        <div className="h-5 w-32 bg-gray-200 rounded"></div>
-                        <div className="h-5 w-20 bg-gray-200 rounded-full"></div>
-                        <div className="h-4 w-4 bg-gray-200 rounded-full"></div>
+                        <div className="h-5 w-32 bg-gray-200 dark:bg-gray-700 rounded"></div>
+                        <div className="h-5 w-20 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                        <div className="h-4 w-4 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
                       </div>
-                      <div className="h-4 w-24 bg-gray-100 rounded"></div>
-                      <div className="h-4 w-40 bg-gray-100 rounded"></div>
-                      <div className="h-4 w-28 bg-gray-100 rounded"></div>
+                      <div className="h-4 w-24 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                      <div className="h-4 w-40 bg-gray-100 dark:bg-gray-600 rounded"></div>
+                      <div className="h-4 w-28 bg-gray-100 dark:bg-gray-600 rounded"></div>
                     </div>
                   </div>
                   <div className="text-right space-y-1">
                     <div className="flex items-center gap-2">
-                      <div className="w-2 h-2 bg-gray-200 rounded-full"></div>
-                      <div className="h-4 w-16 bg-gray-200 rounded"></div>
+                      <div className="w-2 h-2 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+                      <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded"></div>
                     </div>
-                    <div className="h-3 w-20 bg-gray-100 rounded"></div>
+                    <div className="h-3 w-20 bg-gray-100 dark:bg-gray-600 rounded"></div>
                   </div>
                 </div>
               ))}
@@ -847,8 +860,8 @@ export default function AdminSettings() {
         {/* Loading indicator */}
         <div className="flex items-center justify-center py-8">
           <div className="flex items-center gap-3">
-            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-            <span className="text-sm text-gray-600 font-medium">
+            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 dark:border-blue-400"></div>
+            <span className="text-sm text-gray-600 dark:text-gray-400 font-medium">
               Loading admin settings...
             </span>
           </div>
@@ -862,22 +875,24 @@ export default function AdminSettings() {
       {/* Header */}
       <div className="flex items-center justify-between gap-3 mb-8">
         <div className="flex items-center gap-3">
-          <Shield className="h-8 w-8 text-blue-600" />
-          <h1 className="text-3xl font-bold text-gray-900">Admin Settings</h1>
+          <Shield className="h-8 w-8 text-blue-600 dark:text-blue-400" />
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+            Admin Settings
+          </h1>
         </div>
 
         {/* Connection Status Indicator */}
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100">
+          <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700">
             <div
               className={`w-2 h-2 rounded-full ${isOnline && navigator.onLine ? 'bg-green-500' : 'bg-red-500'}`}
             />
-            <span className="text-sm font-medium">
+            <span className="text-sm font-medium text-gray-900 dark:text-white">
               {isOnline && navigator.onLine ? 'Connected' : 'Disconnected'}
             </span>
           </div>
           {!navigator.onLine && (
-            <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-100 text-yellow-800">
+            <div className="flex items-center gap-1 px-2 py-1 rounded bg-yellow-100 dark:bg-yellow-900/20 text-yellow-800 dark:text-yellow-200">
               <span className="text-xs">No Internet</span>
             </div>
           )}
@@ -887,9 +902,9 @@ export default function AdminSettings() {
       {/* Profile and Password Section */}
       <div className="flex flex-col lg:flex-row gap-6">
         {/* Profile Section - 70% on large screens */}
-        <Card className="flex-1 lg:w-[70%]">
+        <Card className="flex-1 lg:w-[70%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <User className="h-5 w-5" />
               Profile Settings
             </CardTitle>
@@ -899,7 +914,7 @@ export default function AdminSettings() {
             <div className="flex items-center gap-6">
               <Avatar className="h-24 w-24">
                 <AvatarImage src={profileFormData.profileImage} />
-                <AvatarFallback className="text-lg">
+                <AvatarFallback className="text-lg bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300">
                   {profile.name?.charAt(0)?.toUpperCase()}
                 </AvatarFallback>
               </Avatar>
@@ -907,7 +922,7 @@ export default function AdminSettings() {
                 <Button
                   variant="outline"
                   onClick={() => fileInputRef.current?.click()}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                 >
                   <Upload className="h-4 w-4" />
                   Upload Photo
@@ -922,7 +937,7 @@ export default function AdminSettings() {
                     if (file) handleImageUpload(file)
                   }}
                 />
-                <p className="text-sm text-gray-500 mt-1">
+                <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                   JPG, PNG or GIF. Max size 5MB.
                 </p>
               </div>
@@ -931,7 +946,12 @@ export default function AdminSettings() {
             {/* Profile Form */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="name">Full Name</Label>
+                <Label
+                  htmlFor="name"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Full Name
+                </Label>
                 <Input
                   id="name"
                   value={profileFormData.name}
@@ -942,10 +962,16 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter your full name"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <div>
-                <Label htmlFor="username">Username</Label>
+                <Label
+                  htmlFor="username"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Username
+                </Label>
                 <Input
                   id="username"
                   value={profileFormData.username}
@@ -956,10 +982,14 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter username"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <div>
-                <Label htmlFor="email" className="flex items-center gap-2">
+                <Label
+                  htmlFor="email"
+                  className="flex items-center gap-2 text-gray-700 dark:text-gray-300"
+                >
                   Email Address
                   {profile.emailVerified && (
                     <CheckCircle className="h-4 w-4 text-green-500" />
@@ -979,10 +1009,16 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter email address"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
               <div>
-                <Label htmlFor="phone">Mobile Number</Label>
+                <Label
+                  htmlFor="phone"
+                  className="text-gray-700 dark:text-gray-300"
+                >
+                  Mobile Number
+                </Label>
                 <Input
                   id="phone"
                   value={profileFormData.phone}
@@ -993,6 +1029,7 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter mobile number"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
               </div>
             </div>
@@ -1000,7 +1037,7 @@ export default function AdminSettings() {
             <Button
               onClick={handleProfileUpdate}
               disabled={isUpdatingProfile}
-              className="w-full md:w-auto"
+              className="w-full md:w-auto bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
             >
               {isUpdatingProfile ? 'Updating...' : 'Update Profile'}
             </Button>
@@ -1008,16 +1045,21 @@ export default function AdminSettings() {
         </Card>
 
         {/* Password Change Section - 30% on large screens */}
-        <Card className="lg:w-[30%]">
+        <Card className="lg:w-[30%] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <Lock className="h-5 w-5" />
               Change Password
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <Label htmlFor="currentPassword">Current Password</Label>
+              <Label
+                htmlFor="currentPassword"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Current Password
+              </Label>
               <div className="relative">
                 <Input
                   id="currentPassword"
@@ -1030,12 +1072,13 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter current password"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 dark:text-gray-400"
                   onClick={() =>
                     setShowPasswords((prev) => ({
                       ...prev,
@@ -1053,7 +1096,12 @@ export default function AdminSettings() {
             </div>
 
             <div>
-              <Label htmlFor="newPassword">New Password</Label>
+              <Label
+                htmlFor="newPassword"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                New Password
+              </Label>
               <div className="relative">
                 <Input
                   id="newPassword"
@@ -1066,12 +1114,13 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Enter new password"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 dark:text-gray-400"
                   onClick={() =>
                     setShowPasswords((prev) => ({ ...prev, new: !prev.new }))
                   }
@@ -1086,7 +1135,12 @@ export default function AdminSettings() {
             </div>
 
             <div>
-              <Label htmlFor="confirmPassword">Confirm New Password</Label>
+              <Label
+                htmlFor="confirmPassword"
+                className="text-gray-700 dark:text-gray-300"
+              >
+                Confirm New Password
+              </Label>
               <div className="relative">
                 <Input
                   id="confirmPassword"
@@ -1099,12 +1153,13 @@ export default function AdminSettings() {
                     }))
                   }
                   placeholder="Confirm new password"
+                  className="bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                 />
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
+                  className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent text-gray-500 dark:text-gray-400"
                   onClick={() =>
                     setShowPasswords((prev) => ({
                       ...prev,
@@ -1124,7 +1179,7 @@ export default function AdminSettings() {
             <Button
               onClick={handlePasswordChange}
               disabled={isChangingPassword}
-              className="w-full"
+              className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
             >
               {isChangingPassword ? 'Changing Password...' : 'Change Password'}
             </Button>
@@ -1134,26 +1189,30 @@ export default function AdminSettings() {
 
       {/* Email Verification Section */}
       {profile.email && !profile.emailVerified && (
-        <Card>
+        <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
               <Mail className="h-5 w-5" />
               Email Verification
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center gap-2 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-              <Clock className="h-4 w-4 text-yellow-600" />
-              <span className="text-sm text-yellow-800">
+            <div className="flex items-center gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-700 rounded-lg">
+              <Clock className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+              <span className="text-sm text-yellow-800 dark:text-yellow-200">
                 Your email address is not verified. Please verify to receive
                 important notifications.
               </span>
             </div>
 
             <div className="space-y-3">
-              <div className="p-3 bg-gray-50 border border-gray-200 rounded-lg">
-                <p className="text-sm text-gray-600 mb-1">Email to verify:</p>
-                <p className="font-medium">{profile.email}</p>
+              <div className="p-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg">
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                  Email to verify:
+                </p>
+                <p className="font-medium text-gray-900 dark:text-white">
+                  {profile.email}
+                </p>
               </div>
 
               {!emailVerification.otpSent ? (
@@ -1163,7 +1222,7 @@ export default function AdminSettings() {
                     emailVerification.isVerifying ||
                     emailVerification.countdown > 0
                   }
-                  className="w-full"
+                  className="w-full bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
                 >
                   {emailVerification.isVerifying
                     ? 'Sending OTP...'
@@ -1174,7 +1233,7 @@ export default function AdminSettings() {
               ) : (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">
                       OTP sent to {profile.email}. Please check your email.
                     </p>
                     <Button
@@ -1188,7 +1247,7 @@ export default function AdminSettings() {
                         }))
                       }}
                       disabled={emailVerification.countdown > 0}
-                      className="text-xs"
+                      className="text-xs border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     >
                       {emailVerification.countdown > 0
                         ? `Resend in ${emailVerification.countdown}s`
@@ -1206,11 +1265,12 @@ export default function AdminSettings() {
                         }))
                       }
                       maxLength={6}
-                      className="flex-1"
+                      className="flex-1 bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder-gray-500 dark:placeholder-gray-400"
                     />
                     <Button
                       onClick={handleVerifyOTP}
                       disabled={emailVerification.isVerifyingOtp}
+                      className="bg-black dark:bg-white text-white dark:text-black hover:bg-gray-800 dark:hover:bg-gray-100"
                     >
                       {emailVerification.isVerifyingOtp
                         ? 'Verifying...'
@@ -1225,13 +1285,13 @@ export default function AdminSettings() {
       )}
 
       {/* All Admins Section */}
-      <Card>
+      <Card className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700">
         <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-white">
             <Users className="h-5 w-5" />
             All Admins
             {isBackgroundUpdating && (
-              <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 text-blue-800">
+              <div className="flex items-center gap-1 px-2 py-1 rounded bg-blue-100 dark:bg-blue-900/20 text-blue-800 dark:text-blue-200">
                 <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                 <span className="text-xs">Updating...</span>
               </div>
@@ -1241,7 +1301,7 @@ export default function AdminSettings() {
             variant="outline"
             onClick={fetchAllAdmins}
             disabled={isLoadingAdmins}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
           >
             <Activity className="h-4 w-4" />
             {isLoadingAdmins ? 'Refreshing...' : 'Refresh'}
@@ -1250,7 +1310,7 @@ export default function AdminSettings() {
         <CardContent>
           {isLoadingAdmins ? (
             <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 dark:border-white"></div>
             </div>
           ) : (
             <div className="space-y-4">
@@ -1263,7 +1323,7 @@ export default function AdminSettings() {
               ))}
 
               {allAdmins.length === 0 && (
-                <p className="text-center text-gray-500 py-8">
+                <p className="text-center text-gray-500 dark:text-gray-400 py-8">
                   No admins found.
                 </p>
               )}
