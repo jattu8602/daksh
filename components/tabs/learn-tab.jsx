@@ -466,7 +466,7 @@ export default function LearnTab() {
     'Unknown Class'
 
   return (
-    <div className="min-h-screen bg-gray-900 dark:bg-gray-900 transition-colors duration-500">
+    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-500 pb-10">
       {/* Testing mode indicator */}
       {TESTING_MODE && (
         <div className="fixed top-4 right-4 z-50 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
@@ -476,7 +476,7 @@ export default function LearnTab() {
 
       <div className="px-4 space-y-8">
         {/* Illustration */}
-        <div className="bg-linear-to-b from-cyan-950/20 to-transparent rounded-md !py-0 dark:bg-cyan-950/5">
+        <div className="bg-linear-to-b from-green-950/10 to-transparent rounded-md !py-0 dark:bg-cyan-950/5">
           <div className="relative z-10 flex flex-col justify-center h-full p-6">
             <h2 className="text-2xl font-bold text-blue-600 dark:text-blue-400 leading-tight mb-2">
               Experience our self-study
