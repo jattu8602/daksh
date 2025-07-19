@@ -70,7 +70,8 @@ export async function GET(request) {
     }
 
     // Extend session if it's close to expiring (less than 7 days left)
-    const daysUntilExpiry = (session.expiresAt - new Date()) / (1000 * 60 * 60 * 24)
+    const daysUntilExpiry =
+      (session.expiresAt - new Date()) / (1000 * 60 * 60 * 24)
     if (daysUntilExpiry < 7) {
       const newExpiresAt = new Date(Date.now() + 90 * 24 * 60 * 60 * 1000) // 90 days
       await prisma.session.update({
@@ -137,9 +138,6 @@ export async function DELETE(request) {
     return response
   } catch (error) {
     console.error('Logout error:', error)
-    return NextResponse.json(
-      { error: 'Failed to logout' },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to logout' }, { status: 500 })
   }
 }

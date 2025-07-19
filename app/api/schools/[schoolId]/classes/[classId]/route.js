@@ -22,7 +22,7 @@ export async function GET(request, { params }) {
   }
 
   try {
-    // Get class details with school and students in a single query
+    // Get class details with school, parent class, and students in a single query
     const classData = await prisma.class.findUnique({
       where: { id: classId },
       include: {
@@ -31,6 +31,13 @@ export async function GET(request, { params }) {
             id: true,
             name: true,
             code: true,
+          },
+        },
+        parentClass: {
+          select: {
+            id: true,
+            name: true,
+            isCommon: true,
           },
         },
         students: {

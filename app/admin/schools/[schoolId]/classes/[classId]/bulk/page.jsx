@@ -1,68 +1,85 @@
-"use client";
+'use client'
 
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import Link from "next/link";
-import toast from "react-hot-toast"; // Assuming you are using react-hot-toast for notifications
+import { useState, useEffect } from 'react'
+import { useParams } from 'next/navigation'
+import Link from 'next/link'
+import toast from 'react-hot-toast' // Assuming you are using react-hot-toast for notifications
 
 export default function BulkImportStudentsPage() {
-  const params = useParams();
-  const schoolId = params.schoolId;
-  const classId = params.classId;
+  const params = useParams()
+  const schoolId = params.schoolId
+  const classId = params.classId
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [classData, setClassData] = useState(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false)
+  const [classData, setClassData] = useState(null)
+  const [errorMessage, setErrorMessage] = useState('')
+  const [successMessage, setSuccessMessage] = useState('')
 
   // Bulk import state: start with 5 empty student fields
   const [bulkStudents, setBulkStudents] = useState(
-    Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null }))
-  );
+    Array(5)
+      .fill(null)
+      .map(() => ({ name: '', gender: '', rollNo: '', profileImage: null }))
+  )
 
   // Fetch class data on component mount
   useEffect(() => {
     const fetchClassData = async () => {
       try {
-        const response = await fetch(`/api/schools/${schoolId}/classes/${classId}`);
-        const data = await response.json();
+        // Check for cache-busting parameters
+        const url = new URL(window.location.href)
+        const noCache = url.searchParams.get('no-cache') === 'true'
+        const classUpdated = url.searchParams.get('classUpdated') === 'true'
+
+        // Clear cache if needed
+        if (noCache || classUpdated) {
+          localStorage.removeItem(`class:${schoolId}:${classId}`)
+          localStorage.removeItem(`class:${schoolId}:${classId}:timestamp`)
+        }
+
+        const response = await fetch(
+          `/api/schools/${schoolId}/classes/${classId}${noCache || classUpdated ? '?no-cache=true' : ''}`
+        )
+        const data = await response.json()
         if (data.success) {
-          setClassData(data.class);
+          setClassData(data.class)
         } else {
-          setErrorMessage(data.error || "Failed to fetch class details");
+          setErrorMessage(data.error || 'Failed to fetch class details')
         }
       } catch (error) {
-        console.error("Error fetching class details:", error);
-        setErrorMessage("Error fetching class details: " + error.message);
+        console.error('Error fetching class details:', error)
+        setErrorMessage('Error fetching class details: ' + error.message)
       }
-    };
-    fetchClassData();
-  }, [schoolId, classId]);
+    }
+    fetchClassData()
+  }, [schoolId, classId])
 
   const handleInputChange = (index, field, value) => {
-    const newStudents = [...bulkStudents];
-    newStudents[index][field] = value;
-    setBulkStudents(newStudents);
-  };
+    const newStudents = [...bulkStudents]
+    newStudents[index][field] = value
+    setBulkStudents(newStudents)
+  }
 
   const handleAddMoreFields = () => {
-    const currentStudentsCount = bulkStudents.length;
-    const maxStudents = 1000;
-    const fieldsToAdd = Math.min(5, maxStudents - currentStudentsCount);
+    const currentStudentsCount = bulkStudents.length
+    const maxStudents = 1000
+    const fieldsToAdd = Math.min(5, maxStudents - currentStudentsCount)
 
     if (fieldsToAdd > 0) {
-      const newFields = Array(fieldsToAdd).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null }));
-      setBulkStudents([...bulkStudents, ...newFields]);
+      const newFields = Array(fieldsToAdd)
+        .fill(null)
+        .map(() => ({ name: '', gender: '', rollNo: '', profileImage: null }))
+      setBulkStudents([...bulkStudents, ...newFields])
     }
-  };
+  }
 
   const handleRemoveField = (index) => {
-    const newStudents = bulkStudents.filter((_, i) => i !== index);
-    setBulkStudents(newStudents);
-  };
+    const newStudents = bulkStudents.filter((_, i) => i !== index)
+    setBulkStudents(newStudents)
+  }
 
   const handleImageUpload = async (index, file) => {
-    if (!file) return;
+    if (!file) return
 
     try {
       // First, get a signature from our API
@@ -74,16 +91,16 @@ export default function BulkImportStudentsPage() {
         body: JSON.stringify({
           timestamp: Math.round(new Date().getTime() / 1000),
         }),
-      });
+      })
 
-      const { signature, timestamp, apiKey } = await signatureResponse.json();
+      const { signature, timestamp, apiKey } = await signatureResponse.json()
 
       // Create form data for Cloudinary upload
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('api_key', apiKey);
-      formData.append('timestamp', timestamp);
-      formData.append('signature', signature);
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('api_key', apiKey)
+      formData.append('timestamp', timestamp)
+      formData.append('signature', signature)
 
       // Upload to Cloudinary
       const response = await fetch(
@@ -92,80 +109,91 @@ export default function BulkImportStudentsPage() {
           method: 'POST',
           body: formData,
         }
-      );
+      )
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (data.secure_url) {
-        const newStudents = [...bulkStudents];
-        newStudents[index].profileImage = data.secure_url;
-        setBulkStudents(newStudents);
+        const newStudents = [...bulkStudents]
+        newStudents[index].profileImage = data.secure_url
+        setBulkStudents(newStudents)
       }
     } catch (error) {
-      console.error('Error uploading image:', error);
-      toast.error('Failed to upload image');
+      console.error('Error uploading image:', error)
+      toast.error('Failed to upload image')
     }
-  };
+  }
 
   const handleRemoveImage = (index) => {
-    const newStudents = [...bulkStudents];
-    newStudents[index].profileImage = null;
-    setBulkStudents(newStudents);
-  };
+    const newStudents = [...bulkStudents]
+    newStudents[index].profileImage = null
+    setBulkStudents(newStudents)
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setErrorMessage("");
-    setSuccessMessage("");
+    e.preventDefault()
+    setIsLoading(true)
+    setErrorMessage('')
+    setSuccessMessage('')
 
     // Filter out rows with empty name, gender, or invalid rollNo
-    const studentsToImport = bulkStudents.filter(student =>
-      student.name.trim() !== "" &&
-      student.gender !== "" &&
-      student.rollNo !== "" &&
-      !isNaN(parseInt(student.rollNo))
-    );
+    const studentsToImport = bulkStudents.filter(
+      (student) =>
+        student.name.trim() !== '' &&
+        student.gender !== '' &&
+        student.rollNo !== '' &&
+        !isNaN(parseInt(student.rollNo))
+    )
 
     if (studentsToImport.length === 0) {
-      setErrorMessage("Please fill in at least one student row with all required fields (Name, Gender, Roll Number), and ensure Roll Number is a valid number.");
-      setIsLoading(false);
-      return;
+      setErrorMessage(
+        'Please fill in at least one student row with all required fields (Name, Gender, Roll Number), and ensure Roll Number is a valid number.'
+      )
+      setIsLoading(false)
+      return
     }
 
     try {
-      const response = await fetch(`/api/schools/${schoolId}/classes/${classId}/students/bulk`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ students: studentsToImport, classId }),
-      });
+      const response = await fetch(
+        `/api/schools/${schoolId}/classes/${classId}/students/bulk`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ students: studentsToImport, classId }),
+        }
+      )
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Failed to import students");
+        throw new Error(data.error || 'Failed to import students')
       }
 
-      setSuccessMessage(`Successfully imported ${data.students.length} students.`);
+      setSuccessMessage(
+        `Successfully imported ${data.students.length} students.`
+      )
       // Optionally reset form or redirect after successful import
-      setBulkStudents(Array(5).fill(null).map(() => ({ name: "", gender: "", rollNo: "", profileImage: null })));
+      setBulkStudents(
+        Array(5)
+          .fill(null)
+          .map(() => ({ name: '', gender: '', rollNo: '', profileImage: null }))
+      )
 
       // Redirect back to the class details page after a short delay and force refresh
       setTimeout(() => {
-        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?no-cache=true`;
-      }, 1500); // Redirect after 1.5 seconds
-
+        window.location.href = `/admin/schools/${schoolId}/classes/${classId}?no-cache=true`
+      }, 1500) // Redirect after 1.5 seconds
     } catch (error) {
-      setErrorMessage(error.message || "Something went wrong");
+      setErrorMessage(error.message || 'Something went wrong')
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   if (!classData) {
-    return <div className="p-6 text-center">Loading class information...</div>;
+    return <div className="p-6 text-center">Loading class information...</div>
   }
 
   return (
@@ -193,7 +221,10 @@ export default function BulkImportStudentsPage() {
               href={`/admin/schools/${schoolId}/classes/${classId}`}
               className="hover:underline"
             >
-              {classData.name}
+              {classData.parentClass
+                ? classData.parentClass.name
+                : classData.name}
+              {classData.section && ` (${classData.section})`}
             </Link>
           </li>
           <li className="flex items-center">
@@ -207,7 +238,11 @@ export default function BulkImportStudentsPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">
-              Bulk Import Students for {classData.name}
+              Bulk Import Students for{' '}
+              {classData.parentClass
+                ? classData.parentClass.name
+                : classData.name}
+              {classData.section && ` (${classData.section})`}
             </h1>
             <div className="mt-1 text-sm text-gray-600">
               School: {classData.school?.name} ({classData.school?.code})

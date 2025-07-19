@@ -64,8 +64,10 @@ export default function ClassDetailPage() {
 
         // Check URL for refresh or no-cache parameters FIRST
         const url = new URL(window.location.href)
-        const noCacheUrlParam = url.searchParams.get('no-cache') === 'true';
-        const refreshUrlParam = url.searchParams.get('refresh') === 'true';
+        const noCacheUrlParam = url.searchParams.get('no-cache') === 'true'
+        const refreshUrlParam = url.searchParams.get('refresh') === 'true'
+        const classUpdatedParam =
+          url.searchParams.get('classUpdated') === 'true'
 
         // Check for cached data
         const cacheKey = `class:${schoolId}:${classId}`
@@ -77,7 +79,12 @@ export default function ClassDetailPage() {
         // Determine if we should use cache or force refresh
         // Prioritize URL params over cache validity
         const shouldFetchFresh =
-          forceRefresh || noCacheUrlParam || refreshUrlParam || !cachedData || !isCacheValid
+          forceRefresh ||
+          noCacheUrlParam ||
+          refreshUrlParam ||
+          classUpdatedParam ||
+          !cachedData ||
+          !isCacheValid
 
         // Use cache if available, valid, and not fetching fresh
         if (!shouldFetchFresh) {
@@ -89,7 +96,10 @@ export default function ClassDetailPage() {
           setIsLoading(false)
 
           // Clean up no-cache/refresh parameter from URL after using cache
-          if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
+          if (
+            (noCacheUrlParam || refreshUrlParam) &&
+            typeof window !== 'undefined'
+          ) {
             window.history.replaceState(
               {},
               document.title,
@@ -107,7 +117,10 @@ export default function ClassDetailPage() {
           localStorage.removeItem(`${cacheKey}:timestamp`)
 
           // Clean up no-cache/refresh parameter from URL after clearing cache
-          if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
+          if (
+            (noCacheUrlParam || refreshUrlParam) &&
+            typeof window !== 'undefined'
+          ) {
             window.history.replaceState(
               {},
               document.title,
@@ -173,7 +186,10 @@ export default function ClassDetailPage() {
                 )
 
                 // Clean up no-cache/refresh parameter from URL after updating cache
-                if ((noCacheUrlParam || refreshUrlParam) && typeof window !== 'undefined') {
+                if (
+                  (noCacheUrlParam || refreshUrlParam) &&
+                  typeof window !== 'undefined'
+                ) {
                   window.history.replaceState(
                     {},
                     document.title,
@@ -678,7 +694,12 @@ export default function ClassDetailPage() {
           </li>
           <li className="flex items-center">
             <span className="mx-2">/</span>
-            <span className="text-gray-900 font-medium">{classData.name}</span>
+            <span className="text-gray-900 font-medium">
+              {classData.parentClass
+                ? classData.parentClass.name
+                : classData.name}
+              {classData.section && ` (${classData.section})`}
+            </span>
           </li>
         </ul>
       </div>
@@ -687,7 +708,12 @@ export default function ClassDetailPage() {
       <div className="bg-white rounded-lg border p-6 shadow">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold">{classData.name}</h1>
+            <h1 className="text-2xl font-bold">
+              {classData.parentClass
+                ? classData.parentClass.name
+                : classData.name}
+              {classData.section && ` (${classData.section})`}
+            </h1>
             <div className="mt-1 text-sm text-gray-600">
               School: {school.name} ({school.code})
             </div>
@@ -713,8 +739,18 @@ export default function ClassDetailPage() {
             >
               Refresh Data
             </button>
-            <button className="rounded-md border px-4 py-2 text-sm font-medium mr-2">
-              Edit Class
+            <button
+              onClick={() => {
+                // Force refresh by clearing cache and reloading
+                localStorage.removeItem(`class:${schoolId}:${classId}`)
+                localStorage.removeItem(
+                  `class:${schoolId}:${classId}:timestamp`
+                )
+                window.location.href = `${window.location.pathname}?classUpdated=true`
+              }}
+              className="rounded-md border px-4 py-2 text-sm font-medium mr-2"
+            >
+              Force Refresh
             </button>
             <Link
               href={`/admin/schools/${schoolId}`}
@@ -804,9 +840,23 @@ export default function ClassDetailPage() {
           >
             <span className="mr-2">+</span> Bulk Import Students
           </Link>
-           <Link href={`/admin/schools/${schoolId}/classes/${classId}/smart-bulk`} className="btn btn-accent">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+          <Link
+            href={`/admin/schools/${schoolId}/classes/${classId}/smart-bulk`}
+            className="btn btn-accent"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-5 w-5 mr-2"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M13 10V3L4 14h7v7l9-11h-7z"
+              />
             </svg>
             Smart Bulk Import
           </Link>

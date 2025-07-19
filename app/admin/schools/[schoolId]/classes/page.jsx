@@ -154,7 +154,7 @@ export default function ClassesPage() {
           <table className="w-full">
             <thead>
               <tr className="border-b bg-gray-50 text-left text-xs font-medium text-gray-500">
-                <th className="px-4 py-3">Class Name</th>
+                <th className="px-4 py-3">Class Type</th>
                 <th className="px-4 py-3">Section</th>
                 <th className="px-4 py-3">Total Students</th>
                 <th className="px-4 py-3">Boys</th>
@@ -167,7 +167,10 @@ export default function ClassesPage() {
               {filteredClasses.length > 0 ? (
                 filteredClasses.map((cls) => (
                   <tr key={cls.id} className="border-b">
-                    <td className="px-4 py-3 font-medium">{cls.name}</td>
+                    <td className="px-4 py-3 font-medium">
+                      {cls.parentClass ? cls.parentClass.name : cls.name}
+                      {cls.section && ` (${cls.section})`}
+                    </td>
                     <td className="px-4 py-3">{cls.section || '-'}</td>
                     <td className="px-4 py-3">{cls.totalStudents || 0}</td>
                     <td className="px-4 py-3">{cls.boys || 0}</td>
