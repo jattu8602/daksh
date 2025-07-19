@@ -44,6 +44,22 @@ export default function LearnTab() {
   const [isLoadingSubjects, setIsLoadingSubjects] = useState(false)
   const [error, setError] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
+  const [isThemeReady, setIsThemeReady] = useState(false)
+
+  // Prevent flash by checking theme on mount
+  useEffect(() => {
+    // Check if theme is already set in localStorage
+    const savedTheme = localStorage.getItem('theme')
+    const systemTheme = window.matchMedia('(prefers-color-scheme: dark)')
+      .matches
+      ? 'dark'
+      : 'light'
+    const currentTheme = savedTheme || systemTheme
+
+    // Apply theme immediately to prevent flash
+    document.documentElement.classList.toggle('dark', currentTheme === 'dark')
+    setIsThemeReady(true)
+  }, [])
 
   // Cache management functions
   const getCachedData = (key) => {
@@ -418,13 +434,24 @@ export default function LearnTab() {
     )
   }
 
+  // Prevent flash by not rendering until theme is ready
+  if (!isThemeReady) {
+    return (
+      <div className="min-h-screen bg-gray-900">
+        <div className="flex items-center justify-center h-screen">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        </div>
+      </div>
+    )
+  }
+
   const studentClass =
     studentData?.student?.class?.parentClass?.name ||
     studentData?.student?.class?.name ||
     'Unknown Class'
 
   return (
-    <div className="min-h-screen bg-white dark:bg-gray-900 transition-colors duration-500">
+    <div className="min-h-screen bg-gray-900 dark:bg-gray-900 transition-colors duration-500">
       <div className="px-4 space-y-8">
         {/* Illustration */}
         <div className="bg-linear-to-b from-cyan-950/20 to-transparent rounded-md !py-0 dark:bg-cyan-950/5">

@@ -24,17 +24,17 @@ export const metadata = {
   icons: {
     icon: [
       { url: '/icons/icon-192x192.png', sizes: '192x192', type: 'image/png' },
-      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' }
+      { url: '/icons/icon-512x512.png', sizes: '512x512', type: 'image/png' },
     ],
     apple: [
-      { url: '/icons/apple-icon.png', sizes: '180x180', type: 'image/png' }
-    ]
+      { url: '/icons/apple-icon.png', sizes: '180x180', type: 'image/png' },
+    ],
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'Daksh'
-  }
+    title: 'Daksh',
+  },
 }
 
 export default function RootLayout({ children }) {
@@ -64,6 +64,24 @@ export default function RootLayout({ children }) {
           content="1dmarru9P3gaivQMYG8pD5nVERSVBb7rr6ewslRmEiE"
         />
         <link rel="manifest" href="/manifest.json" />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                try {
+                  const savedTheme = localStorage.getItem('theme')
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+                  const currentTheme = savedTheme || systemTheme
+                  document.documentElement.classList.toggle('dark', currentTheme === 'dark')
+                } catch (e) {
+                  // Fallback to system theme if localStorage fails
+                  const systemTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+                  document.documentElement.classList.toggle('dark', systemTheme === 'dark')
+                }
+              })()
+            `,
+          }}
+        />
       </head>
       <body
         className={`${geist.className} min-h-screen bg-background pt-[env(safe-area-inset-top)] antialiased`}
