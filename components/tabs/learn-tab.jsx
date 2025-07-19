@@ -21,6 +21,18 @@ import {
 import Image from 'next/image'
 import { Badge } from '@/components/ui/badge'
 
+// Cache keys for local storage
+const CACHE_KEYS = {
+  STUDENT_DATA: 'learn_tab_student_data',
+  BOARDS_DATA: 'learn_tab_boards_data',
+  SUBJECTS_DATA: 'learn_tab_subjects_data',
+  BEYOND_SUBJECTS_DATA: 'learn_tab_beyond_subjects_data',
+  CACHE_TIMESTAMP: 'learn_tab_cache_timestamp',
+}
+
+// Cache duration: 5 minutes
+const CACHE_DURATION = 5 * 60 * 1000
+
 export default function LearnTab() {
   const [studentData, setStudentData] = useState(null)
   const [boards, setBoards] = useState([])
@@ -33,6 +45,133 @@ export default function LearnTab() {
   const [error, setError] = useState(null)
   const [imageErrors, setImageErrors] = useState({})
 
+  // Cache management functions
+  const getCachedData = (key) => {
+    try {
+      const cached = localStorage.getItem(key)
+      if (cached) {
+        const { data, timestamp } = JSON.parse(cached)
+        if (Date.now() - timestamp < CACHE_DURATION) {
+          return data
+        }
+      }
+    } catch (error) {
+      console.error('Error reading cache:', error)
+    }
+    return null
+  }
+
+  const setCachedData = (key, data) => {
+    try {
+      const cacheData = {
+        data,
+        timestamp: Date.now(),
+      }
+      localStorage.setItem(key, JSON.stringify(cacheData))
+    } catch (error) {
+      console.error('Error writing cache:', error)
+    }
+  }
+
+  const clearCache = () => {
+    try {
+      Object.values(CACHE_KEYS).forEach((key) => {
+        localStorage.removeItem(key)
+      })
+    } catch (error) {
+      console.error('Error clearing cache:', error)
+    }
+  }
+
+  const refreshCache = () => {
+    clearCache()
+    window.location.reload()
+  }
+
+  const refreshSubjects = async () => {
+    if (!selectedBoard) return
+
+    try {
+      // Clear only subjects cache
+      localStorage.removeItem(CACHE_KEYS.SUBJECTS_DATA)
+      localStorage.removeItem(CACHE_KEYS.BEYOND_SUBJECTS_DATA)
+
+      // Fetch fresh subjects data
+      setIsLoadingSubjects(true)
+      const subjectsResponse = await fetch(`/api/boards/${selectedBoard.id}`)
+
+      if (subjectsResponse.ok) {
+        const subjectsData = await subjectsResponse.json()
+        if (subjectsData.success) {
+          const validSubjects = (subjectsData.board.subjects || []).filter(
+            (subject) =>
+              subject &&
+              subject.id &&
+              subject.name &&
+              subject.id.trim() !== '' &&
+              subject.name.trim() !== ''
+          )
+          setSubjects(validSubjects)
+          setCachedData(CACHE_KEYS.SUBJECTS_DATA, validSubjects)
+
+          const validBeyondSubjects = (
+            subjectsData.board.beyondSchoolSubjects || []
+          ).filter(
+            (subject) =>
+              subject &&
+              subject.id &&
+              subject.name &&
+              subject.id.trim() !== '' &&
+              subject.name.trim() !== ''
+          )
+          setBeyondSchoolSubjects(validBeyondSubjects)
+          setCachedData(CACHE_KEYS.BEYOND_SUBJECTS_DATA, validBeyondSubjects)
+
+          // Update cache timestamp
+          setCachedData(CACHE_KEYS.CACHE_TIMESTAMP, Date.now())
+        }
+      }
+    } catch (error) {
+      console.error('Error refreshing subjects:', error)
+    } finally {
+      setIsLoadingSubjects(false)
+    }
+  }
+
+  // Check for cache invalidation (when admin adds new subjects)
+  const checkForUpdates = async () => {
+    try {
+      // Get the last cache timestamp
+      const lastCacheTime = getCachedData(CACHE_KEYS.CACHE_TIMESTAMP)
+      if (!lastCacheTime) return
+
+      // Only check for updates if cache is older than 30 minutes
+      // This prevents constant checking and keeps the app fast
+      const thirtyMinutes = 30 * 60 * 1000
+      if (Date.now() - lastCacheTime < thirtyMinutes) {
+        return // Cache is fresh enough, don't check
+      }
+
+      // Lightweight check for updates
+      const response = await fetch('/api/boards?checkUpdates=true', {
+        method: 'HEAD', // Just check headers, don't download data
+      })
+
+      if (response.ok) {
+        const lastModified = response.headers.get('last-modified')
+        if (lastModified && new Date(lastModified) > new Date(lastCacheTime)) {
+          // Only clear subjects cache, keep student and boards data
+          // This way we only reload what changed
+          localStorage.removeItem(CACHE_KEYS.SUBJECTS_DATA)
+          localStorage.removeItem(CACHE_KEYS.BEYOND_SUBJECTS_DATA)
+          console.log('Subjects cache invalidated - new subjects available')
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for updates:', error)
+    }
+  }
+
   // Fetch student data on component mount
   useEffect(() => {
     const fetchStudentData = async () => {
@@ -40,53 +179,86 @@ export default function LearnTab() {
         setIsLoadingStudent(true)
         setError(null)
 
-        // Fetch student session data
-        const sessionResponse = await fetch('/api/auth/session', {
-          credentials: 'include',
-        })
+        // Check for updates first
+        await checkForUpdates()
 
-        if (!sessionResponse.ok) {
-          throw new Error('Failed to fetch student data')
+        // Check for cached student data
+        const cachedStudentData = getCachedData(CACHE_KEYS.STUDENT_DATA)
+        let currentStudentData = null
+
+        if (cachedStudentData) {
+          setStudentData(cachedStudentData)
+          currentStudentData = cachedStudentData
+          console.log('Loaded student data from cache')
+        } else {
+          // Fetch student session data
+          const sessionResponse = await fetch('/api/auth/session', {
+            credentials: 'include',
+          })
+
+          if (!sessionResponse.ok) {
+            throw new Error('Failed to fetch student data')
+          }
+
+          const sessionData = await sessionResponse.json()
+
+          if (!sessionData.success || !sessionData.user?.student) {
+            throw new Error('Student data not found')
+          }
+
+          setStudentData(sessionData.user)
+          currentStudentData = sessionData.user
+          setCachedData(CACHE_KEYS.STUDENT_DATA, sessionData.user)
         }
-
-        const sessionData = await sessionResponse.json()
-
-        if (!sessionData.success || !sessionData.user?.student) {
-          throw new Error('Student data not found')
-        }
-
-        setStudentData(sessionData.user)
 
         // Fetch boards for the student's class
         const classId =
-          sessionData.user.student.class.parentClassId ||
-          sessionData.user.student.class.id
+          currentStudentData?.student?.class?.parentClassId ||
+          currentStudentData?.student?.class?.id
 
-        setIsLoadingBoards(true)
-        const boardsResponse = await fetch(`/api/boards?classId=${classId}`)
-
-        if (!boardsResponse.ok) {
-          throw new Error('Failed to fetch boards')
+        if (!classId) {
+          throw new Error('Class ID not found')
         }
 
-        const boardsData = await boardsResponse.json()
+        // Check for cached boards data
+        const cachedBoardsData = getCachedData(CACHE_KEYS.BOARDS_DATA)
+        if (cachedBoardsData) {
+          setBoards(cachedBoardsData)
+          console.log('Loaded boards from cache')
+          if (cachedBoardsData.length > 0) {
+            setSelectedBoard(cachedBoardsData[0])
+          }
+        } else {
+          setIsLoadingBoards(true)
+          const boardsResponse = await fetch(`/api/boards?classId=${classId}`)
 
-        if (boardsData.success) {
-          // Filter out any boards with empty or invalid values
-          const validBoards = (boardsData.boards || []).filter(
-            (board) =>
-              board &&
-              board.id &&
-              board.name &&
-              board.id.trim() !== '' &&
-              board.name.trim() !== ''
-          )
-          setBoards(validBoards)
-          // Auto-select first board if available
-          if (validBoards.length > 0) {
-            setSelectedBoard(validBoards[0])
+          if (!boardsResponse.ok) {
+            throw new Error('Failed to fetch boards')
+          }
+
+          const boardsData = await boardsResponse.json()
+
+          if (boardsData.success) {
+            // Filter out any boards with empty or invalid values
+            const validBoards = (boardsData.boards || []).filter(
+              (board) =>
+                board &&
+                board.id &&
+                board.name &&
+                board.id.trim() !== '' &&
+                board.name.trim() !== ''
+            )
+            setBoards(validBoards)
+            setCachedData(CACHE_KEYS.BOARDS_DATA, validBoards)
+            // Auto-select first board if available
+            if (validBoards.length > 0) {
+              setSelectedBoard(validBoards[0])
+            }
           }
         }
+
+        // Set cache timestamp when fresh data is fetched
+        setCachedData(CACHE_KEYS.CACHE_TIMESTAMP, Date.now())
       } catch (error) {
         console.error('Error fetching data:', error)
         setError(error.message)
@@ -110,7 +282,23 @@ export default function LearnTab() {
 
       try {
         setIsLoadingSubjects(true)
-        // Fetch regular subjects
+
+        // Check for cached subjects
+        const cachedSubjects = getCachedData(CACHE_KEYS.SUBJECTS_DATA)
+        const cachedBeyondSubjects = getCachedData(
+          CACHE_KEYS.BEYOND_SUBJECTS_DATA
+        )
+
+        if (cachedSubjects && cachedBeyondSubjects) {
+          setSubjects(cachedSubjects)
+          setBeyondSchoolSubjects(cachedBeyondSubjects)
+          console.log('Loaded subjects from cache')
+          setIsLoadingSubjects(false)
+          return // Don't fetch if we have cached data
+        }
+
+        // Only fetch if we don't have cached data
+        console.log('Fetching fresh subjects data')
         const subjectsResponse = await fetch(`/api/boards/${selectedBoard.id}`)
         if (subjectsResponse.ok) {
           const subjectsData = await subjectsResponse.json()
@@ -124,6 +312,9 @@ export default function LearnTab() {
                 subject.id.trim() !== '' &&
                 subject.name.trim() !== ''
             )
+            setSubjects(validSubjects)
+            setCachedData(CACHE_KEYS.SUBJECTS_DATA, validSubjects)
+
             const validBeyondSubjects = (
               subjectsData.board.beyondSchoolSubjects || []
             ).filter(
@@ -134,8 +325,8 @@ export default function LearnTab() {
                 subject.id.trim() !== '' &&
                 subject.name.trim() !== ''
             )
-            setSubjects(validSubjects)
             setBeyondSchoolSubjects(validBeyondSubjects)
+            setCachedData(CACHE_KEYS.BEYOND_SUBJECTS_DATA, validBeyondSubjects)
           }
         }
       } catch (error) {
@@ -177,35 +368,35 @@ export default function LearnTab() {
     return emojiMap[subjectName] || '📖'
   }
 
-  const getSubjectBgColor = (subjectName) => {
-    const colorMap = {
-      Biology: 'bg-green-100 dark:bg-green-900/30',
-      Chemistry: 'bg-purple-100 dark:bg-purple-900/30',
-      Physics: 'bg-indigo-100 dark:bg-indigo-900/30',
-      Mathematics: 'bg-blue-100 dark:bg-blue-900/30',
-      Math: 'bg-blue-100 dark:bg-blue-900/30',
-      English: 'bg-red-100 dark:bg-red-900/30',
-      History: 'bg-yellow-100 dark:bg-yellow-900/30',
-      Geography: 'bg-teal-100 dark:bg-teal-900/30',
-      Science: 'bg-orange-100 dark:bg-orange-900/30',
-      Computer: 'bg-gray-100 dark:bg-gray-900/30',
-      Coding: 'bg-gray-100 dark:bg-gray-900/30',
-      Art: 'bg-pink-100 dark:bg-pink-900/30',
-      Music: 'bg-purple-100 dark:bg-purple-900/30',
-      Sports: 'bg-green-100 dark:bg-green-900/30',
-      Dance: 'bg-pink-100 dark:bg-pink-900/30',
-      Yoga: 'bg-green-100 dark:bg-green-900/30',
-      Cooking: 'bg-orange-100 dark:bg-orange-900/30',
-      Photography: 'bg-blue-100 dark:bg-blue-900/30',
-      Gardening: 'bg-green-100 dark:bg-green-900/30',
-      'Creative Writing': 'bg-yellow-100 dark:bg-yellow-900/30',
-      'Public Speaking': 'bg-red-100 dark:bg-red-900/30',
-      'Financial Literacy': 'bg-green-100 dark:bg-green-900/30',
-      'Life Skills': 'bg-gray-100 dark:bg-gray-900/30',
-      'Social Studies': 'bg-gray-100 dark:bg-gray-900/30',
-      'Social Science': 'bg-gray-100 dark:bg-gray-900/30',
-    }
-    return colorMap[subjectName] || 'bg-gray-100 dark:bg-gray-900/30'
+  // Fixed sequential colors for 24 subject components
+  const getComponentColor = (index) => {
+    const colors = [
+      'bg-blue-100 dark:bg-blue-900/30',
+      'bg-green-100 dark:bg-green-900/30',
+      'bg-purple-100 dark:bg-purple-900/30',
+      'bg-orange-100 dark:bg-orange-900/30',
+      'bg-pink-100 dark:bg-pink-900/30',
+      'bg-indigo-100 dark:bg-indigo-900/30',
+      'bg-teal-100 dark:bg-teal-900/30',
+      'bg-red-100 dark:bg-red-900/30',
+      'bg-yellow-100 dark:bg-yellow-900/30',
+      'bg-emerald-100 dark:bg-emerald-900/30',
+      'bg-violet-100 dark:bg-violet-900/30',
+      'bg-amber-100 dark:bg-amber-900/30',
+      'bg-rose-100 dark:bg-rose-900/30',
+      'bg-cyan-100 dark:bg-cyan-900/30',
+      'bg-lime-100 dark:bg-lime-900/30',
+      'bg-sky-100 dark:bg-sky-900/30',
+      'bg-fuchsia-100 dark:bg-fuchsia-900/30',
+      'bg-slate-100 dark:bg-slate-900/30',
+      'bg-stone-100 dark:bg-stone-900/30',
+      'bg-zinc-100 dark:bg-zinc-900/30',
+      'bg-neutral-100 dark:bg-neutral-900/30',
+      'bg-gray-100 dark:bg-gray-900/30',
+      'bg-slate-200 dark:bg-slate-800/30',
+      'bg-stone-200 dark:bg-stone-800/30',
+    ]
+    return colors[index % colors.length]
   }
 
   if (error) {
@@ -326,7 +517,7 @@ export default function LearnTab() {
               ) : subjects.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
                   {subjects.map((subject, index) => {
-                    const bgColor = getSubjectBgColor(subject.name)
+                    const bgColor = getComponentColor(index)
                     const imgError = imageErrors[subject.id] || false
 
                     return (
@@ -397,7 +588,7 @@ export default function LearnTab() {
               ) : beyondSchoolSubjects.length > 0 ? (
                 <div className="grid grid-cols-3 gap-3">
                   {beyondSchoolSubjects.map((subject, index) => {
-                    const bgColor = getSubjectBgColor(subject.name)
+                    const bgColor = getComponentColor(index)
                     const imgError = imageErrors[subject.id] || false
 
                     return (
