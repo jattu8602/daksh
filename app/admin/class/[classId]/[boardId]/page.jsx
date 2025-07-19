@@ -78,6 +78,7 @@ export default function BoardDetailPage() {
   const [editSubjectDescription, setEditSubjectDescription] = useState('')
   const [editSubjectPhoto, setEditSubjectPhoto] = useState('')
   const [isEditLoading, setIsEditLoading] = useState(false)
+  const [isEditingBeyondSubject, setIsEditingBeyondSubject] = useState(false)
 
   // Delete subject state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -205,6 +206,16 @@ export default function BoardDetailPage() {
     setEditSubjectName(subject.name)
     setEditSubjectDescription(subject.description || '')
     setEditSubjectPhoto(subject.photo || '')
+    setIsEditingBeyondSubject(false)
+    setIsEditDialogOpen(true)
+  }
+
+  const handleEditBeyondSubject = (subject) => {
+    setEditingSubject(subject)
+    setEditSubjectName(subject.name)
+    setEditSubjectDescription(subject.description || '')
+    setEditSubjectPhoto(subject.photo || '')
+    setIsEditingBeyondSubject(true)
     setIsEditDialogOpen(true)
   }
 
@@ -216,37 +227,78 @@ export default function BoardDetailPage() {
 
     setIsEditLoading(true)
     try {
-      const response = await fetch(`/api/subjects/${editingSubject.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          name: editSubjectName.trim(),
-          description: editSubjectDescription.trim(),
-          photo: editSubjectPhoto.trim(),
-        }),
-      })
+      let response
+      let data
 
-      const data = await response.json()
+      if (isEditingBeyondSubject) {
+        // Use beyond school subjects API
+        response = await fetch(
+          `/api/beyond-school-subjects/${editingSubject.id}`,
+          {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              name: editSubjectName.trim(),
+              description: editSubjectDescription.trim(),
+              photo: editSubjectPhoto.trim(),
+            }),
+          }
+        )
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to update subject')
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || 'Failed to update beyond school subject'
+          )
+        }
+
+        setBeyondSchoolSubjects((prev) =>
+          prev.map((subject) =>
+            subject.id === editingSubject.id
+              ? { ...subject, ...data.beyondSchoolSubject }
+              : subject
+          )
+        )
+        toast.success('Beyond school subject updated successfully')
+      } else {
+        // Use regular subjects API
+        response = await fetch(`/api/subjects/${editingSubject.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            name: editSubjectName.trim(),
+            description: editSubjectDescription.trim(),
+            photo: editSubjectPhoto.trim(),
+          }),
+        })
+
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to update subject')
+        }
+
+        setSubjects((prev) =>
+          prev.map((subject) =>
+            subject.id === editingSubject.id
+              ? { ...subject, ...data.subject }
+              : subject
+          )
+        )
+        toast.success('Subject updated successfully')
       }
 
-      setSubjects((prev) =>
-        prev.map((subject) =>
-          subject.id === editingSubject.id
-            ? { ...subject, ...data.subject }
-            : subject
-        )
-      )
-      toast.success('Subject updated successfully')
       setIsEditDialogOpen(false)
       setEditingSubject(null)
       setEditSubjectName('')
       setEditSubjectDescription('')
       setEditSubjectPhoto('')
+      setIsEditingBeyondSubject(false)
     } catch (error) {
       toast.error(error.message || 'Failed to update subject')
       console.error('Error updating subject:', error)
@@ -263,20 +315,53 @@ export default function BoardDetailPage() {
   const handleConfirmDelete = async () => {
     setIsDeleteLoading(true)
     try {
-      const response = await fetch(`/api/subjects/${deletingSubject.id}`, {
-        method: 'DELETE',
-      })
+      let response
+      let data
 
-      const data = await response.json()
+      // Check if it's a beyond school subject by checking if it exists in beyondSchoolSubjects array
+      const isBeyondSubject = beyondSchoolSubjects.some(
+        (s) => s.id === deletingSubject.id
+      )
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to delete subject')
+      if (isBeyondSubject) {
+        // Use beyond school subjects API
+        response = await fetch(
+          `/api/beyond-school-subjects/${deletingSubject.id}`,
+          {
+            method: 'DELETE',
+          }
+        )
+
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(
+            data.error || 'Failed to delete beyond school subject'
+          )
+        }
+
+        setBeyondSchoolSubjects((prev) =>
+          prev.filter((subject) => subject.id !== deletingSubject.id)
+        )
+        toast.success('Beyond school subject deleted successfully')
+      } else {
+        // Use regular subjects API
+        response = await fetch(`/api/subjects/${deletingSubject.id}`, {
+          method: 'DELETE',
+        })
+
+        data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to delete subject')
+        }
+
+        setSubjects((prev) =>
+          prev.filter((subject) => subject.id !== deletingSubject.id)
+        )
+        toast.success('Subject deleted successfully')
       }
 
-      setSubjects((prev) =>
-        prev.filter((subject) => subject.id !== deletingSubject.id)
-      )
-      toast.success('Subject deleted successfully')
       setIsDeleteDialogOpen(false)
       setDeletingSubject(null)
     } catch (error) {
@@ -721,7 +806,7 @@ export default function BoardDetailPage() {
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end">
                       <DropdownMenuItem
-                        onClick={() => handleEditSubject(subject)}
+                        onClick={() => handleEditBeyondSubject(subject)}
                       >
                         <Edit2 className="h-4 w-4 mr-2" />
                         Edit
@@ -827,7 +912,7 @@ export default function BoardDetailPage() {
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit2 className="h-5 w-5" />
-              Edit Subject
+              Edit {isEditingBeyondSubject ? 'Beyond School' : ''} Subject
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-6 py-4">

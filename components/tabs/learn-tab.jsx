@@ -33,6 +33,9 @@ const CACHE_KEYS = {
 // Cache duration: 5 minutes
 const CACHE_DURATION = 5 * 60 * 1000
 
+// Testing mode - set to true to disable cache for instant updates
+const TESTING_MODE = false
+
 export default function LearnTab() {
   const [studentData, setStudentData] = useState(null)
   const [boards, setBoards] = useState([])
@@ -63,6 +66,12 @@ export default function LearnTab() {
 
   // Cache management functions
   const getCachedData = (key) => {
+    // In testing mode, always return null to force fresh data
+    if (TESTING_MODE) {
+      console.log('Testing mode: bypassing cache for', key)
+      return null
+    }
+
     try {
       const cached = localStorage.getItem(key)
       if (cached) {
@@ -78,6 +87,12 @@ export default function LearnTab() {
   }
 
   const setCachedData = (key, data) => {
+    // In testing mode, don't cache anything
+    if (TESTING_MODE) {
+      console.log('Testing mode: not caching', key)
+      return
+    }
+
     try {
       const cacheData = {
         data,
@@ -452,6 +467,13 @@ export default function LearnTab() {
 
   return (
     <div className="min-h-screen bg-gray-900 dark:bg-gray-900 transition-colors duration-500">
+      {/* Testing mode indicator */}
+      {TESTING_MODE && (
+        <div className="fixed top-4 right-4 z-50 bg-yellow-500 text-black px-3 py-1 rounded-full text-xs font-bold">
+          🧪 TESTING MODE - Cache Disabled
+        </div>
+      )}
+
       <div className="px-4 space-y-8">
         {/* Illustration */}
         <div className="bg-linear-to-b from-cyan-950/20 to-transparent rounded-md !py-0 dark:bg-cyan-950/5">
@@ -560,17 +582,17 @@ export default function LearnTab() {
                             </h4>
 
                             {/* Subject icon */}
-                            <div className="absolute bottom-1 right-1 w-12 h-12 flex items-end justify-end transition-transform duration-300 hover:rotate-12">
+                            <div className="absolute bottom-[-10px] right-[-10px] w-20 h-20 flex items-end justify-end transition-transform duration-300 hover:rotate-12">
                               {imgError ? (
-                                <span className="text-2xl">
+                                <span className="text-3xl">
                                   {getSubjectEmoji(subject.name)}
                                 </span>
                               ) : (
                                 <Image
                                   src={subject.photo || '/placeholder.png'}
                                   alt={subject.name}
-                                  width={48}
-                                  height={48}
+                                  width={80}
+                                  height={80}
                                   className="object-contain"
                                   onError={() =>
                                     setImageErrors((prev) => ({
@@ -631,17 +653,17 @@ export default function LearnTab() {
                             </h4>
 
                             {/* Subject icon */}
-                            <div className="absolute bottom-1 right-1 w-12 h-12 flex items-end justify-end transition-transform duration-300 hover:rotate-12">
+                            <div className="absolute bottom-[-10px] right-[-10px] w-20 h-20 flex items-end justify-end transition-transform duration-300 hover:rotate-12">
                               {imgError ? (
-                                <span className="text-2xl">
+                                <span className="text-3xl">
                                   {getSubjectEmoji(subject.name)}
                                 </span>
                               ) : (
                                 <Image
                                   src={subject.photo || '/placeholder.png'}
                                   alt={subject.name}
-                                  width={48}
-                                  height={48}
+                                  width={80}
+                                  height={80}
                                   className="object-contain"
                                   onError={() =>
                                     setImageErrors((prev) => ({
