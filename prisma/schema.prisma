@@ -73,6 +73,7 @@ model School {
 model Class {
   id              String   @id @default(auto()) @map("_id") @db.ObjectId
   name            String
+  parentClassId   String?  @db.ObjectId // Reference to common/template class
   schoolId        String?  @db.ObjectId
   isCommon        Boolean  @default(false)
   totalStudents   Int      @default(0)
@@ -83,11 +84,17 @@ model Class {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
+  // Self-referential relationship for template pattern
+  parentClass     Class?    @relation("ClassTemplate", fields: [parentClassId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  schoolClasses   Class[]   @relation("ClassTemplate")
+
   school   School?   @relation(fields: [schoolId], references: [id])
   students Student[]
   messages Message[]
+  boards   Board[]
 
   @@index([schoolId])
+  @@index([parentClassId])
   @@index([createdAt])
   @@index([totalStudents])
   @@index([isCommon])
@@ -144,6 +151,7 @@ model Mentor {
   createdAt        DateTime          @default(now())
   updatedAt        DateTime          @updatedAt
   videoAssignments VideoAssignment[]
+  subjectMentors   SubjectMentor[]
 
   // Child side declares fields+references
   user User @relation("MentorToUser", fields: [userId], references: [id])
@@ -305,4 +313,163 @@ model EmailVerification {
   @@index([email])
   @@index([userId])
   @@index([expiresAt])
+}
+
+model Board {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String   // NCERT, CBSE, ICSE, etc.
+  code        String   // ncert, cbse, icse
+  description String?
+  classId     String   @db.ObjectId
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  class    Class     @relation(fields: [classId], references: [id], onDelete: Cascade)
+  subjects Subject[]
+  beyondSchoolSubjects BeyondSchoolSubject[]
+
+  @@index([classId])
+  @@index([name])
+  @@index([code])
+  @@index([isActive])
+}
+
+model Subject {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  photo       String?
+  boardId     String   @db.ObjectId
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  board             Board              @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  subjectMentors    SubjectMentor[]
+  subjectPlaylists  SubjectPlaylist[]
+  subjectNcerts     SubjectNcert[]
+  subjectSheets     SubjectSheet[]
+
+  @@index([boardId])
+  @@index([name])
+  @@index([isActive])
+}
+
+model BeyondSchoolSubject {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  photo       String?
+  boardId     String   @db.ObjectId
+  description String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  board             Board              @relation(fields: [boardId], references: [id], onDelete: Cascade)
+  subjectMentors    SubjectMentor[]
+  subjectPlaylists  SubjectPlaylist[]
+  subjectNcerts     SubjectNcert[]
+  subjectSheets     SubjectSheet[]
+
+  @@index([boardId])
+  @@index([name])
+  @@index([isActive])
+}
+
+model SubjectMentor {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId String?  @db.ObjectId
+  beyondSchoolSubjectId String? @db.ObjectId
+  mentorId  String   @db.ObjectId
+  role      String?  @default("instructor") // instructor, assistant, etc.
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  beyondSchoolSubject BeyondSchoolSubject? @relation(fields: [beyondSchoolSubjectId], references: [id], onDelete: Cascade)
+  mentor  Mentor  @relation(fields: [mentorId], references: [id], onDelete: Cascade)
+
+  @@unique([subjectId, mentorId])
+  @@unique([beyondSchoolSubjectId, mentorId])
+  @@index([subjectId])
+  @@index([beyondSchoolSubjectId])
+  @@index([mentorId])
+}
+
+model SubjectPlaylist {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId   String?  @db.ObjectId
+  beyondSchoolSubjectId String? @db.ObjectId
+  title       String
+  description String?
+  thumbnail   String?
+  url         String?
+  platform    String?  // youtube, vimeo, etc.
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  beyondSchoolSubject BeyondSchoolSubject? @relation(fields: [beyondSchoolSubjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([beyondSchoolSubjectId])
+  @@index([order])
+  @@index([isActive])
+}
+
+model SubjectNcert {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId   String?  @db.ObjectId
+  beyondSchoolSubjectId String? @db.ObjectId
+  title       String
+  description String?
+  fileUrl     String?
+  chapter     String?
+  grade       String?
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  beyondSchoolSubject BeyondSchoolSubject? @relation(fields: [beyondSchoolSubjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([beyondSchoolSubjectId])
+  @@index([grade])
+  @@index([chapter])
+  @@index([order])
+  @@index([isActive])
+}
+
+model SubjectSheet {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  subjectId   String?  @db.ObjectId
+  beyondSchoolSubjectId String? @db.ObjectId
+  title       String
+  description String?
+  fileUrl     String?
+  type        String?  // worksheet, answer_key, practice, etc.
+  difficulty  String?  // easy, medium, hard
+  order       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  subject Subject? @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  beyondSchoolSubject BeyondSchoolSubject? @relation(fields: [beyondSchoolSubjectId], references: [id], onDelete: Cascade)
+
+  @@index([subjectId])
+  @@index([beyondSchoolSubjectId])
+  @@index([type])
+  @@index([difficulty])
+  @@index([order])
+  @@index([isActive])
 }

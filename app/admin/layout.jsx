@@ -306,7 +306,7 @@ export default function AdminLayout({ children }) {
 
   return (
     <div className="flex h-screen bg-gray-100">
-      <Toaster position="top-right" />
+      {/* <Toaster position="top-right" /> */}
       <AdminActivityTracker />
       {/* Mobile Overlay - Removed to keep background visible */}
 

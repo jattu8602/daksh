@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 // GET /api/students/[studentId]
 export async function GET(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(
@@ -49,7 +49,7 @@ export async function GET(request, { params }) {
 // PUT /api/students/[studentId]
 export async function PUT(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(
@@ -133,7 +133,7 @@ export async function PUT(request, { params }) {
 // DELETE /api/students/[studentId]
 export async function DELETE(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(
@@ -157,6 +157,13 @@ export async function DELETE(request, { params }) {
 
     // Delete student and associated user, then update class counts
     await prisma.$transaction(async (tx) => {
+      // First, delete any related records
+      await tx.highlightStat.deleteMany({ where: { studentId } })
+      await tx.review.deleteMany({ where: { studentId } })
+      await tx.message.deleteMany({
+        where: { senderId: studentId },
+      })
+
       // Delete student and user
       await tx.student.delete({ where: { id: studentId } })
       await tx.user.delete({ where: { id: student.userId } })
@@ -194,8 +201,13 @@ export async function DELETE(request, { params }) {
     })
   } catch (error) {
     console.error('Error deleting student:', error)
+    console.error('Error details:', {
+      message: error.message,
+      code: error.code,
+      meta: error.meta,
+    })
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: error.message },
       { status: 500 }
     )
   }
