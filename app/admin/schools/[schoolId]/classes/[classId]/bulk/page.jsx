@@ -14,6 +14,7 @@ export default function BulkImportStudentsPage() {
   const [classData, setClassData] = useState(null)
   const [errorMessage, setErrorMessage] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+  const [imageUploading, setImageUploading] = useState({}) // Track which images are uploading
 
   // Bulk import state: start with 5 empty student fields
   const [bulkStudents, setBulkStudents] = useState(
@@ -81,6 +82,21 @@ export default function BulkImportStudentsPage() {
   const handleImageUpload = async (index, file) => {
     if (!file) return
 
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select a valid image file')
+      return
+    }
+
+    // Validate file size (max 5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('Image size should be less than 5MB')
+      return
+    }
+
+    // Set loading state for this specific image
+    setImageUploading((prev) => ({ ...prev, [index]: true }))
+
     try {
       // First, get a signature from our API
       const signatureResponse = await fetch('/api/cloudinary/signature', {
@@ -90,10 +106,21 @@ export default function BulkImportStudentsPage() {
         },
         body: JSON.stringify({
           timestamp: Math.round(new Date().getTime() / 1000),
+          folder: 'students',
         }),
       })
 
-      const { signature, timestamp, apiKey } = await signatureResponse.json()
+      if (!signatureResponse.ok) {
+        const errorData = await signatureResponse.json()
+        throw new Error(errorData.error || 'Failed to get upload signature')
+      }
+
+      const { signature, timestamp, apiKey, cloudName } =
+        await signatureResponse.json()
+
+      if (!signature || !timestamp || !apiKey || !cloudName) {
+        throw new Error('Invalid signature response')
+      }
 
       // Create form data for Cloudinary upload
       const formData = new FormData()
@@ -101,15 +128,23 @@ export default function BulkImportStudentsPage() {
       formData.append('api_key', apiKey)
       formData.append('timestamp', timestamp)
       formData.append('signature', signature)
+      formData.append('folder', 'students')
 
       // Upload to Cloudinary
       const response = await fetch(
-        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        `https://api.cloudinary.com/v1_1/${cloudName}/image/upload`,
         {
           method: 'POST',
           body: formData,
         }
       )
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(
+          errorData.error?.message || `Upload failed: ${response.status}`
+        )
+      }
 
       const data = await response.json()
 
@@ -117,10 +152,16 @@ export default function BulkImportStudentsPage() {
         const newStudents = [...bulkStudents]
         newStudents[index].profileImage = data.secure_url
         setBulkStudents(newStudents)
+        toast.success('Image uploaded successfully')
+      } else {
+        throw new Error('No secure URL received from Cloudinary')
       }
     } catch (error) {
       console.error('Error uploading image:', error)
-      toast.error('Failed to upload image')
+      toast.error(error.message || 'Failed to upload image')
+    } finally {
+      // Clear loading state for this image
+      setImageUploading((prev) => ({ ...prev, [index]: false }))
     }
   }
 
@@ -347,6 +388,10 @@ export default function BulkImportStudentsPage() {
                                 ×
                               </button>
                             </div>
+                          ) : imageUploading[index] ? (
+                            <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-600"></div>
+                            </div>
                           ) : (
                             <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center overflow-hidden">
                               <img
@@ -357,12 +402,21 @@ export default function BulkImportStudentsPage() {
                             </div>
                           )}
                         </div>
-                        <label className="cursor-pointer bg-gray-100 hover:bg-gray-200 px-3 py-1 rounded-md text-sm">
-                          <span>Upload</span>
+                        <label
+                          className={`cursor-pointer px-3 py-1 rounded-md text-sm ${
+                            imageUploading[index]
+                              ? 'bg-gray-300 cursor-not-allowed'
+                              : 'bg-gray-100 hover:bg-gray-200'
+                          }`}
+                        >
+                          <span>
+                            {imageUploading[index] ? 'Uploading...' : 'Upload'}
+                          </span>
                           <input
                             type="file"
                             accept="image/*"
                             className="hidden"
+                            disabled={imageUploading[index]}
                             onChange={(e) =>
                               handleImageUpload(index, e.target.files[0])
                             }

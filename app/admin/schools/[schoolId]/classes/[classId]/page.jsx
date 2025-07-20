@@ -510,6 +510,16 @@ export default function ClassDetailPage() {
 
   const handleImageUpload = async (file) => {
     try {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        throw new Error('Please select a valid image file')
+      }
+
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        throw new Error('Image size should be less than 5MB')
+      }
+
       // Get signature from backend
       const signatureResponse = await fetch('/api/cloudinary/signature', {
         method: 'POST',
@@ -518,11 +528,21 @@ export default function ClassDetailPage() {
         },
         body: JSON.stringify({
           timestamp: Math.round(new Date().getTime() / 1000),
+          folder: 'students',
         }),
       })
 
+      if (!signatureResponse.ok) {
+        const errorData = await signatureResponse.json()
+        throw new Error(errorData.error || 'Failed to get upload signature')
+      }
+
       const { signature, timestamp, apiKey, cloudName } =
         await signatureResponse.json()
+
+      if (!signature || !timestamp || !apiKey || !cloudName) {
+        throw new Error('Invalid signature response')
+      }
 
       // Create form data for Cloudinary upload
       const formData = new FormData()
@@ -530,6 +550,7 @@ export default function ClassDetailPage() {
       formData.append('signature', signature)
       formData.append('timestamp', timestamp)
       formData.append('api_key', apiKey)
+      formData.append('folder', 'students')
 
       // Upload to Cloudinary
       const uploadResponse = await fetch(
@@ -539,6 +560,13 @@ export default function ClassDetailPage() {
           body: formData,
         }
       )
+
+      if (!uploadResponse.ok) {
+        const errorData = await uploadResponse.json()
+        throw new Error(
+          errorData.error?.message || `Upload failed: ${uploadResponse.status}`
+        )
+      }
 
       const uploadData = await uploadResponse.json()
       if (!uploadData.secure_url) {
@@ -1546,7 +1574,7 @@ export default function ClassDetailPage() {
                     ) : (
                       <div className="w-20 h-20 rounded-full bg-gray-200 flex items-center justify-center">
                         <img
-                          src="/public/icons/girl.png"
+                          src="/icons/girl.png"
                           alt="Default"
                           className="w-16 h-16"
                         />
