@@ -35,6 +35,10 @@ model User {
   mentor  Mentor?  @relation("MentorToUser")
   admin   Admin?   @relation("AdminToUser")
 
+  // Follow relationships
+  followers  Follow[] @relation("UserFollowers")
+  following  Follow[] @relation("UserFollowing")
+
   // keep a non-unique index on role
   @@index([role])
 }
@@ -473,6 +477,23 @@ model SubjectSheet {
   @@index([difficulty])
   @@index([order])
   @@index([isActive])
+}
+
+model Follow {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String   @db.ObjectId
+  followingId String   @db.ObjectId
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([createdAt])
 }
 
 model Onboarding {
