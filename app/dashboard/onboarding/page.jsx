@@ -1,10 +1,10 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSelector } from 'react-redux'
 import Image from 'next/image'
-import { Wifi, Battery, Signal } from 'lucide-react'
+import { Wifi, Battery, Signal, ArrowLeft } from 'lucide-react'
 
 const interests = [
   'drawing',
@@ -23,14 +23,32 @@ const interests = [
   'theatre and drama',
 ]
 
-
-
-
 export default function OnboardingInterests() {
   const router = useRouter()
   const { user } = useSelector((state) => state.auth)
   const [selectedInterests, setSelectedInterests] = useState([])
   const [loading, setLoading] = useState(false)
+
+  // Handle browser back button
+  useEffect(() => {
+    const handleBeforeUnload = (e) => {
+      // Allow browser back navigation
+      return undefined
+    }
+
+    const handlePopState = () => {
+      // If user tries to go back, redirect to login
+      router.replace('/')
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    window.addEventListener('popstate', handlePopState)
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload)
+      window.removeEventListener('popstate', handlePopState)
+    }
+  }, [router])
 
   const toggleInterest = (interest, index) => {
     const interestKey = `${interest}-${index}`
@@ -71,7 +89,7 @@ export default function OnboardingInterests() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 flex flex-col overflow-hidden">
+    <div className="h-screen bg-[#FFFFFF] flex flex-col overflow-hidden">
       {/* Mobile Frame */}
       <div
         className="max-w-sm mx-auto bg-white h-full relative overflow-hidden"
@@ -115,15 +133,18 @@ export default function OnboardingInterests() {
             {loading ? 'Saving...' : 'Continue'}
           </button>
 
-          {/* Illustration */}
+          {/* Illustration - Fixed positioning */}
           <div className="flex-1 relative">
-            <Image
-              src="https://res.cloudinary.com/doxmvuss9/image/upload/v1752980532/link-generator/zyj6uldc8jaevocvo7ca.jpg"
-              alt="Onboarding Interests"
-              width={300}
-              height={300}
-              className="absolute bottom-[-200px] left-[-80px] w-150 h-150 object-contain"
-            />
+            <div className="absolute bottom-0 left-0 w-full h-full">
+              <Image
+                src="https://res.cloudinary.com/doxmvuss9/image/upload/v1752980532/link-generator/zyj6uldc8jaevocvo7ca.jpg"
+                alt="Onboarding Interests"
+                fill
+                className="object-contain object-bottom"
+                sizes="(max-width: 375px) 100vw, 375px"
+                priority
+              />
+            </div>
           </div>
         </div>
       </div>
