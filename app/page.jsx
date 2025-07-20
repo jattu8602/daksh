@@ -87,8 +87,16 @@ export default function StudentLogin() {
       // Update Redux state with user data
       dispatch(loginSuccess(data.user))
 
-      // Redirect to dashboard
-      router.replace('/dashboard/home')
+      // Check onboarding status
+      const onboardRes = await fetch('/api/onboarding/status', {
+        credentials: 'include',
+      })
+      const onboardData = await onboardRes.json()
+      if (onboardData.completed) {
+        router.replace('/dashboard/home')
+      } else {
+        router.replace('/dashboard/onboarding')
+      }
     } catch (error) {
       console.error('Login error:', error)
       setLocalError(error.message)
@@ -122,9 +130,16 @@ export default function StudentLogin() {
       if (data.success && data.user) {
         // Update Redux state with user data
         dispatch(loginSuccess(data.user))
-
-        // Redirect to dashboard
-        router.replace('/dashboard/home')
+        // Check onboarding status
+        const onboardRes = await fetch('/api/onboarding/status', {
+          credentials: 'include',
+        })
+        const onboardData = await onboardRes.json()
+        if (onboardData.completed) {
+          router.replace('/dashboard/home')
+        } else {
+          router.replace('/dashboard/onboarding')
+        }
       } else {
         throw new Error('Invalid response from server')
       }
@@ -147,11 +162,7 @@ export default function StudentLogin() {
         <div className="text-center">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mb-4"></div>
           <div className="text-xl font-semibold text-gray-700">
-            {isAuthenticated
-              ? (
-                <SplashScreen />
-              )
-              : 'Loading...'}
+            {isAuthenticated ? <SplashScreen /> : 'Loading...'}
           </div>
         </div>
       </div>

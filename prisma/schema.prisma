@@ -115,6 +115,7 @@ model Student {
   updatedAt      DateTime        @updatedAt
   reviews        Review[]
   highlightStats HighlightStat[]
+  onboarding     Onboarding?    @relation("StudentOnboarding")
 
   // Child side declares fields+references
   user     User      @relation("StudentToUser", fields: [userId], references: [id])
@@ -472,4 +473,20 @@ model SubjectSheet {
   @@index([difficulty])
   @@index([order])
   @@index([isActive])
+}
+
+model Onboarding {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  studentId         String   @unique @db.ObjectId
+  interests         String[] // Array of selected interests
+  completed         Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  // Relations
+  student Student @relation("StudentOnboarding", fields: [studentId], references: [id], onDelete: Cascade)
+
+  // Removed duplicate @@index([studentId])
+  @@index([completed])
+  @@index([createdAt])
 }
