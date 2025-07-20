@@ -168,7 +168,7 @@ export default function ExploreLayout({ children }) {
         </motion.div>
       </div>
 
-      <main className="flex-1 overflow-auto mt-4">{children}</main>
+      <main className="flex-1 overflow-auto ">{children}</main>
     </div>
   )
 }
