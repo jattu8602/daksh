@@ -26,10 +26,19 @@ export default function OtherStudentProfile({ studentData, currentUser }) {
     followingCount: 0,
   })
   const [followLoading, setFollowLoading] = useState(false)
-  const student = studentData?.student
+
+  // Handle both old and new API response structures
+  const student = studentData?.student || studentData
   const studentClass = student?.class
   const school = studentClass?.school
-  const user = studentData?.user
+  const user = studentData?.user || studentData
+
+  console.log('OtherStudentProfile data:', {
+    studentData,
+    student,
+    user,
+    currentUser,
+  })
 
   const profileData = {
     name: user?.name || 'Student',
@@ -90,16 +99,38 @@ export default function OtherStudentProfile({ studentData, currentUser }) {
 
   useEffect(() => {
     const fetchFollowData = async () => {
-      if (!currentUser?.id || !user?.id) return
+      if (!currentUser?.id || !user?.id) {
+        console.log('Missing user data:', {
+          currentUser: currentUser?.id,
+          profileUser: user?.id,
+        })
+        return
+      }
+
+      console.log('Checking follow status for student:', {
+        currentUserId: currentUser.id,
+        profileUserId: user.id,
+      })
 
       try {
         // Check if current user is following this student
         const followCheckResponse = await fetch(
-          `/api/follow/check?followerId=${currentUser.id}&followingId=${user.id}`
+          `/api/follow?followerId=${currentUser.id}&followingId=${user.id}`
         )
+        console.log(
+          'Student follow check response status:',
+          followCheckResponse.status
+        )
+
         if (followCheckResponse.ok) {
           const followData = await followCheckResponse.json()
-          setIsFollowing(followData.isFollowing)
+          console.log('Student follow data received:', followData)
+          setIsFollowing(followData.following)
+        } else {
+          console.error(
+            'Student follow check failed:',
+            followCheckResponse.status
+          )
         }
 
         // Get follow counts
@@ -117,44 +148,50 @@ export default function OtherStudentProfile({ studentData, currentUser }) {
   }, [currentUser?.id, user?.id])
 
   const handleFollowToggle = async () => {
-    if (!currentUser?.id || !user?.id) return
+    if (!currentUser?.id || !user?.id) {
+      console.log('Cannot follow student - missing user data:', {
+        currentUser: currentUser?.id,
+        profileUser: user?.id,
+      })
+      return
+    }
+
+    console.log('Attempting to toggle follow for student:', {
+      currentUserId: currentUser.id,
+      profileUserId: user.id,
+      currentState: isFollowing,
+    })
 
     setFollowLoading(true)
     try {
-      if (isFollowing) {
-        // Unfollow
-        const response = await fetch('/api/follow', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            followerId: currentUser.id,
-            followingId: user.id,
-          }),
-        })
-        if (response.ok) {
-          setIsFollowing(false)
+      const response = await fetch('/api/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          followerId: currentUser.id,
+          followingId: user.id,
+        }),
+      })
+
+      console.log('Student follow toggle response status:', response.status)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Student follow toggle response data:', data)
+
+        if (data.success) {
+          setIsFollowing(data.following)
+          // Update follower count based on the action
           setFollowCounts((prev) => ({
             ...prev,
-            followersCount: prev.followersCount - 1,
+            followersCount: data.following
+              ? prev.followersCount + 1
+              : prev.followersCount - 1,
           }))
+          console.log('Student follow state updated to:', data.following)
         }
       } else {
-        // Follow
-        const response = await fetch('/api/follow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            followerId: currentUser.id,
-            followingId: user.id,
-          }),
-        })
-        if (response.ok) {
-          setIsFollowing(true)
-          setFollowCounts((prev) => ({
-            ...prev,
-            followersCount: prev.followersCount + 1,
-          }))
-        }
+        console.error('Student follow toggle failed:', response.status)
       }
     } catch (error) {
       console.error('Error toggling follow:', error)

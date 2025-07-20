@@ -42,8 +42,11 @@ export default function MentorProfile({ mentorData, currentUser }) {
   })
   const [followLoading, setFollowLoading] = useState(false)
 
-  const mentor = mentorData?.mentor
-  const user = mentorData?.user
+  // Handle both old and new API response structures
+  const mentor = mentorData?.mentor || mentorData
+  const user = mentorData?.user || mentorData
+
+  console.log('MentorProfile data:', { mentorData, mentor, user, currentUser })
 
   const profileData = {
     name: user?.name || 'Mentor',
@@ -86,16 +89,38 @@ export default function MentorProfile({ mentorData, currentUser }) {
     }
 
     const fetchFollowData = async () => {
-      if (!currentUser?.id || !user?.id) return
+      if (!currentUser?.id || !user?.id) {
+        console.log('Missing user data:', {
+          currentUser: currentUser?.id,
+          profileUser: user?.id,
+        })
+        return
+      }
+
+      console.log('Checking follow status for mentor:', {
+        currentUserId: currentUser.id,
+        profileUserId: user.id,
+      })
 
       try {
         // Check if current user is following this mentor
         const followCheckResponse = await fetch(
-          `/api/follow/check?followerId=${currentUser.id}&followingId=${user.id}`
+          `/api/follow?followerId=${currentUser.id}&followingId=${user.id}`
         )
+        console.log(
+          'Mentor follow check response status:',
+          followCheckResponse.status
+        )
+
         if (followCheckResponse.ok) {
           const followData = await followCheckResponse.json()
-          setIsFollowing(followData.isFollowing)
+          console.log('Mentor follow data received:', followData)
+          setIsFollowing(followData.following)
+        } else {
+          console.error(
+            'Mentor follow check failed:',
+            followCheckResponse.status
+          )
         }
 
         // Get follow counts
@@ -114,44 +139,50 @@ export default function MentorProfile({ mentorData, currentUser }) {
   }, [user?.username, currentUser?.id, user?.id])
 
   const handleFollowToggle = async () => {
-    if (!currentUser?.id || !user?.id) return
+    if (!currentUser?.id || !user?.id) {
+      console.log('Cannot follow mentor - missing user data:', {
+        currentUser: currentUser?.id,
+        profileUser: user?.id,
+      })
+      return
+    }
+
+    console.log('Attempting to toggle follow for mentor:', {
+      currentUserId: currentUser.id,
+      profileUserId: user.id,
+      currentState: isFollowing,
+    })
 
     setFollowLoading(true)
     try {
-      if (isFollowing) {
-        // Unfollow
-        const response = await fetch('/api/follow', {
-          method: 'DELETE',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            followerId: currentUser.id,
-            followingId: user.id,
-          }),
-        })
-        if (response.ok) {
-          setIsFollowing(false)
+      const response = await fetch('/api/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          followerId: currentUser.id,
+          followingId: user.id,
+        }),
+      })
+
+      console.log('Mentor follow toggle response status:', response.status)
+
+      if (response.ok) {
+        const data = await response.json()
+        console.log('Mentor follow toggle response data:', data)
+
+        if (data.success) {
+          setIsFollowing(data.following)
+          // Update follower count based on the action
           setFollowCounts((prev) => ({
             ...prev,
-            followersCount: prev.followersCount - 1,
+            followersCount: data.following
+              ? prev.followersCount + 1
+              : prev.followersCount - 1,
           }))
+          console.log('Mentor follow state updated to:', data.following)
         }
       } else {
-        // Follow
-        const response = await fetch('/api/follow', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            followerId: currentUser.id,
-            followingId: user.id,
-          }),
-        })
-        if (response.ok) {
-          setIsFollowing(true)
-          setFollowCounts((prev) => ({
-            ...prev,
-            followersCount: prev.followersCount + 1,
-          }))
-        }
+        console.error('Mentor follow toggle failed:', response.status)
       }
     } catch (error) {
       console.error('Error toggling follow:', error)

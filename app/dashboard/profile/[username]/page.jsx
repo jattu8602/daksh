@@ -14,16 +14,38 @@ export default function DynamicProfilePage() {
   const [loading, setLoading] = useState(true)
   const [profileType, setProfileType] = useState(null) // 'student' or 'mentor'
 
+  // Temporary test user for debugging (remove this in production)
+  const testUser = {
+    id: 'test-user-id',
+    name: 'Test User',
+    username: 'testuser',
+  }
+
+  // Use test user if no real user is logged in (for testing only)
+  const currentUser = user || testUser
+
+  console.log('Profile page debug:', {
+    username: params.username,
+    currentUser: currentUser?.id,
+    isLoggedIn: !!user,
+    usingTestUser: !user,
+  })
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true)
         const username = params.username
 
+        console.log('Fetching profile for username:', username)
+
         // First try to fetch as student
         const studentResponse = await fetch(`/api/students/${username}`)
+        console.log('Student response status:', studentResponse.status)
+
         if (studentResponse.ok) {
           const studentData = await studentResponse.json()
+          console.log('Student data received:', studentData)
           setProfileData(studentData)
           setProfileType('student')
           return
@@ -31,14 +53,18 @@ export default function DynamicProfilePage() {
 
         // If not found as student, try as mentor
         const mentorResponse = await fetch(`/api/mentor/${username}`)
+        console.log('Mentor response status:', mentorResponse.status)
+
         if (mentorResponse.ok) {
           const mentorData = await mentorResponse.json()
+          console.log('Mentor data received:', mentorData)
           setProfileData(mentorData)
           setProfileType('mentor')
           return
         }
 
         // If neither found, set error state
+        console.log('No profile found for username:', username)
         setProfileData(null)
         setProfileType(null)
       } catch (error) {
@@ -101,9 +127,12 @@ export default function DynamicProfilePage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {profileType === 'student' ? (
-        <OtherStudentProfile studentData={profileData} currentUser={user} />
+        <OtherStudentProfile
+          studentData={profileData}
+          currentUser={currentUser}
+        />
       ) : (
-        <MentorProfile mentorData={profileData} currentUser={user} />
+        <MentorProfile mentorData={profileData} currentUser={currentUser} />
       )}
     </div>
   )
