@@ -129,34 +129,91 @@ export default function Component() {
   }
 
   // Real-time search functionality with debouncing
-  const searchUsers = useCallback(async (query) => {
-    if (!query.trim()) {
-      setSearchResults(null)
-      return
-    }
-
-    setIsSearching(true)
-    try {
-      const response = await fetch(
-        `/api/search?q=${encodeURIComponent(query)}&limit=20`
-      )
-      const data = await response.json()
-
-      if (data.success) {
-        setSearchResults(data)
-
-        // Add to recent searches only if it's a meaningful search
-        if (query.trim().length > 2) {
-          addToRecentSearches(query)
-        }
+  const searchUsers = useCallback(
+    async (query) => {
+      if (!query.trim()) {
+        setSearchResults(null)
+        return
       }
+
+      setIsSearching(true)
+      try {
+        const response = await fetch(
+          `/api/search?q=${encodeURIComponent(query)}&limit=20`
+        )
+        const data = await response.json()
+
+        if (data.success) {
+          setSearchResults(data)
+
+          // Check follow status for all users in search results
+          if (user && (data.students.length > 0 || data.mentors.length > 0)) {
+            await checkFollowStatusForUsers([...data.students, ...data.mentors])
+          }
+
+          // Add to recent searches only if it's a meaningful search
+          if (query.trim().length > 2) {
+            addToRecentSearches(query)
+          }
+        }
+      } catch (error) {
+        console.error('Search error:', error)
+        setSearchResults({ students: [], mentors: [], total: 0 })
+      } finally {
+        setIsSearching(false)
+      }
+    },
+    [user]
+  )
+
+  // Check follow status for users (both students and mentors)
+  const checkFollowStatusForUsers = async (users) => {
+    if (!user) return
+
+    console.log('Checking follow status for users:', user.id)
+
+    try {
+      const followChecks = users.map(async (userItem) => {
+        try {
+          const response = await fetch(
+            `/api/follow?followerId=${user.id}&followingId=${userItem.id}`
+          )
+          const data = await response.json()
+
+          if (data.success) {
+            return { userId: userItem.id, following: data.following }
+          } else {
+            console.error(
+              `Follow check failed for user ${userItem.id}:`,
+              data.error
+            )
+            return { userId: userItem.id, following: false }
+          }
+        } catch (error) {
+          console.error(
+            `Error checking follow status for user ${userItem.id}:`,
+            error
+          )
+          return { userId: userItem.id, following: false }
+        }
+      })
+
+      const results = await Promise.all(followChecks)
+
+      // Update follow states
+      const newFollowStates = {}
+      results.forEach((result) => {
+        newFollowStates[result.userId] = result.following
+      })
+
+      setFollowingStates((prev) => ({
+        ...prev,
+        ...newFollowStates,
+      }))
     } catch (error) {
-      console.error('Search error:', error)
-      setSearchResults({ students: [], mentors: [], total: 0 })
-    } finally {
-      setIsSearching(false)
+      console.error('Error checking follow statuses:', error)
     }
-  }, [])
+  }
 
   // Debounced search effect
   useEffect(() => {
@@ -192,7 +249,7 @@ export default function Component() {
     router.push(`/dashboard/profile/${username}`)
   }
 
-  const handleFollow = async (mentorId, mentorUsername) => {
+  const handleFollow = async (userId, username) => {
     if (!user) {
       // Handle not logged in state
       console.log('User not logged in')
@@ -200,9 +257,9 @@ export default function Component() {
     }
 
     console.log('Attempting to follow/unfollow:', {
-      mentorId,
-      mentorUsername,
-      userId: user.id,
+      userId,
+      username,
+      currentUserId: user.id,
     })
 
     try {
@@ -213,7 +270,7 @@ export default function Component() {
         },
         body: JSON.stringify({
           followerId: user.id,
-          followingId: mentorId,
+          followingId: userId,
         }),
       })
 
@@ -223,11 +280,11 @@ export default function Component() {
         // Update following state
         setFollowingStates((prev) => ({
           ...prev,
-          [mentorId]: data.following,
+          [userId]: data.following,
         }))
 
         console.log(
-          `Successfully ${data.following ? 'followed' : 'unfollowed'} mentor ${mentorUsername}`
+          `Successfully ${data.following ? 'followed' : 'unfollowed'} user ${username}`
         )
       } else {
         console.error('Follow operation failed:', data.error)
@@ -246,7 +303,9 @@ export default function Component() {
         className="flex items-center gap-3 py-3 px-3 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors rounded-lg cursor-pointer"
         onClick={() => handleUserClick(user.username)}
       >
-        <Avatar className="h-10 w-10">
+        <Avatar
+          className={`h-10 w-10 ${type === 'mentor' ? 'ring-2 ring-pink-400' : ''}`}
+        >
           <AvatarImage
             src={user.profileImage || '/placeholder.svg'}
             alt={user.name}
@@ -278,43 +337,31 @@ export default function Component() {
           )}
         </div>
 
-        {type === 'mentor' && (
-          <Button
-            size="sm"
-            variant={isFollowing ? 'secondary' : 'outline'}
-            className={`text-xs px-3 py-1 ${
-              isFollowing
-                ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-                : ''
-            }`}
-            onClick={(e) => {
-              e.stopPropagation()
-              handleFollow(user.id, user.username)
-            }}
-          >
-            {isFollowing ? (
-              <>
-                <Check className="h-3 w-3 mr-1" />
-                Following
-              </>
-            ) : (
-              <>
-                <UserPlus className="h-3 w-3 mr-1" />
-                Follow
-              </>
-            )}
-          </Button>
-        )}
-
-        <Badge
-          className={`text-xs px-2 py-0.5 ${
-            type === 'mentor'
-              ? 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-              : 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-          } border-0`}
+        <Button
+          size="sm"
+          variant={isFollowing ? 'secondary' : 'outline'}
+          className={`text-xs px-3 py-1 ${
+            isFollowing
+              ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
+              : ''
+          }`}
+          onClick={(e) => {
+            e.stopPropagation()
+            handleFollow(user.id, user.username)
+          }}
         >
-          {type}
-        </Badge>
+          {isFollowing ? (
+            <>
+              <Check className="h-3 w-3 mr-1" />
+              Following
+            </>
+          ) : (
+            <>
+              <UserPlus className="h-3 w-3 mr-1" />
+              Follow
+            </>
+          )}
+        </Button>
       </div>
     )
   }
@@ -324,18 +371,6 @@ export default function Component() {
 
   return (
     <div className="bg-gray-50 dark:bg-black min-h-screen">
-      {/* Header */}
-      <div className="sticky top-0 z-10 bg-white dark:bg-black border-b border-gray-200 dark:border-gray-800">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <Button variant="ghost" size="icon" onClick={handleBack}>
-            <ArrowLeft className="h-5 w-5" />
-          </Button>
-          <h1 className="text-lg font-semibold text-gray-900 dark:text-white">
-            Accounts
-          </h1>
-        </div>
-      </div>
-
       {/* Search Results */}
       {searchText && (
         <div className="px-4 py-4">
