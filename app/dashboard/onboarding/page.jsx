@@ -29,26 +29,28 @@ export default function OnboardingInterests() {
   const [selectedInterests, setSelectedInterests] = useState([])
   const [loading, setLoading] = useState(false)
 
-  // Handle browser back button
+  // Prevent back navigation and keep user on onboarding page
   useEffect(() => {
-    const handleBeforeUnload = (e) => {
-      // Allow browser back navigation
-      return undefined
+    // Push current state to prevent back navigation
+    window.history.pushState(null, '', window.location.href)
+
+    const handlePopState = (event) => {
+      // Prevent going back - stay on onboarding page
+      window.history.pushState(null, '', window.location.href)
+
+      // Show a subtle message that they need to complete onboarding
+      if (selectedInterests.length === 0) {
+        // You could add a toast notification here if you want
+        console.log('Please complete onboarding first')
+      }
     }
 
-    const handlePopState = () => {
-      // If user tries to go back, redirect to login
-      router.replace('/')
-    }
-
-    window.addEventListener('beforeunload', handleBeforeUnload)
     window.addEventListener('popstate', handlePopState)
 
     return () => {
-      window.removeEventListener('beforeunload', handleBeforeUnload)
       window.removeEventListener('popstate', handlePopState)
     }
-  }, [router])
+  }, [selectedInterests.length])
 
   const toggleInterest = (interest, index) => {
     const interestKey = `${interest}-${index}`
@@ -77,6 +79,7 @@ export default function OnboardingInterests() {
       })
       const data = await res.json()
       if (data.success) {
+        // Only redirect to dashboard after successful onboarding completion
         router.replace('/dashboard/home')
       } else {
         alert(data.error || 'Failed to save onboarding data')
