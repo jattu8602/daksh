@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server'
-import prisma from '@/lib/prisma'
+import { PrismaClient } from '@prisma/client'
 
-// POST /api/follow - Follow a user
+const prisma = new PrismaClient()
+
 export async function POST(request) {
   try {
     const { followerId, followingId } = await request.json()
@@ -13,14 +14,7 @@ export async function POST(request) {
       )
     }
 
-    if (followerId === followingId) {
-      return NextResponse.json(
-        { error: 'Cannot follow yourself' },
-        { status: 400 }
-      )
-    }
-
-    // Check if already following
+    // Check if follow relationship already exists
     const existingFollow = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
@@ -31,56 +25,54 @@ export async function POST(request) {
     })
 
     if (existingFollow) {
-      return NextResponse.json(
-        { error: 'Already following this user' },
-        { status: 400 }
-      )
+      // Unfollow - delete the relationship
+      await prisma.follow.delete({
+        where: {
+          followerId_followingId: {
+            followerId,
+            followingId,
+          },
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        following: false,
+        message: 'Unfollowed successfully',
+      })
+    } else {
+      // Follow - create the relationship
+      await prisma.follow.create({
+        data: {
+          followerId,
+          followingId,
+        },
+      })
+
+      return NextResponse.json({
+        success: true,
+        following: true,
+        message: 'Followed successfully',
+      })
     }
-
-    // Create follow relationship
-    const follow = await prisma.follow.create({
-      data: {
-        followerId,
-        followingId,
-      },
-      include: {
-        follower: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            role: true,
-          },
-        },
-        following: {
-          select: {
-            id: true,
-            name: true,
-            username: true,
-            role: true,
-          },
-        },
-      },
-    })
-
-    return NextResponse.json({
-      success: true,
-      message: 'Successfully followed user',
-      follow,
-    })
   } catch (error) {
-    console.error('Error following user:', error)
+    console.error('Follow error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Failed to follow/unfollow',
+        message: error.message,
+      },
       { status: 500 }
     )
   }
 }
 
-// DELETE /api/follow - Unfollow a user
-export async function DELETE(request) {
+export async function GET(request) {
   try {
-    const { followerId, followingId } = await request.json()
+    const { searchParams } = new URL(request.url)
+    const followerId = searchParams.get('followerId')
+    const followingId = searchParams.get('followingId')
 
     if (!followerId || !followingId) {
       return NextResponse.json(
@@ -89,8 +81,8 @@ export async function DELETE(request) {
       )
     }
 
-    // Delete follow relationship
-    const deletedFollow = await prisma.follow.delete({
+    // Check if follow relationship exists
+    const follow = await prisma.follow.findUnique({
       where: {
         followerId_followingId: {
           followerId,
@@ -101,13 +93,16 @@ export async function DELETE(request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Successfully unfollowed user',
-      deletedFollow,
+      following: !!follow,
     })
   } catch (error) {
-    console.error('Error unfollowing user:', error)
+    console.error('Follow check error:', error)
     return NextResponse.json(
-      { error: 'Internal server error' },
+      {
+        success: false,
+        error: 'Failed to check follow status',
+        message: error.message,
+      },
       { status: 500 }
     )
   }

@@ -1,7 +1,7 @@
 'use client'
 
 import React, { useState, useMemo, useEffect, useRef } from 'react'
-import { Search } from 'lucide-react'
+import { Search, X } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
@@ -111,6 +111,46 @@ export default function ExploreLayout({ children }) {
     return currentTab ? currentTab.id : 'all'
   }, [pathname, tabs])
 
+  const handleSearchClick = () => {
+    // Navigate to accounts page with search functionality
+    if (searchText.trim()) {
+      router.push(
+        `/dashboard/explore/accounts?search=${encodeURIComponent(searchText.trim())}`
+      )
+    } else {
+      router.push('/dashboard/explore/accounts')
+    }
+  }
+
+  // Only update URL when on accounts page and search text changes
+  useEffect(() => {
+    const isOnAccountsPage = pathname.includes('/accounts')
+
+    if (isOnAccountsPage && searchText.trim()) {
+      // Update URL with search text when on accounts page
+      router.push(
+        `/dashboard/explore/accounts?search=${encodeURIComponent(searchText.trim())}`,
+        { scroll: false }
+      )
+    } else if (isOnAccountsPage && !searchText.trim()) {
+      // Clear search when on accounts page
+      router.push('/dashboard/explore/accounts', { scroll: false })
+    }
+  }, [searchText, router, pathname])
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault()
+    if (searchText.trim()) {
+      router.push(
+        `/dashboard/explore/accounts?search=${encodeURIComponent(searchText.trim())}`
+      )
+    }
+  }
+
+  const handleClearSearch = () => {
+    setSearchText('')
+  }
+
   return (
     <div
       className="flex flex-col min-h-screen bg-white dark:bg-black max-w-md mx-auto "
@@ -127,20 +167,31 @@ export default function ExploreLayout({ children }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <div className="flex flex-grow items-center gap-3 bg-gradient-to-r from-purple-100 via-white to-indigo-100 dark:from-purple-900 dark:via-black dark:to-indigo-900 border border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 rounded-full px-4 py-2 shadow-sm cursor-text transition-all duration-300">
-            <Search
-              size={20}
-              className="text-purple-600 dark:text-purple-400"
-            />
-            <input
-              onClick={() => router.push('/dashboard/explore/accounts')}
-              type="text"
-              placeholder={placeholderToShow}
-              value={searchText}
-              onChange={(e) => setSearchText(e.target.value)}
-              className="bg-transparent w-full placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm focus:outline-none"
-            />
-          </div>
+          <form onSubmit={handleSearchSubmit} className="flex flex-grow">
+            <div className="flex flex-grow items-center gap-3 bg-gradient-to-r from-purple-100 via-white to-indigo-100 dark:from-purple-900 dark:via-black dark:to-indigo-900 border border-gray-300 dark:border-gray-700 hover:border-purple-400 dark:hover:border-purple-500 rounded-full px-4 py-2 shadow-sm cursor-text transition-all duration-300">
+              <Search
+                size={20}
+                className="text-purple-600 dark:text-purple-400"
+              />
+              <input
+                type="text"
+                placeholder={placeholderToShow}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+                onClick={handleSearchClick}
+                className="bg-transparent w-full placeholder:text-gray-500 dark:placeholder:text-gray-400 text-sm focus:outline-none"
+              />
+              {searchText && (
+                <button
+                  type="button"
+                  onClick={handleClearSearch}
+                  className="text-gray-400 hover:text-gray-600 dark:text-gray-300 dark:hover:text-gray-100 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              )}
+            </div>
+          </form>
         </motion.div>
 
         {/* Tab Buttons */}
