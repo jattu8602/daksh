@@ -395,7 +395,7 @@ export default function ClassDetailPage() {
 
       // Fetch QR code if not available
       setIsLoading(true)
-      const response = await fetch(`/api/students/${studentId}/qrcode`)
+      const response = await fetch(`/api/students/qrcode/${studentId}`)
       const data = await response.json()
 
       if (data.success && data.qrCode) {
