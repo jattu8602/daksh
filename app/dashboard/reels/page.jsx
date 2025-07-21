@@ -324,6 +324,9 @@ export default function InstagramReels() {
           if (isRefresh) {
             setReels(newReels)
             setCurrentReel(0)
+            // Reset stack tracking for refresh
+            setLoadedStacks(new Set([0]))
+            setLoadingStacks(new Set())
           } else {
             setReels((prev) => {
               const combined = [...prev, ...newReels]
@@ -333,6 +336,11 @@ export default function InstagramReels() {
               )
               return uniqueReels
             })
+          }
+
+          // Mark first stack as loaded for initial load
+          if (!isRefresh && reelsRef.current.length === 0) {
+            setLoadedStacks(new Set([0]))
           }
 
           // Preload videos immediately
@@ -390,11 +398,11 @@ export default function InstagramReels() {
     setLoadedStacks(new Set([0]))
     setLoadingStacks(new Set())
     setReels([])
-    loadStack(0).then(() => {
+    fetchMentorShots(3, true).then(() => {
       setCurrentReel(0)
       setLoading(false)
     })
-  }, [loadStack])
+  }, [fetchMentorShots])
 
   // Initialize window height on client side
   useEffect(() => {
@@ -410,9 +418,12 @@ export default function InstagramReels() {
 
   // Fetch initial reels on component mount - start immediately
   useEffect(() => {
+    console.log('Initializing reels page...')
     const cachedReels = getCachedReels()
+    console.log('Cached reels found:', cachedReels.length)
+
     if (cachedReels.length > 0) {
-      console.log('Loaded reels from cache:', cachedReels.length)
+      console.log('Loading reels from cache:', cachedReels.length)
       setReels(cachedReels)
       setLoading(false)
 
@@ -420,11 +431,21 @@ export default function InstagramReels() {
       const stacksFromCache = Math.ceil(cachedReels.length / STACK_SIZE)
       const stackNumbers = Array.from({ length: stacksFromCache }, (_, i) => i)
       setLoadedStacks(new Set(stackNumbers))
+      console.log('Marked stacks as loaded from cache:', stackNumbers)
     } else {
-      // Load first stack
-      loadStack(0).then(() => {
-        setLoading(false)
-      })
+      // No cache available or first time visit - fetch from API
+      console.log(
+        'No cache available or first time visit, fetching reels from API...'
+      )
+      fetchMentorShots(3, false)
+        .then(() => {
+          console.log('Initial API fetch completed')
+          setLoading(false)
+        })
+        .catch((error) => {
+          console.error('Error in initial API fetch:', error)
+          setLoading(false)
+        })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -460,6 +481,9 @@ export default function InstagramReels() {
     const videosRemainingInStack = STACK_SIZE - (currentReel % STACK_SIZE)
     if (videosRemainingInStack <= 2) {
       // When 2 or fewer videos left in current stack
+      console.log(
+        `Approaching end of stack ${currentStack} (${videosRemainingInStack} videos left), loading next stack ${nextStack}`
+      )
       loadStack(nextStack)
     }
   }, [currentReel, reels.length, loadStack])
@@ -631,7 +655,12 @@ export default function InstagramReels() {
 
   // Loading state
   if (loading && reels.length === 0) {
-    return <ReelSkeleton />
+    return (
+      <div className="fixed inset-0 bg-black">
+        <ReelSkeleton />
+       
+      </div>
+    )
   }
 
   // Error state with retry
@@ -646,12 +675,26 @@ export default function InstagramReels() {
           <p className="text-gray-400 text-sm max-w-sm">{error}</p>
           <div className="flex gap-3 mt-4">
             <Button
-              onClick={() => fetchMentorShots(3)}
+              onClick={() => {
+                setError(null)
+                setLoading(true)
+                fetchMentorShots(3, false)
+                  .then(() => {
+                    setLoading(false)
+                  })
+                  .catch((err) => {
+                    console.error('Retry failed:', err)
+                    setLoading(false)
+                  })
+              }}
               className="flex items-center gap-2"
               variant="outline"
+              disabled={loading}
             >
-              <RefreshCw className="w-4 h-4" />
-              Try Again
+              <RefreshCw
+                className={`w-4 h-4 ${loading ? 'animate-spin' : ''}`}
+              />
+              {loading ? 'Loading...' : 'Try Again'}
             </Button>
           </div>
           <p className="text-gray-500 text-xs mt-2">
