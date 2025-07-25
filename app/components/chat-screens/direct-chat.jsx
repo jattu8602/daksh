@@ -4,6 +4,7 @@ import { ArrowLeft, Phone, Mic, Paperclip, Send } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
+import FollowButton from '@/app/components/FollowButton';
 
 export default function DirectChat({ avatar, name, messages: initialMessages, isTyping = false }) {
   const [messages, setMessages] = useState(initialMessages);
@@ -87,6 +88,12 @@ export default function DirectChat({ avatar, name, messages: initialMessages, is
           <div>
             <h1 className="text-lg font-medium">{name}</h1>
           </div>
+          <FollowButton
+            targetUserId={name} // Use the chat name as a temporary ID, or pass actual user ID from props
+            initialIsFollowed={false} // TODO: wire to real follow state
+            size="sm"
+            variant="outline"
+          />
         </div>
         <div className="ml-auto">
           <motion.button

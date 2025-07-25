@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button' // Make sure this import is corr
 import { SkeletonCard, SkeletonText } from '@/components/ui/loading'
 import Comments from '../comments'
 import ShareModal from '../share-modal'
+import FollowButton from '@/app/components/FollowButton';
 // import { useSession } from 'next-auth/react'
 
 const AVATAR_CACHE_KEY = 'mentor_avatar_cache'
@@ -71,7 +72,7 @@ export default function Posts({
   toggleSave,
   likedPosts,
   savedPosts,
-  followedUsers,
+  followedUsers: initialFollowedUsers,
   openModal,
   activeModal,
   closeModal,
@@ -84,6 +85,7 @@ export default function Posts({
 }) {
   // const { data: session } = useSession();
   const [likeStates, setLikeStates] = useState({}); // { [postId]: { liked: bool, count: number } }
+  const [followedUsers, setFollowedUsers] = useState(initialFollowedUsers || []);
 
   // Get studentId from localStorage or fallback
   const getStudentId = () => {
@@ -91,6 +93,17 @@ export default function Posts({
       return localStorage.getItem('studentId') || 'demo-student';
     }
     return 'demo-student';
+  };
+
+  // Handle follow status change
+  const handleFollowChange = (username, isNowFollowed) => {
+    setFollowedUsers(prev => {
+      if (isNowFollowed) {
+        return [...prev, username];
+      } else {
+        return prev.filter(u => u !== username);
+      }
+    });
   };
 
   useEffect(() => {
@@ -220,6 +233,7 @@ export default function Posts({
           onCommentClick={() => openModal('comments', post.id)}
           onShareClick={() => openModal('share', post.id)}
           likeCount={likeStates[post.id]?.count ?? post.likes}
+          onFollowChange={handleFollowChange}
         />
       ))}
 
@@ -283,6 +297,7 @@ function PostItem({
   onCommentClick,
   onShareClick,
   likeCount,
+  onFollowChange,
 }) {
   const { ref, inView } = useInView({
     threshold: 0.5,
@@ -296,9 +311,7 @@ function PostItem({
   }, [inView, isLast, hasMore, fetchMorePosts])
 
   const [currentImageIndex, setCurrentImageIndex] = useState(0)
-  const [isFollowed, setIsFollowed] = useState(
-    followedUsers.includes(post.username)
-  )
+  // Remove local isFollowed state - FollowButton manages its own state
   const [isExpanded, setIsExpanded] = useState(false)
 
   const images = Array.isArray(post.images) ? post.images : [post.images]
@@ -373,19 +386,11 @@ function PostItem({
             {post.username}
           </span>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          className={clsx(
-            'border text-sm px-4 py-1.5 rounded-md transition-colors',
-            isFollowed
-              ? 'bg-white text-black border-gray-300 hover:bg-gray-100 dark:bg-black dark:text-white dark:border-gray-700 dark:hover:bg-gray-900'
-              : 'bg-black text-white border-gray-700 hover:bg-gray-800 dark:bg-white dark:text-black dark:border-gray-300 dark:hover:bg-gray-200'
-          )}
-          onClick={() => setIsFollowed((prev) => !prev)}
-        >
-          {isFollowed ? 'Following' : 'Follow'}
-        </Button>
+        <FollowButton
+          targetUserId={post.mentorUserId || post.username}
+          initialIsFollowed={followedUsers.includes(post.username)}
+          onFollowChange={onFollowChange}
+        />
       </div>
 
       {/* Image / Video Slider */}

@@ -68,6 +68,7 @@ export async function GET(request) {
           username: mentor.user.username,
           avatar: mentor.profilePhoto || '/icons/girl.png',
           isDaksh: !mentor.isOrganic, // inorganic mentors get daksh tag
+          userId: mentor.user.id, // Add mentor's user ID for follow functionality
         },
         description:
           video.metaDescription ||

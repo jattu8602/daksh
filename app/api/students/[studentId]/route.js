@@ -4,7 +4,7 @@ import prisma from '@/lib/prisma'
 // GET /api/students/[studentId]
 export async function GET(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(
@@ -49,7 +49,7 @@ export async function GET(request, { params }) {
 // PUT /api/students/[studentId]
 export async function PUT(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(
@@ -133,7 +133,7 @@ export async function PUT(request, { params }) {
 // DELETE /api/students/[studentId]
 export async function DELETE(request, { params }) {
   try {
-    const { studentId } = params
+    const { studentId } = await params
 
     if (!studentId) {
       return NextResponse.json(

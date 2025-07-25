@@ -34,6 +34,8 @@ model User {
   student Student? @relation("StudentToUser")
   mentor  Mentor?  @relation("MentorToUser")
   admin   Admin?   @relation("AdminToUser")
+  followers Follow[] @relation("FollowFollower")
+  following Follow[] @relation("FollowFollowing")
 
   // keep a non-unique index on role
   @@index([role])
@@ -347,4 +349,21 @@ model CommentLike {
   @@unique([commentId, studentId])
   @@index([commentId])
   @@index([studentId])
+}
+
+model Follow {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  followerId  String   @db.ObjectId // The user who follows
+  followingId String   @db.ObjectId // The user being followed
+  status      String   @default("accepted") // For future: 'pending', 'accepted', 'rejected'
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  follower    User     @relation("FollowFollower", fields: [followerId], references: [id])
+  following   User     @relation("FollowFollowing", fields: [followingId], references: [id])
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@index([status])
 }

@@ -103,6 +103,7 @@ export async function GET(request) {
         username: mentor.user.username,
         avatar: mentor.profilePhoto || '/placeholder.png',
         hashtags: hashtags,
+        mentorUserId: mentor.user.id, // Add mentor's user ID for follow functionality
       }
     }))
 

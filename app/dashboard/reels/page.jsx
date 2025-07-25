@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import FollowButton from '@/app/components/FollowButton';
 
 // --- START: localStorage Caching ---
 const REELS_CACHE_KEY = 'daksh_reels_cache'
@@ -191,6 +192,7 @@ export default function InstagramReels() {
   const [videoErrors, setVideoErrors] = useState({})
   const [loadedStacks, setLoadedStacks] = useState(new Set([0])) // Track which stacks have been loaded
   const [loadingStacks, setLoadingStacks] = useState(new Set()) // Track which stacks are currently loading
+  const [followedUsers, setFollowedUsers] = useState([]) // State to track followed users
 
   const videoRefs = useRef([])
   const containerRef = useRef(null)
@@ -932,13 +934,12 @@ export default function InstagramReels() {
                         </Badge>
                       )}
                     </div>
-                    <Button
-                      variant="outline"
+                    <FollowButton
+                      targetUserId={reel.mentor.userId}
+                      initialIsFollowed={followedUsers?.includes(reel.mentor.username)}
                       size="sm"
-                      className="text-sm px-2 py-1 h-8 border-2 border-white text-black hover:bg-black hover:text-black font-semibold"
-                    >
-                      Follow
-                    </Button>
+                      variant="outline"
+                    />
                   </div>
                 </div>
 

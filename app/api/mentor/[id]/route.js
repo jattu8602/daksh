@@ -77,7 +77,7 @@ export async function GET(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
   try {
     const body = await req.json();
     // Update mentor fields
@@ -125,7 +125,7 @@ export async function PATCH(req, { params }) {
 }
 
 export async function DELETE(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
   try {
     // Find mentor and user
     const mentor = await prisma.mentor.findUnique({ where: { id } });

@@ -3,8 +3,41 @@
 import { ArrowLeft, Settings, Search, Users, Phone } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
+import FollowButton from '@/app/components/FollowButton';
+import { useEffect, useState } from 'react';
 
 export default function ProfileView({ profileData, onBack }) {
+  const [followers, setFollowers] = useState(0);
+  const [following, setFollowing] = useState(0);
+  const [isFollowed, setIsFollowed] = useState(profileData.isFollowed || false);
+
+  // Fetch followers/following count
+  useEffect(() => {
+    async function fetchCounts() {
+      if (!profileData.id) return;
+      try {
+        const [followersRes, followingRes] = await Promise.all([
+          fetch(`/api/followers/${profileData.id}`),
+          fetch(`/api/following/${profileData.id}`),
+        ]);
+        const followersData = await followersRes.json();
+        const followingData = await followingRes.json();
+        setFollowers(followersData.followers?.length || 0);
+        setFollowing(followingData.following?.length || 0);
+      } catch {
+        setFollowers(0);
+        setFollowing(0);
+      }
+    }
+    fetchCounts();
+  }, [profileData.id]);
+
+  // Handler to update counts on follow/unfollow
+  const handleFollowChange = (nowFollowed) => {
+    setIsFollowed(nowFollowed);
+    setFollowers((prev) => prev + (nowFollowed ? 1 : -1));
+  };
+
   return (
     <div className="h-screen flex flex-col bg-white dark:bg-black text-gray-900 dark:text-white transition-colors duration-300">
       {/* Sticky Header */}
@@ -32,6 +65,10 @@ export default function ProfileView({ profileData, onBack }) {
 
           <div className="text-center space-y-1">
             <h2 className="text-xl font-bold">{profileData.name}</h2>
+            <div className="flex justify-center gap-6 text-xs text-gray-500 dark:text-gray-400 mt-1">
+              <span><b>{followers}</b> Followers</span>
+              <span><b>{following}</b> Following</span>
+            </div>
             {profileData.info && (
               <div className="text-gray-600 dark:text-gray-400 text-sm">
                 {profileData.info.subject && <p>{profileData.info.subject}</p>}
@@ -45,6 +82,16 @@ export default function ProfileView({ profileData, onBack }) {
 
           {/* Action Buttons */}
           <div className="flex flex-wrap justify-center gap-3 mt-1">
+            {/* Only show FollowButton for student/mentor profiles, not groups */}
+            {['student', 'mentor'].includes(profileData.type) && (
+              <FollowButton
+                targetUserId={profileData.id}
+                initialIsFollowed={isFollowed}
+                onChange={handleFollowChange}
+                size="sm"
+                variant="outline"
+              />
+            )}
             <Button
               variant="outline"
               size="sm"

@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server'
 import prisma from '@/lib/prisma'
 
 export async function GET(request, { params }) {
-  const schoolId = await params.schoolId
-  const classId = await params.classId
+  const schoolId = params.schoolId;
+  const classId = params.classId;
 
   // Use URL to check for any cache-control settings
   const url = new URL(request.url)
