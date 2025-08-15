@@ -5,7 +5,8 @@
       "namespace": "android_app",
       "package_name": "in.dakshedu.app",
       "sha256_cert_fingerprints": [
-        "47:FF:DE:95:FB:D5:4D:79:C7:3A:E8:B9:34:A6:94:01:4B:22:14:62:4B:62:A3:01:B4:94:66:89:C1:76:A6:80"
+        "47:FF:DE:95:FB:D5:4D:79:C7:3A:E8:B9:34:A6:94:01:4B:22:14:62:4B:62:A3:01:B4:94:66:89:C1:76:A6:80",
+        "4E:C2:FC:B1:18:3F:5A:DE:C3:73:5A:09:92:53:1C:28:C3:DA:19:0D:AC:67:FD:CC:39:C2:F7:3C:79:27:F6:0B"
       ]
     }
   }
